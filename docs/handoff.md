@@ -1,5 +1,65 @@
 # Handoff — read this first
 
+## Latest: T-007 implementation ready for Claude review — 2026-10-16
+
+Branch `t-007-storage`, isolated checkout from merged main `7aad2a9` (PR #10,
+accepted T-007 v3/data spec v1.2.1). The implementation PR names the exact final
+review commit and records CI results for that SHA. **State: Review; not accepted
+or merged.** Claude performs the independent implementation review next.
+
+Implemented CSV parsing and named boundary errors, public development-only import,
+immutable raw records/declarations, deterministic Parquet write/read with full
+manifest verification, the owner-only split CLI and proposal mode, holdout-date
+proposal, `INVALID_MODE`, and owner instructions/recovery in the README. PyArrow
+23.0.1 is pinned in uv.lock; existing dependency versions are unchanged. All data
+used in development and tests are synthetic. The program has no network or broker
+calls. Engineering dependency installation and GitHub publication used network;
+no market data was downloaded.
+
+Completed locally under Python 3.12:
+- `UV_CACHE_DIR=/tmp/trading-t007-cache /tmp/trading-build-tools/bin/uv sync --locked`
+  installed the locked environment. Initial offline attempt lacked cached tools;
+  installation then succeeded.
+- `.venv/bin/ruff check .`: passed.
+- `.venv/bin/python -m pytest -q`: **714 passed**, including all 625 existing tests
+  and 89 new T-007 acceptance/regression cases.
+- `.venv/bin/trader-split --help`: entry point works.
+- `git diff --check`: passed.
+- Existing fixtures, strategy parameters and specifications unchanged.
+
+Coverage includes exact CSV errors/file/line, all three market-date boundaries,
+after-boundary attestations, deterministic identities and Parquet bytes, independent
+hash calculation, provenance digest, corrupt files/metadata/schema, rehashed but
+semantically invalid input, exact partitions, empty partitions, source/symlink/
+output preflight before reads, case-insensitive prospective aliases, caught rollback,
+subprocess `os._exit` interruption and retry/owner cleanup, valid-close counts and
+leap convention, and CLI proposal/split execution. No historical performance run.
+
+Routine implementation choices for review:
+- Internal full-history parser is `_parse_csv_dir`; the public import is guarded.
+  Errors without a physical source row use line 0. Missing declaration reports
+  `declarations.csv:0`; empty numeric close remains None for builder validation.
+- Source imports reject undeclared/extra/duplicate declarations. A partition
+  intentionally retains source declarations even for an instrument with no records
+  on that side; this implements the requirement to copy all declarations unchanged.
+- Manifest result is a dictionary; `manifest_digest` is returned alongside fields,
+  never embedded in the bytes it hashes. Reads decode the same bytes they hashed,
+  reject symlinked dataset files and enforce exact Arrow column schemas.
+- Rows use stable full-row tie-breakers without deleting duplicates. Storage does
+  not turn bad market values into valid prices; the builder still reports them.
+- Publication is per dataset, with file/directory sync before proceeding to the next
+  rename. Existing outputs are never overwritten. Concurrent splits/path mutation
+  are unsupported and documented; containment is not a security sandbox.
+- CLI records the implementation checkout's Git HEAD, so the owner must use a clean
+  checkout of the reviewed commit. Proposal mode needs no output/provenance flags.
+
+CI is separate from local verification; exact-head results and links are maintained
+in the implementation PR. Owner-reported IBKR observations remain unverified by
+agents. Real use still requires D5 evidence, declarations and a charter-confirmed
+holdout boundary. No funding, broker calls, real data, holdout access, experiments,
+purchases, merges or deployment performed.
+
+
 ## Latest: Codex T-007 v3 acceptance — 2026-10-16
 
 **T-007 v3 Accepted** at exact commit `abc2f474b3a073eccd20176173e9215e58e92943` (data spec v1.2.1, decision 0007). No blocking requirements findings remain. No implementation started during this review.
