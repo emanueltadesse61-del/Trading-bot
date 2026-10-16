@@ -26,7 +26,7 @@ Paper trading and live trading are separate authorisations. Passing every paper 
 | Item | Status | Entry |
 |---|---|---|
 | Residence | Confirmed | United Kingdom |
-| Broker | Proposed | Interactive Brokers (IBKR); new account being created by the owner |
+| Broker | Confirmed | Interactive Brokers (IBKR); account **approved 2026-10-16** (owner). Account approval does not authorise funding or real trading (§2) |
 | Account type | Proposed | Cash account (no margin), ETF trading permissions only |
 | ISA wrapper | Open | Deferred until real capital is considered |
 | API access, permissions, market-data entitlements | Open | Verified in T-004 once the account exists |

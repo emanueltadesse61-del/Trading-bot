@@ -18,7 +18,7 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 
 ## Decisions
 
-**Confirmed** (owner): UK residence; new IBKR account being created; Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
+**Confirmed** (owner): UK residence; IBKR account approved 2026-10-16 (no funding authorised); Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
 
 **Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; £600/year data-and-hosting ceiling; ~12 UCITS ETFs, GBP lines only; weekly rebalance; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20; holdout 3–5 most recent years.
 
@@ -78,13 +78,13 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Blockers
 
-- IBKR account not yet approved → T-004 Table A blocked.
+- IBKR account **approved 2026-10-16**. T-004 Table A checks are now the owner's to perform on the owner's own machine (agents never touch the broker or credentials). Results go into `docs/feasibility-matrix.md` with dated evidence.
 - None for Claude: GitHub is linked and Claude can push.
 
 ## Next
 
 1. Codex: check the T-007 card's requirements (and its two open questions) before building. Owner: merge PR #9.
-2. Owner decisions gating real data: the holdout start (proposal: most recent 4 years, start fixed mechanically from usable history before any performance is computed, never chosen around a market event) and IBKR approval / data source (D5).
+2. Owner decisions gating real data: the holdout start (proposal: most recent 4 years, start fixed mechanically from usable history before any performance is computed, never chosen around a market event) and the data source (D5), which depends on the owner's Table A results, especially API historical-bar depth and market-data cost for LSE ETFs.
 3. PR #6 remains open; no closure authorised in this task.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
