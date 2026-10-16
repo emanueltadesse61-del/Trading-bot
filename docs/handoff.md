@@ -6,9 +6,15 @@ PR #13 is merged at `1d4529f`, preserving acceptance `7abbac3`. Implementation i
 
 Implemented the optional canonical open (raw v1 storage refuses it), bounded decision/admission adapter, schedules, synthetic simulator, shared-engine strategy generator, baselines, descriptive metrics and T-007 N1–N6. The buy affordability search is logarithmic rather than decrementing one share at a time; non-negative costs make it mathematically equivalent to the specified largest-affordable-quantity loop. Generators declare an explicit instrument set, including scripted generators, so unknown orders cannot expand admission scope. Baselines default to monthly; an explicit different named schedule is refused.
 
-Completed before the implementation commit: all 21 numeric fixture tests passed; admission/causality/generator tests passed, and storage follow-ups passed. Full clean-checkout verification follows this commit because the new dirty-checkout guard intentionally refuses the old CLI smoke test while tracked edits exist. The CSV test exporter now explicitly excludes the canonical `open=None` field (and asserts it is None); CSV acceptance assertions and all fixture values are unchanged.
+Completed verification at implementation commit `902e3e1`:
+- `PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python -m pytest -q`: **806 passed in 2.72s**, including all fixture cases, synthetic strategy/baseline integration, admission codes, causality, cash/NAV identities, anomaly reporting and all N1–N6 follow-ups. The real chmod test ran (non-root), with no skips.
+- `/tmp/trading-t007-build/.venv/bin/ruff check .`: **All checks passed**.
+- `git diff origin/main -- tests/fixtures src/trader/signals src/trader/portfolio src/trader/planner src/trader/params.py`: **empty**.
+- Clean working tree after the implementation commit; original CLI smoke test passed with the new tracked-dirty guard active.
 
-Synthetic tests only, no evaluation runs or registry entries. No real data, holdout, broker access, funding or spending. Next: full clean-checkout checks and CI, then Claude reviews the exact implementation commit. No merge authorised.
+The CSV test exporter explicitly excludes the canonical `open=None` field (and asserts it is None); CSV acceptance assertions and all fixture values are unchanged. The final handoff-only commit is the PR review head; GitHub CI status and exact SHA are recorded in the PR body.
+
+Synthetic tests only, no evaluation runs or registry entries. No real data, holdout, broker access, funding or spending. Next: GitHub CI, then Claude reviews the exact PR head. No merge authorised.
 
 ## Latest: Codex accepts T-008 v3 requirements — 2026-10-16
 
