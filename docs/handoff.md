@@ -36,7 +36,7 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-003 Portfolio engine | **Merged** (`489eda8`; Accepted at `a783e0c`) | — |
 | T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
-| T-005 Data-layer spec + reference cases | **Review** | Codex checks; reproduces D2, D3, D7, D11, D12, D14 |
+| T-005 Data-layer spec + reference cases | **Changes requested** at `3dceea8` | Claude resolves B1/B2 below |
 | T-006 Data build + holdout guard | Draft (Ready when T-005 Accepted) | Codex implements |
 
 Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
@@ -81,7 +81,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Codex: review T-005 (spec check only, no implementation); reproduce D2, D3, D7, D11, D12 and D14 independently. Mark Accepted or return findings.
+1. Claude: resolve T-005 B1/B2 in the spec and decision record; Codex rechecks the exact amended commit. T-006 remains Draft.
 2. When T-005 is Accepted: Codex implements T-006 on its own branch; Claude reviews.
 3. Owner decisions: D1 gold ETC, D2 US Treasury history, D3 feed-unit rule (now written into the data spec); R-002 lookbacks; R-006 rebalancing; stop-date convention; budget; PR #6 close. After account approval: D5 and Table A.
 
@@ -168,3 +168,34 @@ Independent calculator: `/tmp/review_t002_v12.py`, outside the repository. Comma
 - GitHub CI on the exact reviewed revision: push run 38836464917 and PR run 38836469395 both succeeded.
 
 Only this handoff was edited for acceptance; no spec, fixture or source changes. PR #1 and PR #2 remained open/unmerged at review time. T-003 has not started and remains blocked by the T-001 merge prerequisite. Owner should merge PR #1 then PR #2; acceptance does not authorise trading, spending, deployment or an agent merge.
+
+
+## Codex T-005 review — 2026-10-16
+
+Codex T-005 review at **3dceea8e70071105dca3411fa61a9bd8c4c0c114: Changes requested.** T-006 remains Draft; no implementation started.
+
+### Blocking
+
+**B1 — Holdout containment is weaker than the existing protocol (§8, D14, T-006 holdout signature).** Research protocol §3 and AGENTS.md require exclusion from the repo AND every agent workspace. D14 accepts /work/Trading-bot-holdout because it is outside /work/Trading-bot, but if the agent workspace is /work the data is still inside it. The two-argument guard cannot establish the stronger property. The split/write description also needs to say who runs it and where raw holdout records are first read, so a local full-history import does not expose the holdout before splitting. Either define this explicitly as a limited repo-containment primitive and add a separate mandatory owner-run isolation boundary before any real-data ingestion, or extend the forbidden-root contract and cases. Do not imply that passing D14 authorises holdout storage/access. This is enforcing the existing no-agent-workspace rule, not requiring a fully separate evaluation platform.
+
+**B2 — Jump approval time has no defined effect (§7, D6, research protocol §4).** D6 has t=2026-01-09 and approval=2026-10-16, yet data_ok=true. This is reproducible under the membership-only rule, but later approvals can retrospectively change whether an earlier run trades. Decide explicitly between (a) as-of operational approval, which must exist by t, and (b) a frozen, versioned research-cleaning snapshot approved before the evaluation, whose later date is permitted but is not represented as information available at t. State how the relevant snapshot is selected and pinned, and what happens for missing/malformed approval dates or empty reasons. Record its hash/version in the dataset/run provenance. Add cases for a future approval and an approval absent from the selected snapshot. Without this distinction the builder's behaviour and the leakage guarantee cannot both be judged.
+
+### Non-blocking clarifications to address with the amendment
+
+- §3 and the T-005 choices table say a held record-error instrument produces BLOCKED_HELD_INELIGIBLE. In the accepted planner, data_ok=false is checked first and produces BLOCKED_DATA, even when the bad instrument is unheld. Both prevent unsafe sales; align the documented status and global blocking scope with the existing engine, and add a composition test. Stale-only inputs can still use the held-ineligible path.
+- §7 calls JUMP_LIMIT a 'one-session' threshold but compares consecutive valid prices across gaps. 100, None, 130 is a 30% multi-session move and is flagged under the written formula. Choose/document that behaviour and add a gap-jump case; do not silently invent daily interpolation.
+- Define build-boundary handling of duplicate/unsorted/empty calendars, unknown record ids and records before the supplied calendar range. T-006 currently only pins t-not-in-calendar. Also retain approved jump provenance in the audit report or manifest even if the active DATA_JUMP flag is suppressed.
+- Splits, next-open execution prices and non-GBP distribution amounts remain real-adapter/backtester prerequisites, not solved by this close-only synthetic contract; their deferral is acceptable if T-007/T-008 gate their use.
+
+### Independent reproduction
+
+Temporary standard-library calculator outside the repo: /tmp/review_t005.py; command python3 /tmp/review_t005.py. Used exact Fraction arithmetic and reinvested-share accounting rather than copying the proposed chained-return implementation.
+
+- D2: 100, 100, 102.02020202020202, 101.01010101010101, 103.03030303030303.
+- D3: 100, 102, None, 106, 104.98076923076923.
+- D7: A all None, DATA_OFF_CALENDAR on 2026-01-03; B 50,51,52,53,54; data_ok=false.
+- D11: output stops at Jan 8; A all None, DATA_FUTURE_RECORD on Jan 9; B 50,51,52,53; data_ok=false. Future price is on the supplied calendar, so it is not also off-calendar.
+- D12: 20,20.05,20.251507537688443,20.352261306532665,20.201130653266333; trade_close=20.05.
+- D14: both repository paths refused; both outside paths accepted, matching the fixture's limited containment rule. This did not test an implemented guard or access actual holdout data.
+
+All requested expected fields match within 1e-10, with exact statuses/reports. Existing suite: 575 passed under Python 3.12; ruff passed. These tests cover the existing portfolio engine, not a built data layer. Both CI checks on the reviewed SHA succeeded (38887131737, 38887101247). No code, spec or fixture edits, market-data downloads, broker access, holdout access, experiments, spending or merges. Claude should resolve B1/B2 in the spec/decision record before T-006 becomes Ready.
