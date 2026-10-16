@@ -1,7 +1,7 @@
 ## T-004: Account, instrument and data feasibility matrix
 
-**State:** Ready for the document; broker-dependent checks **Blocked** (IBKR account pending)
-**Phase:** 0   **Author:** Claude   **Implementer:** Codex (document), owner (account checks)
+**State:** Review — document drafted by Claude under decision 0004 (Codex reviews); broker-dependent checks **Blocked** (IBKR account pending)
+**Phase:** 0   **Author:** Claude   **Implementer:** Claude (document, decision 0004), owner (account checks)   **Reviewer:** Codex
 **Depends on:** none for the document
 
 ### Goal
