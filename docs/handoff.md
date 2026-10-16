@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
+Last updated: 2026-10-16 by Codex. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
 
@@ -29,8 +29,8 @@ Last updated: 2026-10-16 by Claude. Update this file at the end of every session
 
 | Task | State | Owner of next step |
 |---|---|---|
-| T-001 Repository bootstrap | **Ready** | Codex implements |
-| T-002 Portfolio spec + reference cases | **Review** | Codex reviews, then marks Accepted or returns findings |
+| T-001 Repository bootstrap | **Review** | Claude reviews PR; owner merges |
+| T-002 Portfolio spec + reference cases | **Changes requested** | Claude resolves findings below in decision records |
 | T-003 Synthetic portfolio implementation | Draft (Ready when T-002 Accepted and T-001 merged) | — |
 | T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
 
@@ -62,6 +62,44 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Owner: give Codex the handoff message (bootstrap is on `main`).
-2. Codex: review T-002 (check only, no implementation), then implement T-001 on branch `t-001-bootstrap`.
-3. Claude: review the T-001 PR and respond to T-002 findings.
+1. Claude: resolve T-002 findings below with spec amendments/evidence and decision records.
+2. Claude: review T-001 at the exact full SHA in the PR handoff.
+3. Owner: decide the stop-date convention and budget when ready; neither blocks T-001.
+4. T-003 remains Draft until T-002 is accepted and T-001 is merged.
+
+## Codex T-002 review — 2026-10-16
+
+Review base: `c949dfd5a9bdd16007025206415d51101406a2a3`; checkout base `8b7d331` adds only the handoff SHA. No spec or fixture changes made. T-002 is **Changes requested**, not Accepted. Findings do not block the independent empty T-001 skeleton.
+
+### Blocking findings
+
+1. **B1 — contradictory all-ineligible outcome (portfolio spec §§3, 6, 7).** §7 says no eligible instruments causes existing holdings to exit. §§3/6 instead block any held ineligible instrument, and architecture §1 prohibits selling on bad data. Example: one held ETF loses its latest close and U becomes empty: the two rules prescribe a sale and no orders respectively. Make the precedence explicit; distinguish eligible instruments with zero signals from an empty eligible universe. Add a reference case.
+2. **B2 — calendar/date contract missing (portfolio spec §§2–3).** Right-aligning arrays on their last element cannot establish consecutive sessions ending at t. Example: A has Monday–Friday closes, B has 253 observations ending Thursday after a Friday outage; right alignment silently treats Thursday as Friday. Define a shared dated calendar/mask or require and test a validated aligned-input contract that preserves missing sessions before the pure signal function runs. Current undated fixtures cannot verify this property.
+3. **B3 — invalid numeric inputs lack defined outcomes (portfolio spec §§2–6).** Define finite, strictly positive prices; finite nonnegative cash and integral nonnegative holdings; positive NAV; consistent IDs/dimensions; finite symmetric valid covariance; and explicit rejection outcomes at the responsible boundary. Example: empty unfunded account gives NAV=0; P=0 divides by zero; NaN volatility can evade ordinary comparison checks. “Data checks passed” does not define these account/math preconditions. Do not invent behaviour in T-003.
+4. **B4 — Gate 3 outcome overlap (research protocol §6).** The simpler-rule test explicitly says failure if its Sharpe advantage is below .10, but the Inconclusive rule includes every positive benchmark ΔSR short of pass bars before holdout. Example: ΔSR=.30, bootstrap=.90, acceptable drawdown/cost stress, but simpler-rule advantage=.05: both Fail and Inconclusive apply. Specify outcome precedence and which shortfalls permit prospective continuation. This is a protocol blocker, not a blocker to T-001.
+
+### Non-blocking follow-ups
+
+- **N1 — fees and execution revalidation (portfolio spec §6.5–6.6).** A 0.5% price buffer is not an explicit commission reservation; costs are excluded from projected NAV. A £100 order with £100.50 cash and £1 commission can exceed cash even at the reference price. Before broker integration, specify fee-aware, fresh-price risk checks; the current planner is a reference-price approximation, not execution approval.
+- **N2 — fixture coverage.** Add cases for missing sessions, invalid numeric input, no eligible assets, and an unresolved constraint after repair when amending the spec. Current examples validate ordinary arithmetic, not every failure branch.
+
+### Independently reproduced calculations
+
+A temporary standard-library calculator outside the repository (`/tmp/review_trading_t002.py`) read only synthetic fixture inputs and compared calculations with the recorded expectations at absolute tolerance 1e-8. Command: `python3 /tmp/review_trading_t002.py` — passed.
+
+- W1: pre-scale volatility 0.09334380331881288; scale 1; all recorded weight-stage values match.
+- W4: pre-scale volatility 0.1676054214305116; scale 0.5966394114611592; all recorded weight-stage values match.
+- Additional W2, W3, W5 weight-stage values also match.
+- O1: independently recomputed targets give SELL BD_GILT 10, GOLD 8; BUY EQ_JP 34, EQ_US 8; buffered unscaled buy need £1507.50.
+- O2: initial BUY EQ4 60 implies class weight .657; repair sells EQ1–EQ3 19 each, retains BUY EQ4 60; buffered buy need £603.
+- No historical backtest, market data, broker calls, or experiment variants were run. Signal fixture arithmetic and every order diagnostic were not independently reproduced in this review.
+
+## T-001 implementation evidence
+
+Branch: `t-001-bootstrap`. Exact implementation and review SHA will be recorded in the PR and a subsequent handoff update to avoid a self-referential commit hash.
+
+Added Python 3.12 src-layout package with nine empty components, uv lockfile, NumPy/pandas runtime dependencies, pytest/ruff development dependencies, CI, README, ignore rules, import/fixture smoke tests, and static import/live-config guards. No strategy implementation or fixtures changed.
+
+Completed locally: `uv sync --locked`, `uv run ruff check .`, `uv run pytest -q` (using uv 0.13.1 and Python 3.12.15). The parametrised forbidden-import tests exercise both SDKs, aliases, from-imports, submodules and nested imports. Static import checks are not a security sandbox.
+
+CI: pending PR creation/run. No CI success claimed yet. Owner merge and Claude review remain required.
