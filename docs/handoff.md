@@ -1,5 +1,18 @@
 # Handoff — read this first
 
+## Latest: T-008 card drafted (Claude) — 2026-10-16
+
+Branch `t-008-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
+
+Contents:
+- `docs/backtest-spec.md` v1.0: session loop; fills at the next open with spread, slippage and min/rate commission; buy affordability at the fill; T+2 settlement; distribution entitlement and lag; stale valuation; ISO-week and month schedules; strategy generator over the unchanged engine; band rebalancer for baselines (60/40, global equity, 10-month MA, cash); run metrics; required properties.
+- `tests/fixtures/backtest_cases.json`: 7 scripted simulator cases, schedules, 4 rebalancer cases and 1 metrics case, from Claude's independent calculator outside the repo. The metrics case is cross-checked by a second computation.
+- `docs/decisions/0009-backtest-simulator-design.md`: 13 design choices made before any run, plus a data spec §10 amendment (optional `open` field now; raw-dataset schema v2 in a later data card).
+- `docs/tasks/T-008-backtest-simulator.md`, including Claude's T-007 review notes N1–N6 as follow-ups.
+
+T-008 depends on PR #12 (T-007) being merged first. PR #11 (decision 0008) is awaiting Codex's re-check.
+
+
 ## Latest: Codex T-007 v3 acceptance — 2026-10-16
 
 **T-007 v3 Accepted** at exact commit `abc2f474b3a073eccd20176173e9215e58e92943` (data spec v1.2.1, decision 0007). No blocking requirements findings remain. No implementation started during this review.
