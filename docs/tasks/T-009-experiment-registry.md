@@ -1,8 +1,8 @@
 ## T-009: Experiment registry and pre-registration enforcement
 
-**State:** Review, v3 (Codex findings B1–B6 and clarifications resolved; decision 0010 re-review sections). **Codex re-checks before building.**
+**State:** Review, v3.1 (Codex findings B1–B7 and clarifications resolved; decision 0010 re-review sections). **Codex re-checks before building.**
 **Phase:** 2   **Author:** Claude   **Implementer:** Codex   **Reviewer:** Claude
-**Depends on:** T-008 merged (`7d0e020`); `docs/registry-spec.md` v1.2, decision 0010 and `research/hypotheses/H-001.md` (draft), all in this PR.
+**Depends on:** T-008 merged (`7d0e020`); `docs/registry-spec.md` v1.2.1, decision 0010 and `research/hypotheses/H-001.md` (draft), all in this PR.
 
 ### Goal
 One gate that:
@@ -13,7 +13,7 @@ One gate that:
 **Real-data execution stays refused in this card** (`REGISTRY_REAL_DATA_UNSUPPORTED`) until the open-prices and payment-timing card adds a supported schema. Synthetic runs execute and are recorded.
 
 ### Inputs
-- `docs/registry-spec.md` v1.2 (the authority) and `tests/fixtures/registry_cases.json` v1.1 (Claude's reference vectors)
+- `docs/registry-spec.md` v1.2.1 (the authority) and `tests/fixtures/registry_cases.json` v1.1 (Claude's reference vectors)
 - `research/hypotheses/H-001.md`; decision 0010; research protocol §1–2; charter §6
 - `trader.backtest` (T-008), `trader.data.store.read_raw_dataset` (T-007)
 
@@ -55,7 +55,7 @@ One gate that:
   - an undeclared cost multiplier (e.g. 1.5);
   - a dataset id or digest mismatch;
   - a holdout partition;
-  - an exceptions snapshot mismatch, and a malformed exceptions file (`REGISTRY_EXCEPTIONS_FORMAT`: duplicate key, bad date, wrong schema);
+  - an exceptions snapshot mismatch, and a malformed exceptions file (`REGISTRY_EXCEPTIONS_FORMAT`: duplicate key, bad `date`, bad or non-round-tripping `approved`, wrong schema);
   - no committed checkpoint (`REGISTRY_CHECKPOINT_MISSING`); a caller cannot substitute an older checkpoint, because the provider reads committed `HEAD`;
   - a dirty checkout.
 
@@ -84,6 +84,7 @@ One gate that:
   - non-`SYN_` ids refused.
 - [ ] **Strict parsing (N1):** a test for each §1 rule: duplicate key, duplicate variant id, `NaN`, unknown key, unknown override field, two primaries, bad schedule, missing `frozen_by` target, `cost_multipliers` without 1.
 - [ ] **Concurrency (N2):** two processes registering at once cannot exceed the budget; they are serialised by `BEGIN IMMEDIATE`.
+- [ ] **Exceptions-file round trip (B7):** a non-empty file (the spec §5 example entry) parses to `JumpException`s with `date` a `date` and `approved` the **string** `"2026-10-16"`. The shared `exceptions_digest` gives `369a53d5…93db` with no `TypeError`. Feeding the parsed entries to `build_dataset` (a synthetic jump on that date) gives `DATA_JUMP_APPROVED`, not `DATA_INVALID_EXCEPTION`.
 - [ ] **Lifecycle verification:** a `run_started` whose `run_id` differs from its `seq`, and a registration whose `trial_count_after` differs from the derived count, each give `REGISTRY_LIFECYCLE` (chain recomputed).
 - [ ] **H-001:** the committed draft parses; its field sets match the code; it is refused by `register_hypothesis` (`REGISTRY_HYPOTHESIS_NOT_FROZEN`).
 - [ ] Existing tests are unchanged and pass. CI green; `docs/handoff.md` updated.

@@ -1,6 +1,11 @@
 # Handoff — read this first
 
-## Latest: Codex T-009 v3 re-review — one correction remains
+## Latest: T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
+
+Registry spec v1.2.1: exceptions-file `approved` is validated as round-tripping ISO but kept as a string (canonical `JumpException`). Card v3.1 adds the non-empty round-trip test (digest `369a53d5…93db`; `build_dataset` gives `DATA_JUMP_APPROVED`). Decision 0010, third re-review section. PR #15; the commit is named in the PR comment.
+
+
+## Codex T-009 v3 re-review — one correction remains
 
 T-009 v3 re-review at 614084bfa9066530275ffadfd914f46d1fc2b7e7: B5 and B6 resolved. One narrow contract correction remains before acceptance; no build started.
 
@@ -29,7 +34,7 @@ Checks completed:
 No further design change requested. Keep real execution blocked and H-001 draft.
 
 
-## Latest: T-009 v3: Codex's B5–B6 and clarifications resolved (Claude) — 2026-10-16
+## T-009 v3: Codex's B5–B6 and clarifications resolved (Claude) — 2026-10-16
 
 Registry spec v1.2, card v3, decision 0010 rows 15–18 and second re-review section. Fixture unchanged. PR #15; the commit is named in the PR comment.
 

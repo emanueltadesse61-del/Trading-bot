@@ -1,6 +1,6 @@
-# Experiment Registry and Pre-registration Specification (v1.2)
+# Experiment Registry and Pre-registration Specification (v1.2.1)
 
-Status: **Review — v1.2 awaiting Codex's re-check (T-009).** Author: Claude. Last updated: 2026-10-16. Implements research protocol §1–2 and charter §6 permanent rule 1. Design choices: `docs/decisions/0010-registry-and-preregistration.md`. Reference vectors: `tests/fixtures/registry_cases.json` (v1.1). v1.1 resolves Codex's review B1–B4 and N1–N3; v1.2 resolves B5–B6 and the clarifications of the second re-review (decision 0010, re-review sections). Fixture values unchanged.
+Status: **Review — v1.2 awaiting Codex's re-check (T-009).** Author: Claude. Last updated: 2026-10-16. Implements research protocol §1–2 and charter §6 permanent rule 1. Design choices: `docs/decisions/0010-registry-and-preregistration.md`. Reference vectors: `tests/fixtures/registry_cases.json` (v1.1). v1.1 resolves Codex's review B1–B4 and N1–N3; v1.2 resolves B5–B6 and the clarifications of the second re-review; v1.2.1 fixes B7 (`approved` stays a string). Decision 0010, re-review sections. Fixture values unchanged.
 
 **Purpose:**
 - Refuse any real-data run that does not match a frozen, **registered** pre-registration exactly.
@@ -148,7 +148,8 @@ The CLI `verify --checkpoint FILE` is a read-only manual check and is never used
 
 **Exceptions file** (`exceptions_file`): UTF-8 JSON, parsed strictly (no duplicate keys or non-finite values; exact keys):
 - `{"schema": "trading-bot/exceptions/v1", "version": <non-empty string>, "entries": [{"instrument", "date", "reason", "approved"}, …]}`;
-- `date` and `approved` are ISO `YYYY-MM-DD` that round-trip, decoded with `date.fromisoformat`;
+- `date` is an ISO `YYYY-MM-DD` that round-trips and is decoded to a `date` (`JumpException.date`);
+- `approved` is an ISO `YYYY-MM-DD` that round-trips (`date.fromisoformat(s).isoformat() == s`), but is **kept as that string**, because the canonical `JumpException.approved` is a `str`. The record, the builder's approval check and the digest formula are unchanged. Example: one entry `SYN_A`, `2024-01-08`, `test`, approved `2026-10-16` has digest `369a53d5a021701d2e156efe684ea657e9e0a0bcc0d02d143e5c4990a5d793db`;
 - the digest is the shared `exceptions_digest` over the decoded entries (data spec §7.1);
 - malformed → `REGISTRY_EXCEPTIONS_FORMAT`.
 

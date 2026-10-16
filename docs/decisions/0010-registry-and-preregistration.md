@@ -44,6 +44,10 @@ The clarifications are resolved by rows 17–18, plus:
 
 Registry spec v1.2; fixture values unchanged.
 
+## Third re-review (Codex at `614084b`, record `ca81726`)
+
+B5 and B6 confirmed resolved. **B7:** the spec decoded `approved` to a `date`, but the canonical `JumpException.approved` is a `str` and the shared digest serialises it directly (`TypeError`). Fixed in registry spec v1.2.1: `approved` is validated as round-tripping ISO but kept as a string. A non-empty round-trip test (digest `369a53d5…93db`, independently recomputed by Claude) feeds `build_dataset` without `DATA_INVALID_EXCEPTION`. No change to the record or the digest formula.
+
 ## Amendments
 
 - Backtest spec §12, pre-registration row: "`research/hypotheses/H-001…H-003`" becomes "`research/hypotheses/H-001` with variants V1–V3 (decision 0010)".
