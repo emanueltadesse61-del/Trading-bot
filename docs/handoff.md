@@ -1,5 +1,37 @@
 # Handoff — read this first
 
+## Latest: Codex T-007 requirements review — 2026-10-16
+
+Requirements review at 9b534c96097910ccdd6778917dba9146ef9e1b99: **Changes requested; T-007 is not accepted and no build has started.**
+
+N2 (INVALID_MODE) and N3 (typed CSV validation) are included. IBKR approval on 2026-10-16 is recorded; Table A remains owner-performed input to D5, not funding or broker-access permission.
+
+## Answers to the two questions
+
+1. Use a content identity: SHA-256 over canonical UTF-8 JSON containing a schema/version and a filename-keyed mapping of all three file SHA-256 digests. Specify JSON canonicalisation exactly. Do not hash an unlabelled sorted list of digests (it loses file identity), and do not include retrieval time, source label or code commit in the content id. Keep those in the provenance manifest; pin that manifest separately by its committed revision or digest when a run uses it. Same bytes can have the same dataset_id while having different provenance. Byte identity is guaranteed only under the pinned writer/schema settings; it is not a promise across arbitrary PyArrow versions.
+2. One owner-facing command: trader-split performs parse, validation, split and writes both outputs. Keep parsing/splitting as independently testable internals. No second intermediate full-history Parquet dataset is needed. The existing source CSV export still exists, so one command does not remove the need to isolate and guard it.
+
+## Blocking findings
+
+**B1 — Owner import contract contradicts itself and omits the raw-source boundary (Outputs 1/3; data spec §8.3).**
+import_csv refuses holdout_start=None for non-synthetic data, but trader-split is required to do exactly that. Also, only holdout_out is guarded: a source inside an agent workspace passes the specified preflight when the output is elsewhere, contrary to §8.3. Define a private full-history parsing path used by the owner command, while retaining the public development-import refusal. Before reading content, guard the source directory and resolved input files as well as holdout_out against repo/all workspace roots (including symlink aliases). Require source/dev/holdout destinations to be disjoint, including ancestor relationships and filesystem aliases: dev_out=holdout_out otherwise writes one partition over the other before verification. Specify failure behaviour so incomplete or failed output is not returned/published as a usable dataset. Add synthetic preflight cases with an unreadable source, a forbidden source, symlinked source file, and overlapping outputs. A CLI warning is not an isolation check; the owner-only execution rule still applies.
+
+**B2 — Storage contract does not satisfy its named spec and leaves round-trip metadata undefined (Output 2; spec §§7.1/8.1).**
+§8.1 requires built series, calendar reference and exceptions provenance; the proposed API only receives raw ImportResult and writes three raw-record files, with no mode/version/digest. Decide explicitly whether T-007 stores raw imports only (with a spec amendment and a separately defined later built-dataset manifest) or also persists builds and their provenance now. Do not fabricate exceptions provenance for raw data. Define ImportResult fields carrying holdout_start/synthetic status, and how split outputs preserve them; write_dataset has no other source for these manifest fields. Specify validation of schema, exact required file set, recomputed dataset_id, date range and instrument metadata, and development cutoff rather than trusting the JSON summaries. E.g. changing date_range.last to an earlier date currently evades the listed file/count checks and undermines the split's manifest-only boundary verification. Define empty-partition behaviour and whether manifest.json is allowed inside data_dir (the CLI writes manifests to output directories, while the reader rejects extra files). Add cases for metadata tampering and empty partitions. Hash checks provide integrity against a pinned manifest, not authenticity if both files and manifest can be replaced.
+
+**B3 — The corporate-action limitation relies on a false detection claim (Constraints; data spec §10).**
+For a pure r:1 split, price drop is 1-1/r. Exact Fraction calculations give 1.33:1 -> 24.812030075%, and 4:3 -> exactly 25%; neither exceeds the existing strict >25% JUMP_LIMIT. A 1.2:1 split drops 16.6667%, and market moves can also mask larger splits. Remove the claim that these actions are reliably caught. Keeping split adjustment out of scope is fine, but explicitly gate real use on dated source/owner evidence for corporate-action coverage and supported price semantics, or mark that instrument unusable until supported. The jump flag is an anomaly check, not proof that no split occurred. Retain the prohibition on approving a split-induced jump as ordinary cleaning.
+
+## Clarifications / real-use prerequisites
+
+- The holdout proposal avoids event selection, which is correct, but “latest session such that ... usable data for both periods” does not uniquely define four years or a minimum development span. Before real import, pin an as-of end session, calendar-year subtraction/session-boundary convention, and minimum development/warm-up sufficiency. Insufficient history should return a feasibility decision, not silently shorten the holdout. Actual dates remain the owner's decision; no dates chosen here.
+- Absent distributions.csv currently means confirmed zero payments. A missing export for a distributing fund would silently turn total returns into price returns. Require an explicit completeness/no-payments declaration before real use; a missing file alone is not evidence.
+- Remove stale “account approval pending” from the card and PR description. Account approval does not establish D5 adequacy.
+- Name the no-holdout-date refusal code, and define missing files/malformed CSV handling. These are small boundary-contract additions, not strategy changes.
+
+Evidence: read the exact card, charter/handoff and data-spec storage/isolation/provenance requirements against the existing record classes, builder and guard. Independently evaluated the three split ratios with Python Fraction; all are below or equal to the strict jump threshold. This is a requirements review, not a test of a new implementation; no new code or real data was run. Claude should amend the card/spec and record material resolutions before re-review.
+
+
 Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
