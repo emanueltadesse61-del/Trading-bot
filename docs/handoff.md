@@ -1,5 +1,37 @@
 # Handoff — read this first
 
+## Latest: Codex decision 0008 consistency review — 2026-10-16
+
+Consistency review of PR #11 at **da352357d80d58de88840ac4ea8bcb7004c298f0**. Owner decisions respected; **one documentation blocker before merge**, plus alignment notes. No strategy or owner decision changed.
+
+## B1 — Clarify the strategy universe versus benchmark-only instruments
+
+Decision 0008, charter §6 and handoff say the strategy universe is now 11 instruments after removing VDTS. Table B actually lists eleven strategy-role candidates before that removal plus VWRL explicitly labelled “Benchmark: global equity.” Removing VDTS leaves ten strategy candidates:
+VUKE, CSP1, VERX, VJPN, VFEM, VGOV, INXG, SGLN, CMOP, IWDP.
+VWRL is the eleventh distinct data instrument when benchmark coverage is included; the 60/40 benchmark reuses VGOV.
+
+Please list the intended strategy and benchmark-only sets explicitly. If the intention is to preserve Table B's roles, write “10 strategy instruments plus VWRL for benchmarks (11 distinct data instruments)” and mark VDTS dropped in Table B. Do not silently add VWRL to portfolio selection to make the count 11. If eleven tradable strategy instruments are intended instead, that needs an explicit owner choice identifying the extra instrument. This is a scope/configuration ambiguity, not an objection to dropping Treasuries.
+
+## Checks that pass
+
+- SGLN's named conditional exception is explicit; approval still depends on owner account evidence.
+- Trial accounting in decision 0008 is correct: **primary + two robustness variants = three reserved variants out of 20**, not two total. No completed backtest trials are evidenced. Say “three reserved, zero run” consistently; the primary is not free. Protocol §1 hypothesis files must still be committed before testing. The document's selection of variants is not a substitute for those exact pre-registrations.
+- Pre-registration should make the comparisons orthogonal: 1/3/12 with weekly scheduling, and 3/6/12 with monthly scheduling, all else fixed. Combining both changes would be another variant, not silently included in these two. Every run still gets a registry row; the budget counts variants under §2, not simply all reruns.
+- Date arithmetic: 2027-03-08 minus 2026-10-19 = 140 days, exactly 20 weeks. The written one-extension rule is explicit.
+- £600/year remains a ceiling rather than spending authority; paper-first and the separate live charter remain intact.
+- Four-year holdout selection remains performance-independent and subject to history sufficiency. Exact dates are still unset.
+
+## Alignment notes to fix with the documentation amendment
+
+1. “About eight years” is a useful feasibility shorthand, not an exact inception-date test or a proof of sufficiency. The binding rule is 1,009 valid development closes before H plus the T-007 holdout conditions. Missing/invalid data and the common usable development period can still disqualify an older fund. The actual data depth must be checked for the chosen lines, including benchmark inputs. Proxy use remains research-only and separately reported; it is not an automatic remedy.
+2. Protocol §3 still says 3–5 years; point it to the owner's confirmed four-year rule. The handoff's “date set when real data is first split” should say: owner-only proposal -> charter confirmation -> split/copy development. Confirm before data enters an agent-accessible location, not only before performance calculations.
+3. Table A and the feasibility header still say account approval pending. Update to owner-reported approved/remaining checks pending, without marking cash-account status, permissions, entitlement or full-history adequacy verified. The reported VWRP/IGLT probes do not verify the configured VWRL/VGOV lines.
+4. Keep the one-use holdout rule explicit in the future hypothesis cards: comparisons do not each get a fresh final exam; candidate selection must be frozen using development evidence before any holdout inspection.
+5. The handoff now trails implementation: **T-007 is already in PR #12 at eceba59abdffd92500f73fafa2f07ad79d94b170**, 714 local tests and both CI runs passed, awaiting Claude's independent review. Do not start another T-007 build.
+
+Evidence: reviewed the exact five-file documentation diff against charter, portfolio spec, T-007 and research protocol; counted Table B's role-labelled rows; independently calculated the 140-day interval. No tests rerun for this docs-only review. External product inception/availability and IBKR statements were not independently verified; this is an internal-consistency review, not approval of a feed or instrument. No broker access, real data, spending, code changes or merge.
+
+
 ## Latest: owner decisions recorded (Claude) — 2026-10-16
 
 PR #10 (T-007 v3 card + data spec v1.2.1) was merged by the owner's instruction as `7aad2a9`, pinned to `a132d34`. **Codex: implement T-007 from main.**
