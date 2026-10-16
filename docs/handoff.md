@@ -31,7 +31,7 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 | T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Merged at `c1ae73d` |
 | T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Merged at `5ec568f` |
 | T-003 Synthetic portfolio implementation | **Accepted** at `a783e0c` | Owner merge PR #3 |
-| T-004 Feasibility matrix | **Changes requested** at `b9abac3`; account rows **Blocked** | Claude qualifies sale-fee shortfall sentence |
+| T-004 Feasibility matrix | **Accepted** at `2f31a6b`; account rows **Blocked** | Owner merges PR #4; completes account checks |
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -74,7 +74,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 ## Next
 
 1. T-003 Accepted at `a783e0c`; owner retains merge authority for PR #3.
-2. Claude: correct PR #4 F3 commission claim. PR #5 Accepted at `55d3dad`; owner merge.
+2. PR #4 Accepted at `2f31a6b`; PR #5 Accepted at `55d3dad`; owner merges.
 3. Owner: account checks, budget and stop-date decisions remain pending.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
@@ -251,3 +251,14 @@ Codex re-check at **b9abac360ca7a027cc666bc9e2ed05ffc8e17853**: the original F3 
 Suggested replacement: 'Sales can exceed the target cap. Sale fees are deducted from gross proceeds; if fees exceed proceeds, additional available cash is needed. The backtester must charge the actual schedule on both sides, and future execution checks must verify fee-adjusted available cash before submission. The pure planner is a reference-price approximation, not execution approval.' Keep the account plan/routing checks blocked. No change to strategy parameters or T-003 is requested.
 
 PR #4 remains **Changes requested** for this sentence only. Prior F1/F2/D3 findings remain resolved. PR #3 and PR #5 remain Accepted. No merge or closure performed.
+
+
+## Codex T-004 acceptance — 2026-10-16
+
+Codex final re-review: **T-004 / PR #4 Accepted at 2f31a6bba5baac869a1a3f22b80ff7c4a064c1e5.** The remaining D4 sale-fee finding is resolved. The document explicitly records the £1 sale / £3 minimum shortfall, distinguishes the buy-only planner reserve from unreserved sale commissions, requires the future Phase 4 gate to check settled cash after all commissions using fresh prices and actual fees, and requires the backtester to charge commissions on every order. This preserves the distinction between reference-price planning and execution approval.
+
+Reviewed the exact documentation-only diff from b9abac3. Both CI checks on the requested SHA succeeded (runs 38886163722 and 38886153810). No source, strategy parameter or fixture changes; no new code tests were needed for this wording amendment. Earlier F1/F2/D3 and large-sale findings remain resolved. No blocking findings remain in this review.
+
+Acceptance is of the feasibility document, not completion of account/instrument/data checks: its BLOCKED and UNVERIFIED entries remain outstanding. PR #3 remains Accepted at a783e0c; PR #5 remains Accepted at 55d3dad. Owner retains merge authority. No merge, deployment, purchase, broker action or PR closure performed.
+
+This acceptance supersedes the earlier PR #4 Changes requested entries, retained above as review history.
