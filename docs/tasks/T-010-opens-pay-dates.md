@@ -9,7 +9,7 @@ Stored real data can carry the two things the backtester needs that v1 lacks: **
 
 ### Inputs
 - `docs/data-spec.md` v1.3 (§2.2, §8.4.1, §10), `docs/backtest-spec.md` v1.3 (§2.1.1, §2.2, §3 step 2), decision 0011
-- `tests/fixtures/backtest_cases.json` v1.3: BT13 is new; every earlier case is unchanged
+- `tests/fixtures/backtest_cases.json` v1.3: BT13 is new, under the new key `pay_date_cases` so the current harness is unaffected; every earlier case is unchanged
 - `trader.data` (T-005–T-007), `trader.backtest` (T-008)
 
 ### Outputs
@@ -25,7 +25,7 @@ Stored real data can carry the two things the backtester needs that v1 lacks: **
 - v1 datasets and their ids must still read back exactly as before.
 
 ### Acceptance criteria
-- [ ] **Fixture:** every simulator case, including BT13, reproduces with the existing harness. BT13 needs pay dates passed through `DistributionRecord.pay_date`.
+- [ ] **Fixture:** every `simulator_cases` entry still reproduces. Each `pay_date_cases` entry (BT13) reproduces with the same harness, extended to pass `pay_date` into `DistributionRecord`.
 - [ ] **CSV v2:**
   - v2 headers parse, with an open empty or numeric;
   - a v1 `prices.csv` with a v2 `distributions.csv` (and the reverse) gives `IMPORT_BAD_HEADER`;

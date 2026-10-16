@@ -255,7 +255,7 @@ Produced by Claude's independent calculator; tolerance 1e-12 relative, 1e-9 abso
 | BT10_lots_pending_at_end | Lots still pending at `end` | Sale proceeds 996.50 and distribution 10.00 unsettled at `end`; NAV 10,003.00 |
 | BT11_sell_cost_stress_2x | Sell-side stress | Sell fill 99.70 at m = 2 (99.85 at m = 1): stress lowers a sell price; commission 9.8703 |
 | BT12_buy_after_shortfall | Buy after a permitted negative balance | Same-session buy after a `SHORTFALL` sell, and next-session buy: both `SKIPPED_CASH`, quantity 0 |
-| BT13_distribution_pay_dates | Settlement by pay date | Saturday pay date → settles Monday 15th; pay date on the ex-date → settles the next session; pay date after the supplied calendar → stays unsettled at `end` |
+| BT13_distribution_pay_dates (key `pay_date_cases`) | Settlement by pay date | Saturday pay date → settles Monday 15th; pay date on the ex-date → settles the next session; pay date after the supplied calendar → stays unsettled at `end` |
 | BT8_schedules | ISO-week and month ends with holidays and a year boundary | Weekly: 2025-12-19, 12-24, 2026-01-02, 01-09, 01-16, 01-23, 01-29; monthly: 2025-12-31, 2026-01-29; the final session is never included |
 | RB1–RB4 | Baseline rebalancer | Band trades with `k` scaling (15 VWRL, 238 VGOV); unsettled cash unusable (1 VGOV); inside the band no trade; exit and no trade on a missing price |
 | MT1_metrics | Metric definitions | Values in the fixture, cross-checked by a second independent computation |

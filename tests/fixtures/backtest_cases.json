@@ -1931,419 +1931,6 @@
      "cancelled": []
     }
    ]
-  },
-  {
-   "name": "BT13_distribution_pay_dates",
-   "description": "With pay_date present, distribution cash settles at the first supplied session that is strictly after the ex-date session and on or after the pay date: a Saturday pay date settles Monday; a pay date equal to the ex-date settles the next session; a pay date after the last supplied session never settles inside the run. DISTRIBUTION_LAG is not used.",
-   "inputs": {
-    "calendar": [
-     "2024-01-08",
-     "2024-01-09",
-     "2024-01-10",
-     "2024-01-11",
-     "2024-01-12",
-     "2024-01-15",
-     "2024-01-16",
-     "2024-01-17",
-     "2024-01-18",
-     "2024-01-19",
-     "2024-01-22",
-     "2024-01-23",
-     "2024-01-24",
-     "2024-01-25",
-     "2024-01-26"
-    ],
-    "start": "2024-01-08",
-    "prices": [
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-08",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-09",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-10",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-11",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-12",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-15",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-16",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-17",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-18",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-19",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-22",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-23",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-24",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-25",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
-      "date": "2024-01-26",
-      "open": 100.0,
-      "close": 100.0,
-      "unit": "GBP"
-     }
-    ],
-    "distributions": [
-     {
-      "instrument": "SYN_A",
-      "ex_date": "2024-01-10",
-      "amount": 1.0,
-      "unit": "GBP",
-      "pay_date": "2024-01-13"
-     },
-     {
-      "instrument": "SYN_A",
-      "ex_date": "2024-01-15",
-      "amount": 1.0,
-      "unit": "GBP",
-      "pay_date": "2024-01-15"
-     },
-     {
-      "instrument": "SYN_A",
-      "ex_date": "2024-01-17",
-      "amount": 1.0,
-      "unit": "GBP",
-      "pay_date": "2024-02-02"
-     }
-    ],
-    "half_spread": {
-     "SYN_A": 0.0
-    },
-    "scripted_orders": {
-     "2024-01-08": [
-      [
-       "SYN_A",
-       "BUY",
-       10
-      ]
-     ]
-    },
-    "params": {
-     "INITIAL_CASH": 10000.0,
-     "COMMISSION_RATE": 0.0005,
-     "COMMISSION_MIN": 3.0,
-     "SLIPPAGE": 0.0005,
-     "COST_MULTIPLIER": 1,
-     "SETTLEMENT_LAG": 2,
-     "DISTRIBUTION_LAG": 20
-    }
-   },
-   "expected": [
-    {
-     "date": "2024-01-08",
-     "settled": 10000.0,
-     "unsettled": 0,
-     "holdings": {},
-     "nav": 10000.0,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-09",
-     "settled": 8996.5,
-     "unsettled": 0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 9996.5,
-     "stale": [],
-     "fills": [
-      {
-       "kind": "BUY",
-       "instrument": "SYN_A",
-       "qty": 10,
-       "fill_price": 100.05,
-       "commission": 3.0,
-       "spread_slippage_cost": 0.4999999999999716,
-       "status": "OK"
-      }
-     ],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-10",
-     "settled": 8996.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10006.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [
-      {
-       "instrument": "SYN_A",
-       "shares": 10,
-       "cash": 10.0
-      }
-     ],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-11",
-     "settled": 8996.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10006.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-12",
-     "settled": 8996.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10006.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-15",
-     "settled": 9006.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10016.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [
-      {
-       "instrument": "SYN_A",
-       "shares": 10,
-       "cash": 10.0
-      }
-     ],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-16",
-     "settled": 9016.5,
-     "unsettled": 0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10016.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-17",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [
-      {
-       "instrument": "SYN_A",
-       "shares": 10,
-       "cash": 10.0
-      }
-     ],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-18",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-19",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-22",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-23",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-24",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-25",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    },
-    {
-     "date": "2024-01-26",
-     "settled": 9016.5,
-     "unsettled": 10.0,
-     "holdings": {
-      "SYN_A": 10
-     },
-     "nav": 10026.5,
-     "stale": [],
-     "fills": [],
-     "settled_negative": false,
-     "distributions": [],
-     "cancelled": []
-    }
-   ]
   }
  ],
  "schedule_case": {
@@ -2777,5 +2364,421 @@
    "code": "BACKTEST_OPEN",
    "description": "An open that is not None but non-finite or <= 0 after unit conversion, dated <= end."
   }
- ]
+ ],
+ "pay_date_cases": [
+  {
+   "name": "BT13_distribution_pay_dates",
+   "description": "With pay_date present, distribution cash settles at the first supplied session that is strictly after the ex-date session and on or after the pay date: a Saturday pay date settles Monday; a pay date equal to the ex-date settles the next session; a pay date after the last supplied session never settles inside the run. DISTRIBUTION_LAG is not used.",
+   "inputs": {
+    "calendar": [
+     "2024-01-08",
+     "2024-01-09",
+     "2024-01-10",
+     "2024-01-11",
+     "2024-01-12",
+     "2024-01-15",
+     "2024-01-16",
+     "2024-01-17",
+     "2024-01-18",
+     "2024-01-19",
+     "2024-01-22",
+     "2024-01-23",
+     "2024-01-24",
+     "2024-01-25",
+     "2024-01-26"
+    ],
+    "start": "2024-01-08",
+    "prices": [
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-08",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-09",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-10",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-11",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-12",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-15",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-16",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-17",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-18",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-19",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-22",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-23",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-24",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-25",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-26",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [
+     {
+      "instrument": "SYN_A",
+      "ex_date": "2024-01-10",
+      "amount": 1.0,
+      "unit": "GBP",
+      "pay_date": "2024-01-13"
+     },
+     {
+      "instrument": "SYN_A",
+      "ex_date": "2024-01-15",
+      "amount": 1.0,
+      "unit": "GBP",
+      "pay_date": "2024-01-15"
+     },
+     {
+      "instrument": "SYN_A",
+      "ex_date": "2024-01-17",
+      "amount": 1.0,
+      "unit": "GBP",
+      "pay_date": "2024-02-02"
+     }
+    ],
+    "half_spread": {
+     "SYN_A": 0.0
+    },
+    "scripted_orders": {
+     "2024-01-08": [
+      [
+       "SYN_A",
+       "BUY",
+       10
+      ]
+     ]
+    },
+    "params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "COST_MULTIPLIER": 1,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20
+    }
+   },
+   "expected": [
+    {
+     "date": "2024-01-08",
+     "settled": 10000.0,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": 10000.0,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-09",
+     "settled": 8996.5,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 9996.5,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_A",
+       "qty": 10,
+       "fill_price": 100.05,
+       "commission": 3.0,
+       "spread_slippage_cost": 0.4999999999999716,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-10",
+     "settled": 8996.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10006.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [
+      {
+       "instrument": "SYN_A",
+       "shares": 10,
+       "cash": 10.0
+      }
+     ],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-11",
+     "settled": 8996.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10006.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-12",
+     "settled": 8996.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10006.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-15",
+     "settled": 9006.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10016.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [
+      {
+       "instrument": "SYN_A",
+       "shares": 10,
+       "cash": 10.0
+      }
+     ],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-16",
+     "settled": 9016.5,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10016.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-17",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [
+      {
+       "instrument": "SYN_A",
+       "shares": 10,
+       "cash": 10.0
+      }
+     ],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-18",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-19",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-22",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-23",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-24",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-25",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-26",
+     "settled": 9016.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10026.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    }
+   ]
+  }
+ ],
+ "pay_date_cases_note": "Requires DistributionRecord.pay_date (T-010). Same structure and harness as simulator_cases; distributions carry pay_date."
 }
