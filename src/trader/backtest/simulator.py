@@ -2,10 +2,11 @@
 
 import math
 from collections import Counter
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date
 
 from trader.data import DataParams
+from trader.data.build import exceptions_digest
 from trader.numerics import is_finite_number
 from trader.planner import Order
 
@@ -75,12 +76,14 @@ def run_backtest(
         raise BacktestInputError("BACKTEST_CALENDAR", "invalid run bounds")
     names = tuple(generator.instruments)
     params.validate_instruments(names)
-    if generator.exceptions is not None:
-        market = replace(
-            market,
-            exceptions=generator.exceptions,
-            exceptions_version=generator.exceptions_version,
-        )
+    # Market is the sole source of run approvals. Legacy generator arguments
+    # are optional assertions, never an override of data or provenance.
+    if (generator.exceptions is not None
+            and exceptions_digest(generator.exceptions) != market.exceptions_digest):
+        raise BacktestInputError("BACKTEST_PARAMS", "conflicting exception snapshots")
+    if (generator.exceptions_version is not None
+            and generator.exceptions_version != market.exceptions_version):
+        raise BacktestInputError("BACKTEST_PARAMS", "conflicting exception versions")
     bounded = market.at(end, names)
     built = bounded.build(end, names)
     non_excluding = {

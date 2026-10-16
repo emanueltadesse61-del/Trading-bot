@@ -53,8 +53,8 @@ def strategy_generator(
     universe,
     asset_class,
     params=Params(),
-    exceptions=(),
-    exceptions_version="synthetic-v1",
+    exceptions=None,
+    exceptions_version=None,
 ):
     names, classes = tuple(sorted(universe)), dict(asset_class)
 
@@ -94,12 +94,13 @@ def strategy_generator(
         "strategy",
         names,
         generate,
-        exceptions=tuple(exceptions),
+        exceptions=None if exceptions is None else tuple(exceptions),
         exceptions_version=exceptions_version,
     )
 
 
 def rebalance(targets, state, prices, params=Params()):
+    """Target keys are the traded set; omitted holdings are retained, not exited."""
     if state.nav <= 0:
         return []
     delta = {}
@@ -134,6 +135,8 @@ def _baseline(name, instruments, policy, params):
     names = tuple(instruments)
 
     def generate(d, state, market):
+        if state.nav <= 0:
+            return Decision("BLOCKED_NAV")
         built = market.build(d, names)
         if not built.data_ok:
             return Decision("BLOCKED_DATA")

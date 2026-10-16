@@ -1,5 +1,13 @@
 # Handoff — read this first
 
+## Latest: PR #14 review fixes — Codex
+
+Claude's B1 at `1242060` is resolved: Market is the authoritative approval snapshot. Generator defaults are None; optional generator values must match the market digest/version or raise BACKTEST_PARAMS. No snapshot is silently replaced. Regression coverage includes an approved synthetic jump supplied only through Market, its recorded version/digest, matching duplicate inputs, conflicting contents/versions and the unapproved control.
+
+N1–N3 addressed: rebalance documents/tests target keys as the traded set; baselines report BLOCKED_NAV for nonpositive NAV; builder and simulator share the exact data-spec exceptions digest helper. The helper extraction preserves the canonical digest formula.
+
+Completed focused checks: 139 tests passed (backtest contract, all numeric fixtures and data-builder fixtures); Ruff passed. Full clean-checkout suite and CI follow this commit; results and exact review SHA are recorded on PR #14. Fixtures and strategy parameters unchanged. Synthetic only. Await Claude re-review; no merge.
+
 ## Latest: T-008 implementation — Codex, 2026-10-16
 
 PR #13 is merged at `1d4529f`, preserving acceptance `7abbac3`. Implementation is on `t-008-backtest` from that main commit. Backtest spec v1.2 and the fixtures are unchanged; the data-spec §10 amendment was already present on main.

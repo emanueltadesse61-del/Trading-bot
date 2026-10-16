@@ -476,3 +476,41 @@ def test_positive_metrics_include_costs_and_turnover():
     result = compute_metrics(CAL[:3], [100, 101, 102], fills=fills)
     assert result["turnover"] == pytest.approx(50 / (2 * 101) * 252 / 2)
     assert result["cost_drag"] == pytest.approx(3.5 / 101 * 252 / 2)
+
+
+def test_market_approval_used_and_recorded():
+    m = synthetic_history()
+    jump = m.calendar[280]
+    m = replace(m, prices=tuple(replace(r, close=r.close * 1.5, open=r.open * 1.5)
+                                if r.instrument == A and r.date >= jump else r for r in m.prices),
+                exceptions=(JumpException(A, jump, 'synthetic approved jump', '2026-01-01'),),
+                exceptions_version='owner-snapshot-v7')
+    generator = strategy_generator((A, B), {A: 'equity', B: 'bond'})
+    p = BacktestParams(HALF_SPREAD={A: .001, B: .001})
+    def execute(g, market=m):
+        return run_backtest(market, g, p, start=m.calendar[270], end=m.calendar[-1], decision_dates=[jump])
+    result = execute(generator)
+    assert result.decisions[0]['status'] != 'BLOCKED_DATA'
+    assert result.decisions[0]['exceptions_count'] == 1
+    assert result.inputs['exceptions_version'] == 'owner-snapshot-v7'
+    assert result.inputs['exceptions_digest'] == m.exceptions_digest
+    confirmed = replace(generator, exceptions=m.exceptions, exceptions_version=m.exceptions_version)
+    assert execute(confirmed) == result
+    assert execute(generator, replace(m, exceptions=())).decisions[0]['status'] == 'BLOCKED_DATA'
+    for conflicting in (replace(generator, exceptions=()),
+                        replace(generator, exceptions_version='different'),
+                        replace(generator, exceptions=(replace(m.exceptions[0], reason='different'),))):
+        code('BACKTEST_PARAMS', lambda: execute(conflicting))
+
+
+def test_rebalance_omitted_holding_is_not_a_zero_target_exit():
+    from trader.backtest import rebalance
+    state = State({A: 10, B: 10}, 1000, 0, 3000)
+    orders = rebalance({A: 0.}, state, {A: 100., B: 100.})
+    assert [(o.id, o.side, o.qty) for o in orders] == [(A, 'SELL', 10)]
+
+
+def test_baseline_nonpositive_nav_is_reported():
+    for nav in (0., -1.):
+        response = global_equity(A)(CAL[-1], State({}, nav, 0, nav), DecisionMarket(simple(), ()))
+        assert response.status == 'BLOCKED_NAV' and not response.orders

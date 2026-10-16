@@ -1,11 +1,10 @@
 """Only this adapter exposes market observations to decision generators."""
 
-import hashlib
-import json
 from dataclasses import dataclass
 from datetime import date
 
 from trader.data import DataParams, build_dataset
+from trader.data.build import exceptions_digest
 
 
 @dataclass(frozen=True)
@@ -50,23 +49,7 @@ class Market:
 
     @property
     def exceptions_digest(self):
-        entries = sorted(
-            [
-                dict(
-                    instrument=e.instrument,
-                    date=e.date.isoformat(),
-                    reason=e.reason,
-                    approved=e.approved,
-                )
-                for e in self.exceptions
-            ],
-            key=lambda e: (e["instrument"], e["date"]),
-        )
-        return hashlib.sha256(
-            json.dumps(
-                entries, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-            ).encode("utf-8")
-        ).hexdigest()
+        return exceptions_digest(self.exceptions)
 
 
 @dataclass(frozen=True)

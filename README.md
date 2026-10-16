@@ -128,3 +128,10 @@ and input provenance. Strategy generation reuses the accepted portfolio engine.
 Only synthetic use is supported at this stage. Registry, Gate 3 statistics and
 real-data opens/pay-date prerequisites remain separate cards. Raw storage rejects
 non-None opens with `OPEN_PRICES_UNSUPPORTED`; CSV headers remain unchanged.
+
+Supply the frozen jump-approval snapshot and version on `Market`. The strategy
+generator defaults both optional approval arguments to `None`, so it uses that
+market snapshot unchanged. If supplied, generator approval arguments are assertions
+that must match the market snapshot/version; conflicts raise `BACKTEST_PARAMS`.
+`rebalance` trades only target keys: an omitted held instrument is retained; an
+explicit zero target requests an exit. Baselines report `BLOCKED_NAV` for NAV ≤ 0.
