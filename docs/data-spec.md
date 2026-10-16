@@ -240,5 +240,5 @@ Every case also gives the expected `exceptions_digest`.
 | Share splits and other non-cash corporate actions | Not supported. Real use requires a §8.5 declaration that none occurred; otherwise the instrument is unusable until split support is specified |
 | Incomplete distribution history | Real use requires `distributions_complete = true` (§8.5); a missing export is never treated as "no payments" |
 | Distributions in a currency other than GBP or GBX | Rejected by `DATA_UNKNOWN_UNIT` |
-| Next-session open prices for fills | T-008 (backtester) must extend the canonical record before any backtest result is used |
+| Next-session open prices for fills | T-008 adds an optional `open` field to the canonical price record. Raw-dataset storage and CSV import refuse non-`None` opens until a data card adds raw-dataset schema v2. No backtest result on real data is used before that card is merged (decision 0009) |
 | FX conversion, intraday data | Not in v1 |

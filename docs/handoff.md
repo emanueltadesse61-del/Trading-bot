@@ -1,6 +1,155 @@
 # Handoff — read this first
 
-## Latest: PR #11 merged; PR #12 brought up to date (Claude) — 2026-10-16
+## Latest: Codex accepts T-008 v3 requirements — 2026-10-16
+
+Accepted at `4b896e2b80545224524fc14d18e8843dadbbee0d` (PR #13), backtest spec v1.2. No remaining blocking findings. This accepts the requirements, not an implementation or evidence of trading performance.
+
+- B6 resolved: cost-stress acceptance checks the exact side-dependent fill and commission formulas, without the incorrect monotonic claims. BT11 independently reproduces sell fill 99.70 and commission 9.8703 (base fill 99.85).
+- B7 resolved: buy affordability is clamped to zero; BT12 independently reproduces quantity 0, commission 0 and SKIPPED_CASH for both the same-session and next-session buys after SHORTFALL, with no cash or holdings change from either buy.
+- Completed: `python3 /tmp/review_t008_v3.py` (independent temporary calculator outside the repo): all 11 simulator cases matched every expected ledger field; weekly/monthly schedules, MT1 metrics and all four rebalancer cases matched.
+- Completed: parsed-JSON comparison against `96e9617c11f78bc10cfaf2363ffdce55eec1f44b`: all 9 earlier simulator cases, schedule case, 4 rebalancer cases, 5 metric cases and 8 invalid-input cases unchanged. Only BT11 and BT12 added.
+- Completed: GitHub CI verified successful at the reviewed SHA for both push run 38961971954 and PR run 38961978369. No local full-suite rerun for this documents/fixture review.
+
+Next: include this handoff-only acceptance commit in PR #13; owner merges. Then implement T-008 against the accepted card using synthetic data only. No build started in this review; real-data evaluation, broker access, funding and spending remain outside scope.
+
+## Latest: T-008 v3: Codex's B6–B7 resolved (Claude) — 2026-10-16
+
+- **B6:** the cost-stress acceptance now checks exact formulas at m = 1 and m = 2 (buys worsen upward, sells downward) with no monotonic claims; BT11 adds a sell-side stress case (99.70 vs 99.85; commission 9.8703).
+- **B7:** spec §4 buy affordability is clamped at `max(0, …)`; with settled cash ≤ 0 a buy is `SKIPPED_CASH` with quantity 0; BT12 covers the same-session and next-session cases after a `SHORTFALL`.
+
+Fixture v1.2: earlier cases are unchanged, and the values come from Claude's calculator outside the repo. Spec v1.2, card v3, decision 0009 second re-review section. Branch `t-008-card` (PR #13); the commit is named in the PR comment.
+
+
+## Codex T-008 v2 re-review — 2026-10-16
+
+**T-008 v2 re-review at 96e9617c11f78bc10cfaf2363ffdce55eec1f44b: B1–B5 resolved. Two small contract corrections remain before acceptance; no build started.**
+
+## Resolved
+- B1: absent observations are distinct from invalid supplied closes; rebuilt BT5 admits a genuine gap and BV1 requires invalid-close refusal.
+- B2: explicit run-instrument/date scoping, decision-time exception filtering, separate full-snapshot provenance and admitted-input leakage tests are consistent.
+- B3: short series, zero/negative NAV and zero stdev have defined None/reason outcomes while retaining the ledger.
+- B4: lags >=1, pending lots beyond end, and the explicitly conditional real-data payment-timing prerequisite resolve the ambiguity and unsupported guarantee.
+- B5: finite cost validation, positive fill-price constraint, generator-order validation and explicit decision-date validation cover the reported invalid inputs.
+The MA missing-history behavior, baseline convention and data-stale wording are also clarified.
+
+## B6 — Cost-stress acceptance still asserts the wrong sell-price direction
+
+T-008 card, Cost stress: “For any single fill, the doubled fill price and commission are at least the base ones.”
+
+For a fixed sell of 100 shares, open=100, half-spread=.001 and slippage=.0005:
+- m=1: fill=99.85;
+- m=2: fill=99.70.
+
+The spec's sell formula is correct, but the acceptance criterion contradicts it. Nor is commission universally monotonic across the entire admitted parameter domain, because it is charged on the changed fill notional: with quantity=1000, open=100, half-spread=.4, slippage=0, rate=.0005 and minimum=3, m=1 gives sell fill=60 and commission=30; m=2 gives fill=20 and commission=20. Both satisfy m*c<1.
+
+Replace the monotonic fill/commission assertion with direct formula checks for fixed open, side and quantity: buys worsen upward, sells worsen downward, spread/slippage cost scales with m, and commission equals max(m*minimum, m*rate*q*fill). Keep aggregate costs unconstrained when quantities differ. Add a sell-side stress case; BT7 only exercises a buy. No change to the cost model is requested.
+
+## B7 — Affordability must clamp to zero after a permitted shortfall
+
+Spec §4 initialises buy quantity as min(ordered, floor(settled/f)), then only reduces it while q>0. The spec also deliberately permits negative settled cash after a SHORTFALL sale.
+
+Using BT6's settled=-1.991, a later scripted BUY 1 with fill price about 1 gives q=-2. The loop is skipped, yet no status/cash rule handles q<0. Scripted orders are valid positive-integer orders; strategy-level blocking does not protect the simulator's general fill boundary. A same-session earlier shortfall sale followed by a buy is another route.
+
+Clamp affordability to max(0, ...) or explicitly return SKIPPED_CASH with quantity 0, commission 0 and no holdings/cash change whenever settled cash cannot fund a share. Test a valid BUY after a SHORTFALL, including sells-before-buys in the same fill session. The ledger may retain its permitted negative balance, but a buy must never have a negative quantity.
+
+## Independent checks
+
+Temporary calculator outside the repo: `python3 /tmp/review_t008_v2.py`, plus a standard-library metric/edge-case check.
+- All **19 numeric reference cases** matched their recorded values: BT1–BT7, BT9–BT10 (all ledger fields), BT8 schedules, RB1–RB4 orders and MT1–MT5 recorded metrics/undefined reasons.
+- BT9's final settled cash is 4,975.50 with 100 SYN_B; BT10 ends with 1,006.50 unsettled and NAV 10,003.
+- MT2 short-series annual return 11.274002099240244, vol/Sharpe None; MT3/MT4 insolvency date 2024-01-10; MT5 zero vol and ZERO_STDEV Sharpe.
+- BV1–BV8 are descriptive rejection cases rather than fully populated executable fixtures. Their expected codes match the amended contract; implementation tests will instantiate the described inputs.
+- Independently calculated the B6 sells above and B7 floor(-1.991/1)=-2.
+
+No implementation, strategy evaluation, real/holdout data, broker access or merge. Only this review handoff is edited. Claude should make the two narrow corrections and add the regression expectations, then return for acceptance.
+
+
+## T-008 v2: Codex's findings B1–B5 resolved (Claude) — 2026-10-16
+
+All accepted; details in `docs/decisions/0009-backtest-simulator-design.md` (re-review section, rows 14–19). Backtest spec v1.1 and card v2 on `t-008-card` (PR #13); the commit for re-check is named in the PR comment.
+
+- **B1:** an absent observation is the absence of a record; `close = None` is invalid and refused at admission. BT5 was rebuilt, BV1 added, and last-close valuation is always defined.
+- **B2:** admission is scoped to the run's instrument set and to records ≤ `end`. New spec §2.3 point-in-time adapter: calendar, records and exception entries dated ≤ d, a whole-snapshot fingerprint, and the published calendar only for schedule and lags. The leakage property applies between admitted inputs.
+- **B3:** undefined metrics are `None` with a reason (`NON_POSITIVE_NAV` + `insolvent_on`, `SHORT_SERIES`, `ZERO_STDEV`); fixtures MT2–MT5.
+- **B4:** lags are integers ≥ 1 with settle-before-fill timing; BT9 (lag 1) and BT10 (pending at `end`). The 20-session distribution lag is a declared assumption, with a real-data pay-date prerequisite.
+- **B5:** `BACKTEST_COSTS` (every fill price positive), `BACKTEST_ORDER`, `BACKTEST_SCHEDULE`; fixtures BV1–BV8.
+- **Notes:** cost-stress acceptance reworded; exits-never-blocked labelled a simulation assumption; `DATA_STALE` wording fixed; moving-average "not traded" pinned; global-equity convention in protocol §5.
+- **Fixture v1.1:** all new values come from Claude's calculator outside the repo. The earlier cases are unchanged apart from BT5 (rebuilt) and MT1's added `insolvent_on`/`undefined` keys.
+
+
+## Codex T-008 requirements review — 2026-10-16
+
+**T-008 requirements: Changes requested. No implementation started.**
+
+Reviewed the requested `ebf34a00ab9b095d42f07858433e5f7d1331883e`. During review PR #12 merged and PR #13 advanced to `9961f02cca52548ce84681d0c896aac94b3fe0f1`; the backtest spec, T-008 card and fixture are unchanged between those revisions. The findings apply to both. The T-007 merge dependency is now satisfied.
+
+## Independent reference reproduction
+
+A temporary standard-library calculator outside the repo (`python3 /tmp/review_t008.py`) reproduced **all 13 cases**: BT1–BT7 every expected ledger field, BT8 weekly/monthly dates, RB1–RB4 orders, and every MT1 metric, within the specified tolerances. Buy affordability was independently calculated using the closed-form minimum of the fixed-fee and proportional-fee cash bounds. This checks the reference arithmetic; it does not resolve the contract contradictions below.
+
+## B1 — BT5 is refused by the mandatory preflight
+
+Spec §2.2 requires BACKTEST_DATA_EXCLUDED for an excluding builder error over the run, but BT5 includes SYN_A on 2024-01-10 with close=None and open=101. The accepted builder reports DATA_INVALID_PRICE and excludes that instrument. I reproduced that exact report using BT5 inputs. Thus a compliant run cannot also return BT5's expected stale-valued ledger.
+
+Define the intended missing-close representation and boundary explicitly. If the simulator retains an open while treating an absent close as a gap, specify its projection into the unchanged builder and distinguish an absent observation from an invalid supplied price; alternatively amend the data contract with explicit tests. Do not silently drop erroneous prices or exempt scripted cases from the promised preflight. Add tests for both a genuine missing observation and an invalid supplied close. Also define valuation if an instrument bought at an available open has never had a known close; “last known close” is otherwise undefined.
+
+## B2 — Point-in-time adapter and leakage property need a consistent contract
+
+Spec §6.1 says to call build_dataset with calendar up to d but does not define the records/exception subset. Passing full records produces DATA_FUTURE_RECORD at every early decision. Filtering prices alone still leaves future-dated entries in the frozen exceptions snapshot outside that prefix calendar, producing DATA_INVALID_EXCEPTION and BLOCKED_DATA. Both effects reproduce with the existing builder on three synthetic sessions.
+
+Specify:
+- preflight records bounded through end and the exact relevant instrument set;
+- decision records bounded through d, including distributions;
+- how the frozen exception snapshot is validated, scoped and fingerprinted without a future entry falsely invalidating an earlier decision;
+- whether the known full exchange calendar is retained for validation/schedule lookup while market observations are bounded;
+- benchmark versus strategy instrument scoping (the eleven-data-instrument bundle includes benchmark-only VWRL).
+
+Additionally, §9's unconditional “changing any data after d leaves every decision at d unchanged” conflicts with full-run rejection: adding a duplicate at a later session changes an admitted run into BACKTEST_DATA_EXCLUDED before any decision exists. Keeping fail-closed admission is reasonable, but explicitly distinguish admission validation from causal decisions: state the leakage comparison's domain (e.g. both datasets pass admission), and test invalid future-data rejection separately. The adapter must not use future values to select historical trades.
+
+## B3 — Metrics have no outcome for permitted short or bankrupt runs
+
+start < end permits a two-session run: T=1 gives one daily return, so sample stdev(ddof=1) is undefined. Only the zero-stdev case currently has a rule.
+
+BT6 deliberately produces NAV=-1.991 from initial 4.01, and zero NAV is also possible. Return ratios divide by zero after a zero NAV; annualising a negative terminal ratio can be non-real (for example extend the negative-ending ledger to T=5). This is not covered by “still a valid record.” Define the metric contract for short series, zero/negative NAV and non-positive mean NAV: preserve the ledger and report named undefined metrics/reasons, or define a recorded insolvency termination policy. Do not silently clamp or output complex/NaN performance statistics. Add short, zero-crossing and negative-NAV fixtures.
+
+## B4 — Settlement rules need zero-lag and pay-date semantics
+
+Both lags allow zero, but settlement occurs before new distribution/sale lots are created. A lot created at d and due at d is therefore not spendable until the next session under the literal loop. Define same-session availability explicitly (including whether a zero-lag sale can fund a later buy at that open), or disallow zero. Add cases for lag 0, lag 1, and lots still pending beyond end/the supplied calendar.
+
+Decision 0009 also claims an assumed 20-session distribution delay ensures cash is never available earlier than reality. Without a pay date or evidence establishing that bound, that does not follow: a payment on session ex+25 would be credited five sessions early. Keep 20 as a declared synthetic assumption if desired, but remove the guarantee and specify the real-data prerequisite for payment timing (or an explicitly approved approximation and sensitivity policy). Do not call it inherently conservative.
+
+## B5 — Fill inputs admit non-positive execution prices and malformed orders
+
+The current spread condition permits any finite nonnegative value; costs/multiplier have no combined upper bound. HALF_SPREAD=1, SLIPPAGE=.0005 and m=1 gives a negative sell fill at a positive open (open=100 -> -0.05). Costs and the multiplier must be finite, and the computed execution prices must be positive (for example require m*(half_spread+slippage)<1, with a named refusal).
+
+Define the order-generator boundary too: known instrument, BUY/SELL side, positive whole-share quantity, and a policy for duplicate/conflicting orders. A negative or fractional scripted quantity must be rejected, not allowed to violate §9's holdings/cash invariants. Specify validation for decision_dates (unique, increasing, eligible sessions with a next fill inside the run). These are simulator input guarantees, not broker execution approval.
+
+## Non-blocking amendments / implementation clarifications
+
+- The cost-stress acceptance must not promise higher *aggregate* costs for arbitrary runs. Example: cash £10, open £6, order 1, zero spread/slippage/rate, minimum £3: base fills and costs £3; double minimum £6 prevents the fill and costs £0. Check per-unit/per-order cost formulas, BT7, and report changed fills/turnover rather than asserting universal monotonic totals.
+- “Exits never blocked” is an explicit simulation assumption, not the engine's data-safety rule and not Phase 4 permission to borrow for fees. Decision 0009 #7 should not claim equivalence to that rule. SHORTFALL records are operationally infeasible under the later nonnegative-cash gate and must stay visible.
+- §2.2 incorrectly groups DATA_STALE with data_ok=false flags: the accepted builder leaves data_ok true for stale-only data; held missing history blocks through the planner. Align the wording/status test with the existing engine.
+- Pin the handling of an MA instrument lacking ten usable month-ends as “do not trade,” not a zero-target exit, including if it is already held. Use the known schedule so the current month-end is included despite a market-data cutoff at d.
+- Global equity is now a monthly band/reinvestment baseline, whereas the protocol calls it buy-and-hold. State that precise convention in the protocol/decision record; do not imply distributions are reinvested immediately.
+- The newer branch correctly includes decision 0008 and T-007. Preserve that updated handoff when incorporating this review; no replacement implementation is needed.
+
+No source or fixture was edited. Only synthetic fixture calculations and small probes against the accepted builder were run; no strategy evaluation, real/holdout data, broker access, spending or merge. Existing implementation CI is not evidence that this new simulator contract is consistent. Claude should resolve B1–B5 in the spec/card/decision record and add the boundary reference cases before acceptance.
+
+
+## T-008 card drafted (Claude) — 2026-10-16
+
+Branch `t-008-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
+
+Contents:
+- `docs/backtest-spec.md` v1.0: session loop; fills at the next open with spread, slippage and min/rate commission; buy affordability at the fill; T+2 settlement; distribution entitlement and lag; stale valuation; ISO-week and month schedules; strategy generator over the unchanged engine; band rebalancer for baselines (60/40, global equity, 10-month MA, cash); run metrics; required properties.
+- `tests/fixtures/backtest_cases.json`: 7 scripted simulator cases, schedules, 4 rebalancer cases and 1 metrics case, from Claude's independent calculator outside the repo. The metrics case is cross-checked by a second computation.
+- `docs/decisions/0009-backtest-simulator-design.md`: 13 design choices made before any run, plus a data spec §10 amendment (optional `open` field now; raw-dataset schema v2 in a later data card).
+- `docs/tasks/T-008-backtest-simulator.md`, including Claude's T-007 review notes N1–N6 as follow-ups.
+
+PRs #11 (`b9828c1`) and #12 (`0805908`) are merged; main is merged into this branch, so T-008 can be built on it once accepted.
+
+
+## PR #11 merged; PR #12 brought up to date (Claude) — 2026-10-16
 
 PR #11 (decision 0008) was merged by the owner's instruction as `b9828c1`, pinned to Codex's acceptance handoff `7b17650`. Main was then merged into `t-007-storage` for PR #12. This changes docs only: the T-007 code accepted at `eceba59` is unchanged. Both handoff records are kept below, decision 0008 first, then T-007.
 
