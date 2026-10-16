@@ -36,8 +36,8 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-003 Portfolio engine | **Merged** (`489eda8`; Accepted at `a783e0c`) | — |
 | T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
-| T-005 Data-layer spec + reference cases | **Accepted** at `619de06e32a046fc15e8f2c4f9f37f84a884d6d9` | Owner merge PR #7 |
-| T-006 Data build + holdout guard | **Ready** (T-005 v1.1 Accepted) | Codex implements; Claude reviews |
+| T-005 Data-layer spec + reference cases | **Merged** at `450fc3f` (spec accepted at `619de06`) | — |
+| T-006 Data build + holdout guard | **Review** | Claude reviews the exact T-006 PR commit |
 
 Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
 
@@ -81,9 +81,9 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. T-005 v1.1 Accepted at `619de06`; owner retains merge authority for PR #7.
-2. T-006 is Ready for implementation against the accepted spec and unchanged fixture; no implementation started in this review.
-3. Owner decisions and account checks remain pending. Real-data access remains gated by data spec §8.3.
+1. Claude: independently review T-006 at the exact SHA named in its PR, against data spec v1.1 and the unchanged fixture.
+2. Owner retains merge authority. T-007 real-data work remains gated by holdout dates and feasibility checks.
+3. PR #6 remains open; no closure authorised in this task.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
@@ -210,3 +210,24 @@ Independent standard-library reproduction outside the repo: `python3 /tmp/review
 Recomputed canonical JSON digests: D6/D6b `c0d216361c0192af1a10e06caf3db3d16f853da9f8da2634f7739b62b60617e1`; D6d `44e4cdc8b445dd3bb89dc41592425e5bbbcba1435587a1641bfe01d1558c28d4`; empty list `4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945`. All match. Compared the 12 unaffected original cases' expected fields against v1: unchanged; fixture now has 26 cases.
 
 Existing suite: genuine Python 3.12 pytest, 575 passed; ruff passed. Both CI runs on the exact SHA succeeded (38887823632, 38887817188). These are existing-engine checks, not proof that T-006 exists. No blocking findings remain. T-006 becomes Ready; no implementation started in this review. No spec/fixture/source changes, real-data download, holdout access, broker call, experiment, purchase or merge into the project branch. Owner retains merge authority.
+
+## T-006 implementation — 2026-10-16
+
+Branch `t-006-data-build`, based on latest main `450fc3f` (PR #7 merged with the accepted spec and acceptance handoff). Exact review head and CI links are recorded in the PR.
+
+Implemented canonical frozen records, data-quality defaults, pure build_dataset, and the resolved-path holdout containment guard. The builder validates records in spec order, converts units, preserves missing sessions, constructs distribution-adjusted closes, reports jump/stale/error conditions, and records operational/research exception provenance with the canonical SHA-256 digest. The guard rejects repo/workspace descendants including symlink aliases and does not create files.
+
+Local checks: `PYTHONPATH=src /tmp/trading-bot-codex/.venv/bin/python -m pytest -q` → **622 passed** under Python 3.12; `/tmp/trading-bot-codex/.venv/bin/ruff check .` → passed; `git diff --check` → passed. All 26 data fixture cases pass unchanged (including DV1–DV5), plus both required engine composition tests. Added tests for empty/no-record universes, malformed numeric inputs, validation precedence, cutoff behaviour, exception timing/digests, frozen defaults, valid integration, nonmutation, and symlink/root containment. Specs and fixtures are unchanged against main. Implementation commit `b73a24d6aaf95dbf2f9ffe8ef08bb70e5eba73ca` passed both GitHub CI runs: [push 38889037917](https://github.com/emanueltadesse61-del/Trading-bot/actions/runs/38889037917) and [PR 38889083454](https://github.com/emanueltadesse61-del/Trading-bot/actions/runs/38889083454). [PR #8](https://github.com/emanueltadesse61-del/Trading-bot/pull/8) records the final review head, including this evidence-only handoff update, and its CI result.
+
+Routine interface choices: canonical record/session dates use datetime.date; approval dates remain ISO strings so malformed approvals can be reported. Invalid mode values (outside the two specified modes) raise ValueError; missing/blank research versions raise INVALID_EXCEPTIONS_VERSION. Identical issue triples are emitted once, matching duplicate-record fixture reporting. Defaults use a read-only units map. The guard uses Path.resolve and does not claim to prevent later filesystem changes or authorise holdout access.
+
+Data: synthetic only; no experiments. No new dependencies, storage, downloads, real-feed adapter, broker calls, holdout access, funding, deployment or merges. The guard cannot discover omitted workspace roots; callers must supply all roots and enforce the owner-run boundary before real ingestion. Claude review remains outstanding.
+
+
+## T-006 Claude review B1 fix — 2026-10-16
+
+Reviewed implementation was `a43aefdb89b2a28a3e75795aec346929f12d4ca9`; Claude requested one guard correction in review 5551443923. The guard now retains resolved lexical containment and additionally calls os.path.samefile for the destination and each ancestor against every resolved forbidden root. Missing paths are skipped so nonexistent leaves are supported; other filesystem errors propagate rather than implying safety. No paths are created.
+
+Regression coverage simulates case-insensitive identity for both repository and agent-workspace roots, includes nonexistent destination children and a permitted prefix sibling, and checks that access errors are not swallowed. Existing real symlink tests remain. Local Python 3.12 pytest: **625 passed**; ruff and git diff --check passed. Specs, fixtures and builder logic unchanged. CI for the exact fix commit is recorded in PR #8.
+
+N1 remains Claude's spec clarification. N2 (mode error taxonomy) and N3 (typed-record adapter validation) are deferred to the adapter boundary rather than changing the accepted interface here. No new input-error code is introduced. T-006 remains Review pending Claude's re-check of B1. No merge, downloads, holdout access, broker calls or spending.
