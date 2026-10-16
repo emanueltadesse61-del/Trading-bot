@@ -23,7 +23,7 @@ This is a checklist that every backtest result must satisfy before anyone, human
 ## 3. Costs
 
 - [ ] Base costs: actual commission schedule, half the measured spread per side, slippage (protocol §5).
-- [ ] Sensitivity at 2× costs: the result must not turn negative (Gate 3).
+- [ ] **Cost stress (hard fail).** Recompute ΔSR = Sharpe(strategy) − Sharpe(60/40) from **paired monthly returns** over the walk-forward period, with base costs doubled for **both** the strategy and the benchmark. **ΔSR ≤ 0 is a Fail** (research protocol §6, step 1). Positive absolute returns do not rescue it: ΔSR = −0.02 fails, and ΔSR = 0 fails.
 - [ ] Turnover and total cost drag are reported for every run.
 
 ## 4. Research discipline
@@ -44,10 +44,20 @@ Every Gate 3 report contains:
 | Max drawdown and its length | Strategy and benchmark |
 | ΔSR vs 60/40 on paired monthly returns, and the bootstrap share of positive paths | Protocol §6. The share is a stability measure, not a probability of edge |
 | Simpler-rule comparison | Protocol §6 |
-| 2× cost result | Sensitivity only |
+| ΔSR at 2× costs (both sides doubled) | **Hard-fail check:** ΔSR ≤ 0 is a Fail (protocol §6, step 1) |
 | Number of registered trials | Registry count |
-| **New: Deflated Sharpe Ratio** | Supplementary, not a gate criterion. It corrects for the number of trials, sample length, skewness and kurtosis (Bailey & López de Prado 2014, 2021). Inputs come from the registry |
+| **Proposed: Deflated Sharpe Ratio** | **Not yet required** (decision log R-008). Becomes a supplementary report item, never a gate criterion, only after a pre-registered calculation contract defines its inputs (below) |
 | Proxy vs real-ETF split | If any proxy history is used |
+
+### Deflated Sharpe Ratio: what a calculation contract must define (R-008)
+
+From the paper ([Bailey & López de Prado 2014](https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf)), the DSR needs:
+
+- **N, the number of independent trials.** This is **not** the raw registry run count. Repeated runs of one variant (for example the 2× cost check) are not separate trials, and correlated variants are not independent. The paper's Appendix A.3 estimates an implied independent-trial count from the average correlation among trials, and warns that the estimate can itself be overfit.
+- **The variance of Sharpe ratios across those trials.**
+- **The selected strategy's Sharpe ratio, sample length, skewness and kurtosis.**
+
+The contract must state how each is computed from the registry before any Gate 3 result is seen. Until then, the DSR is not reported.
 
 ## 6. Independent cross-checks (optional, never authoritative)
 

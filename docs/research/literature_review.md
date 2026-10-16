@@ -47,7 +47,7 @@ Companion documents: `strategy_evidence.md` (rule-by-rule evidence map), `backte
 
 - **Findings:** momentum suffers rare but persistent crashes. They cluster in "panic" states: after market declines, during high volatility, and as markets rebound sharply. A dynamic version that scales exposure using forecasts of momentum's mean and variance roughly doubled the static strategy's Sharpe ratio in their sample.
 - **Limits for us:** this is long/short stock momentum. Our sleeve is long-only, with a positive-return filter.
-- **Informs:** the positive-return filter on momentum (spec §4) and the volatility ceiling as a crash dampener. See decision log R-003.
+- **Informs:** the **motivation** for the positive-return filter on momentum (spec §4) and for the volatility ceiling as a crash dampener. The paper does not test this exact filter, so its effect on crashes is a hypothesis (decision log R-003).
 
 ## 3. Volatility management
 
@@ -71,7 +71,7 @@ Companion documents: `strategy_evidence.md` (rule-by-rule evidence map), `backte
 ### Bailey & López de Prado (2014). The Deflated Sharpe Ratio. *Journal of Portfolio Management* 40(5), 94–107. — Checked ([SSRN](https://papers.ssrn.com/abstract=2460551))
 
 - **Findings:** corrects a Sharpe ratio for two sources of inflation: selection bias from testing many strategies, and non-normal returns.
-- **Informs:** the Deflated Sharpe Ratio as a required, supplementary statistic in every Gate 3 report (`backtesting_standards.md` §5).
+- **Informs:** a **proposed** supplementary statistic for Gate 3 reports (decision log R-008). It is not required until a calculation contract defines the number of independent trials and the other inputs (`backtesting_standards.md` §5). Full paper: [author's PDF](https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf).
 
 ### Bailey & López de Prado (2021). How "Backtest Overfitting" in Finance Leads to False Discoveries. *Significance* 18(6), 22–25. — Checked ([Oxford Academic](https://academic.oup.com/jrssig/article/18/6/22/7038278))
 
