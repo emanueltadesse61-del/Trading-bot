@@ -1,6 +1,6 @@
-# Portfolio Reference Cases (spec v1.1)
+# Portfolio Reference Cases (spec v1.2)
 
-Status: **Review — v1.1 awaiting Codex re-check (T-002).** Calculated independently by Claude from `docs/portfolio-spec.md` v1.1. Machine-readable values, with every intermediate step: `tests/fixtures/portfolio_cases.json` (absolute tolerance 1e-8). Changes from v1 are in `docs/decisions/0002-t002-review-resolutions.md`.
+Status: **Review — v1.2 awaiting Codex re-check (T-002).** Calculated independently by Claude from `docs/portfolio-spec.md` v1.2. Machine-readable values, with every intermediate step: `tests/fixtures/portfolio_cases.json` (absolute tolerance 1e-8). Changes from v1 are in `docs/decisions/0002-t002-review-resolutions.md` and `0003-portfolio-volatility-numerics.md`.
 
 Claude's calculator is deliberately **not** in the repository. Codex's implementation must reproduce these numbers on its own. A mismatch is investigated, not patched over (`AGENTS.md`, disagreements).
 
@@ -17,6 +17,7 @@ Fixture conventions are listed in `meta.conventions`. In short: covariance = out
 | W5_tie_negative_ineligible | F ineligible (σ 0.004); D and E tie for 4th, D wins by id; C and D in TopN with negative returns | A 0.1724 (= 0.5 × 10/29); B 0.0862 (= 0.5 × 5/29); cash 0.7414 |
 | W6_hedged_pair | X and Y, σ 50%, correlation −0.8 | Both capped at 0.25; σp 0.0791, no scaling; cash 0.50 |
 | W7_empty_universe | Both instruments fail MIN_VOL | Eligible set empty; cash 1.0 |
+| W8_negative_quadratic_boundary | Explicit Σ with smallest eigenvalue ≈ −5e-13 (valid); weights 0.25/0.25 give xᵀΣx ≈ −6.25e-14 | Clamped: σp = 0, scale 1, weights 0.25/0.25, cash 0.50 |
 
 ### W1 by hand
 
@@ -70,6 +71,7 @@ The fixture also gives the annualised covariance matrix of UPTREND, DOWNTREND an
 | V6_negative_cash | plan | Settled cash −1 | INVALID_CASH |
 | V7_duplicate_date | signals | Last date duplicated | INVALID_CALENDAR |
 | V8_negative_price | signals | Close at t = −1 | INVALID_PRICE_SERIES |
+| V9_eigenvalue_below_tolerance | targets | W8 with smallest eigenvalue ≈ −1e-11 | INVALID_COVARIANCE |
 
 ## Coverage
 
@@ -77,11 +79,11 @@ The fixture also gives the annualised covariance matrix of UPTREND, DOWNTREND an
 |---|---|
 | Cash allocation | W3, W5, W7, O1 |
 | Asset cap / class cap (proportional) | W1, O1 / W2, W4 |
-| Volatility reduction / unresolved volatility | W4 / O9 |
+| Volatility reduction / unresolved volatility / negative-rounding boundary | W4 / O9 / W8, V9 |
 | Actual-vs-target bands, rounding | O1, O2 |
 | Settled cash with commission reserve | O1, O9 |
 | Post-rounding constraint check | O2, O9 |
 | Top-4 selection with more than four assets; ties | W1, W5 |
 | Insufficient history, missing sessions, stale close, zero volatility | S1, W5, W7 |
 | Every BLOCKED status in spec §7 | O3, O4, O7, O8, O9, O10 |
-| Invalid inputs | V1–V8 |
+| Invalid inputs | V1–V9 |

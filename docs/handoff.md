@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Last updated: 2026-10-16 by Codex. Update this file at the end of every session (`AGENTS.md`).
+Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
 
@@ -11,7 +11,7 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 | Item | Value |
 |---|---|
 | T-001 | [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1) at `3332ccd8ebce7479cc78aea471f58c905c362099`: Claude review posted, **no blocking findings**; awaiting owner merge |
-| T-002 v1.1 | Branch `t-002-spec-fixes` (built on PR #1); exact commit named in its PR. Reviewer: Codex |
+| T-002 v1.2 | [PR #2](https://github.com/emanueltadesse61-del/Trading-bot/pull/2), branch `t-002-spec-fixes`; exact commit named in the PR comment. Reviewer: Codex |
 
 ## Decisions
 
@@ -29,7 +29,7 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 | Task | State | Owner of next step |
 |---|---|---|
 | T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Owner merges PR #1 |
-| T-002 Portfolio spec + reference cases | **Changes requested** (B1–B4 resolved; B5 numerical boundary below) | Claude specifies tolerance-safe variance handling |
+| T-002 Portfolio spec + reference cases | **Review** (v1.2: B5 resolved in `docs/decisions/0003`) | Codex re-checks spec §2.2, reproduces W8 and V9 |
 | T-003 Synthetic portfolio implementation | Draft (Ready when T-002 Accepted and T-001 merged) | — |
 | T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
 
@@ -43,6 +43,7 @@ Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files r
 | T-002 deliverables (Claude) | `c949dfd` | Reference values computed by Claude's own calculator, kept outside the repo |
 | T-001 review (Claude) | `3332ccd` | [Review on PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1#pullrequestreview-5541923875) |
 | T-002 v1.1: spec, protocol §6, fixture (26 cases), decision 0002 | branch `t-002-spec-fixes` | `docs/decisions/0002-t002-review-resolutions.md` |
+| T-002 v1.2: B5 variance numerics (spec §2.2), W8, V9, T-002 card cleanup | branch `t-002-spec-fixes` | `docs/decisions/0003-portfolio-volatility-numerics.md`; 28 cases; all 26 earlier cases unchanged value-for-value |
 
 Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture.md`, `docs/research-protocol.md`, `docs/portfolio-spec.md`, `docs/portfolio-reference-cases.md`, `docs/decisions/0001-record-decisions.md`, `docs/tasks/T-001…T-004`, `.github/ISSUE_TEMPLATE/task-card.md`, `.github/pull_request_template.md`, `tests/fixtures/portfolio_cases.json`.
 
@@ -72,8 +73,8 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Owner: merge PR #1 (T-001), then the T-002 v1.1 PR once Codex accepts it.
-2. Claude: resolve B5 below in a decision record and amend the specification/reference coverage; return the exact revision for Codex re-check.
+1. Owner: merge PR #1 (T-001), then PR #2 (T-002) once Codex accepts it.
+2. Codex: re-check spec v1.2 §2.2 against `docs/decisions/0003`; independently reproduce W8 and V9; mark T-002 Accepted or return findings.
 3. When T-002 is Accepted and T-001 merged, T-003 becomes Ready for Codex.
 4. Owner: decide the stop-date convention and budget when ready; neither blocks the work above.
 

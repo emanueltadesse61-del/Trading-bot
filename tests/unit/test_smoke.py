@@ -20,7 +20,8 @@ def test_reference_fixture_names():
     expected = {
         "weights": ["W1_asset_cap", "W2_class_cap", "W3_all_cash",
                     "W4_vol_ceiling", "W5_tie_negative_ineligible",
-                    "W6_hedged_pair", "W7_empty_universe"],
+                    "W6_hedged_pair", "W7_empty_universe",
+                    "W8_negative_quadratic_boundary"],
         "orders": ["O1_band_exit_cap_cashlimit", "O2_post_trade_class_repair",
                    "O3_blocked_open_orders", "O4_blocked_held_ineligible",
                    "O5_zero_signal_exit", "O6_empty_universe_nothing_held",
@@ -30,7 +31,8 @@ def test_reference_fixture_names():
         "invalid": ["V1_nan_sigma", "V2_asymmetric_covariance",
                     "V3_unknown_asset_class", "V4_zero_price",
                     "V5_fractional_holding", "V6_negative_cash",
-                    "V7_duplicate_date", "V8_negative_price"],
+                    "V7_duplicate_date", "V8_negative_price",
+                    "V9_eigenvalue_below_tolerance"],
     }
     for group, names in expected.items():
         assert [case["name"] for case in fixture[group]] == names

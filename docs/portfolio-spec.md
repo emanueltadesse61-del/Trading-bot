@@ -1,8 +1,8 @@
-# Portfolio Specification (v1.1)
+# Portfolio Specification (v1.2)
 
-Status: **Review — v1.1 awaiting Codex re-check (T-002).** Author: Claude. Last updated: 2026-10-16.
+Status: **Review — v1.2 awaiting Codex re-check (T-002).** Author: Claude. Last updated: 2026-10-16.
 
-v1.1 resolves Codex's T-002 findings B1–B3, N1 and N2, plus one further gap found while fixing them; see `docs/decisions/0002-t002-review-resolutions.md`.
+v1.1 resolves Codex's T-002 findings B1–B3, N1 and N2 (`docs/decisions/0002-t002-review-resolutions.md`). v1.2 resolves B5, the numerical handling of portfolio volatility (`docs/decisions/0003-portfolio-volatility-numerics.md`).
 
 This document is the single authoritative definition of how target weights and orders are computed. Code that disagrees with it is wrong, or this document needs an amendment recorded in `docs/decisions/`. Reference cases live in `tests/fixtures/portfolio_cases.json` and are explained in `docs/portfolio-reference-cases.md`.
 
@@ -61,6 +61,17 @@ Inputs that break these rules are not market states; they are bugs or upstream d
 
 Legitimate account states that cannot be traded are **statuses**, not errors (§6).
 
+### 2.2 Portfolio volatility
+
+Every portfolio volatility in this spec (§5 step 6, §6.3 steps 3 and 6) is computed with one function:
+
+```text
+σ(x) = sqrt(max(0, q))   where q = xᵀ Σ x
+if q < −PSD_TOL:  raise InvalidInputError("INVALID_COVARIANCE")
+```
+
+Why this is safe: validation (§2.1) guarantees every eigenvalue of Σ is ≥ −`PSD_TOL`, so q ≥ −`PSD_TOL` × ‖x‖². Every weight vector here is non-negative and sums to at most 1, because there is no leverage and cash is ≥ 0, so ‖x‖² ≤ 1 and q ≥ −`PSD_TOL`. A q between −`PSD_TOL` and 0 is rounding noise and is treated as 0. A q below −`PSD_TOL` cannot come from validated inputs, so it is raised as an error, never clamped away silently.
+
 ## 3. Eligibility (per instrument, at date t)
 
 An instrument is **eligible** only if all hold:
@@ -94,7 +105,7 @@ Inputs are validated first (§2.1). Steps then run in this exact order.
 3. **Combine.** `w_i = SLEEVE_TREND × wT_i + SLEEVE_MOM × wM_i`.
 4. **Asset cap.** `w_i = min(w_i, ASSET_CAP)`.
 5. **Class cap.** For each class c with `W_c = Σ_{i∈c} w_i > CLASS_CAP`: multiply every `w_i` in c by `CLASS_CAP / W_c` (proportional reduction).
-6. **Volatility ceiling.** `σ_p = sqrt(wᵀ Σ w)`. If `σ_p > VOL_CEILING`, multiply every `w_i` by `VOL_CEILING / σ_p`. Weights are never scaled up.
+6. **Volatility ceiling.** `σ_p = σ(w)` (§2.2). If `σ_p > VOL_CEILING`, multiply every `w_i` by `VOL_CEILING / σ_p`. Weights are never scaled up. If `σ_p = 0`, no scaling.
 7. **Cash.** `w_cash = 1 − Σ w_i`. Cash is GBP held at the broker. It is not an instrument and is exempt from both caps; it has zero volatility and zero covariance in every risk estimate.
 
 Steps 5 and 6 only shrink weights, so earlier caps still hold. If `U` is empty, every target is 0 and `w_cash = 1`; what happens to holdings is decided by the planner (§6).
@@ -133,13 +144,13 @@ Target weights `w` (§5), the eligible set `U`, current share holdings `q_i`, `t
    - `exit`: `w_i == 0` and `q_i > 0`.
    - `asset_cap`: `a_i > ASSET_CAP + TOL`.
    - `class_cap`: `a_i > w_i + TOL` and the actual weight of i's class `> CLASS_CAP + TOL`.
-   - `vol`: `a_i > w_i + TOL` and `sqrt(aᵀ Σ a) > VOL_CEILING + TOL`.
+   - `vol`: `a_i > w_i + TOL` and `σ(a) > VOL_CEILING + TOL` (§2.2).
 4. **Target shares** for i in S: `q*_i = floor(w_i × NAV / P_i + FLOOR_EPS)`. `Δ_i = q*_i − q_i`. Instruments not in S keep `Δ_i = 0`.
 5. **Settled-cash limit.** Let `gross = Σ_{Δ_i>0} Δ_i × P_i × (1 + BUY_BUFFER)`, `n_b` = the number of buys, and `need = gross + COMMISSION_RESERVE × n_b`. If `need > cash_settled`: `k = max(0, cash_settled − COMMISSION_RESERVE × n_b) / gross`, and every buy becomes `Δ_i = floor(k × Δ_i + FLOOR_EPS)`. Sale proceeds from this run are **not** used for this run's buys.
 6. **Post-trade check.** With `q' = q + Δ` and `NAV' = NAV` (costs ignored for the check), compute `a'`. Violations, and the instruments each one adds to S:
    - `a'_i > ASSET_CAP + TOL` → i (reason `repair_asset`).
    - A class's weight `> CLASS_CAP + TOL` → every i in that class with `a'_i > w_i + TOL` (reason `repair_class`).
-   - `sqrt(a'ᵀ Σ a') > VOL_CEILING + TOL` → every i with `|a'_i − w_i| > TOL`, in either direction (reason `repair_vol`). An under-held hedge can push volatility up, so moving only over-weight positions is not enough.
+   - `σ(a') > VOL_CEILING + TOL` → every i with `|a'_i − w_i| > TOL`, in either direction (reason `repair_vol`). An under-held hedge can push volatility up, so moving only over-weight positions is not enough.
 7. **Resolution.**
    - No violations → go to step 8.
    - Violations, and step 6 added at least one instrument **not already in S** → add them and repeat steps 4–6 **once**.

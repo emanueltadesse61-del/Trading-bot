@@ -929,6 +929,83 @@
     },
     "cash": 1.0
    }
+  },
+  {
+   "name": "W8_negative_quadratic_boundary",
+   "description": "Codex's B5 counterexample. The covariance passes validation (smallest eigenvalue about -5e-13, within PSD_TOL), but for weights 0.25/0.25 the quadratic form is about -6.25e-14. It is clamped to 0: sigma_p = 0, no scaling, weights unchanged.",
+   "inputs": {
+    "ids": [
+     "H1",
+     "H2"
+    ],
+    "asset_class": {
+     "H1": "equity",
+     "H2": "bond"
+    },
+    "sigma_60d": {
+     "H1": 0.2,
+     "H2": 0.2
+    },
+    "trend_score": {
+     "H1": 1,
+     "H2": 1
+    },
+    "momentum_return": {
+     "H1": 0.1,
+     "H2": 0.1
+    },
+    "covariance": [
+     [
+      0.04,
+      -0.0400000000005
+     ],
+     [
+      -0.0400000000005,
+      0.04
+     ]
+    ]
+   },
+   "expected": {
+    "eligible": [
+     "H1",
+     "H2"
+    ],
+    "ranking": [
+     "H1",
+     "H2"
+    ],
+    "top_n": [
+     "H1",
+     "H2"
+    ],
+    "w_trend": {
+     "H1": 0.5,
+     "H2": 0.5
+    },
+    "w_mom": {
+     "H1": 0.5,
+     "H2": 0.5
+    },
+    "combined": {
+     "H1": 0.5,
+     "H2": 0.5
+    },
+    "after_asset_cap": {
+     "H1": 0.25,
+     "H2": 0.25
+    },
+    "after_class_cap": {
+     "H1": 0.25,
+     "H2": 0.25
+    },
+    "sigma_p_before_scale": 0.0,
+    "scale": 1.0,
+    "weights": {
+     "H1": 0.25,
+     "H2": 0.25
+    },
+    "cash": 0.5
+   }
   }
  ],
  "orders": [
@@ -3763,6 +3840,29 @@
    },
    "expected": {
     "error": "INVALID_PRICE_SERIES"
+   }
+  },
+  {
+   "name": "V9_eigenvalue_below_tolerance",
+   "description": "W8 inputs with off-diagonal -0.04000000001: smallest eigenvalue about -1e-11, beyond PSD_TOL.",
+   "stage": "targets",
+   "inputs": {
+    "base": "W8_negative_quadratic_boundary",
+    "override": {
+     "covariance": [
+      [
+       0.04,
+       -0.04000000001
+      ],
+      [
+       -0.04000000001,
+       0.04
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "error": "INVALID_COVARIANCE"
    }
   }
  ]
