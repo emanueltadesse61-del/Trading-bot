@@ -12,7 +12,7 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 
 | Item | Value |
 |---|---|
-| T-005 | Data-layer spec and reference cases on branch `t-005-data-spec`; exact commit named in its PR. Reviewer: Codex |
+| T-005 | [PR #7](https://github.com/emanueltadesse61-del/Trading-bot/pull/7): v1 reviewed at `3dceea8` (B1 holdout, B2 jump-approval timing); v1.1 resolves both (decision 0006). Re-review commit named in the PR. Reviewer: Codex |
 | Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728` (each pinned to the accepted commit) |
 | Open | PR #6 (Codex's T-003 review record): stays open until the owner authorises closing it |
 

@@ -82,7 +82,10 @@
      "A": 10.02
     },
     "data_ok": true,
-    "report": []
+    "report": [],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -163,7 +166,10 @@
      "A": 102
     },
     "data_ok": true,
-    "report": []
+    "report": [],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -238,7 +244,10 @@
      "A": 103
     },
     "data_ok": true,
-    "report": []
+    "report": [],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -312,7 +321,10 @@
       "instrument": "A",
       "date": "2026-01-09"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -392,12 +404,107 @@
       "instrument": "A",
       "date": "2026-01-06"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
-   "name": "D6_jump_approved",
-   "description": "The same 40% move listed in the approved-exceptions file: no flag, data_ok true.",
+   "name": "D6_jump_approved_research",
+   "description": "Research mode with a pinned snapshot: an exception approved after t clears the jump; DATA_JUMP_APPROVED is kept for audit.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 141,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 142,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": [
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "reason": "synthetic test",
+      "approved": "2026-10-16"
+     }
+    ],
+    "mode": "research",
+    "exceptions_version": "excsnap-001"
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      140.0,
+      141.0,
+      140.0,
+      142.0
+     ]
+    },
+    "trade_close": {
+     "A": 142
+    },
+    "data_ok": true,
+    "report": [
+     {
+      "code": "DATA_JUMP_APPROVED",
+      "instrument": "A",
+      "date": "2026-01-06"
+     }
+    ],
+    "mode": "research",
+    "exceptions_version": "excsnap-001",
+    "exceptions_digest": "c0d216361c0192af1a10e06caf3db3d16f853da9f8da2634f7739b62b60617e1"
+   }
+  },
+  {
+   "name": "D6b_operational_future_approval",
+   "description": "Operational mode: the approval (2026-10-16) is later than t, so it was not information at t: the jump stays flagged.",
    "inputs": {
     "calendar": [
      "2026-01-05",
@@ -472,8 +579,301 @@
     "trade_close": {
      "A": 142
     },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_JUMP",
+      "instrument": "A",
+      "date": "2026-01-06"
+     }
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "c0d216361c0192af1a10e06caf3db3d16f853da9f8da2634f7739b62b60617e1"
+   }
+  },
+  {
+   "name": "D6c_operational_approval_by_t",
+   "description": "Operational mode: approved on the jump date (on or before t): the jump is cleared and kept for audit.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 141,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 142,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": [
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "reason": "synthetic test",
+      "approved": "2026-01-06"
+     }
+    ]
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      140.0,
+      141.0,
+      140.0,
+      142.0
+     ]
+    },
+    "trade_close": {
+     "A": 142
+    },
     "data_ok": true,
-    "report": []
+    "report": [
+     {
+      "code": "DATA_JUMP_APPROVED",
+      "instrument": "A",
+      "date": "2026-01-06"
+     }
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "88ec995dbb1eb592030403b5d963b3c6b6df31b6d0097fc3cf99a3b7aca6c8d8"
+   }
+  },
+  {
+   "name": "D6d_exception_empty_reason",
+   "description": "Research mode: an exception with an empty reason is invalid, ignored, and reported; the jump stays flagged.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 141,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 142,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": [
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "reason": "",
+      "approved": "2026-10-16"
+     }
+    ],
+    "mode": "research",
+    "exceptions_version": "excsnap-001"
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      140.0,
+      141.0,
+      140.0,
+      142.0
+     ]
+    },
+    "trade_close": {
+     "A": 142
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_INVALID_EXCEPTION",
+      "instrument": "A",
+      "date": "2026-01-06"
+     },
+     {
+      "code": "DATA_JUMP",
+      "instrument": "A",
+      "date": "2026-01-06"
+     }
+    ],
+    "mode": "research",
+    "exceptions_version": "excsnap-001",
+    "exceptions_digest": "44e4cdc8b445dd3bb89dc41592425e5bbbcba1435587a1641bfe01d1558c28d4"
+   }
+  },
+  {
+   "name": "D6e_exception_bad_date",
+   "description": "Research mode: an exception with a malformed approval date is invalid and ignored; the jump stays flagged.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 141,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 142,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": [
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "reason": "synthetic test",
+      "approved": "16/10/2026"
+     }
+    ],
+    "mode": "research",
+    "exceptions_version": "excsnap-001"
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      140.0,
+      141.0,
+      140.0,
+      142.0
+     ]
+    },
+    "trade_close": {
+     "A": 142
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_INVALID_EXCEPTION",
+      "instrument": "A",
+      "date": "2026-01-06"
+     },
+     {
+      "code": "DATA_JUMP",
+      "instrument": "A",
+      "date": "2026-01-06"
+     }
+    ],
+    "mode": "research",
+    "exceptions_version": "excsnap-001",
+    "exceptions_digest": "101ff62afbecb16b69236755d59c5380c1acb46e3253c97366dc02435f36b777"
    }
   },
   {
@@ -598,7 +998,10 @@
       "instrument": "A",
       "date": "2026-01-03"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -723,7 +1126,10 @@
       "instrument": "A",
       "date": "2026-01-07"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -842,7 +1248,10 @@
       "instrument": "A",
       "date": "2026-01-09"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -962,7 +1371,10 @@
       "instrument": "A",
       "date": "2026-01-07"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -1072,7 +1484,10 @@
       "instrument": "A",
       "date": "2026-01-09"
      }
-    ]
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -1153,7 +1568,10 @@
      "A": 20.05
     },
     "data_ok": true,
-    "report": []
+    "report": [],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
@@ -1227,26 +1645,443 @@
      "A": 10.3
     },
     "data_ok": true,
-    "report": []
+    "report": [],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+   }
+  },
+  {
+   "name": "D15_gap_jump",
+   "description": "A 30% move across a missing session (100, missing, 130) is flagged: the check compares consecutive valid prices, which may span gaps.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 130,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 131,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 130,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      null,
+      130.0,
+      131.0,
+      130.0
+     ]
+    },
+    "trade_close": {
+     "A": 130
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_JUMP",
+      "instrument": "A",
+      "date": "2026-01-07"
+     }
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+   }
+  },
+  {
+   "name": "D16_before_calendar",
+   "description": "A has a record on Fri 2 Jan 2026, a real LSE session but before the supplied calendar: it is off the supplied calendar, so A is excluded.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A",
+     "B"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-02",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-05",
+      "close": 50,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-06",
+      "close": 51,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-07",
+      "close": 52,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-08",
+      "close": 53,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-09",
+      "close": 54,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "B": [
+      50,
+      51.0,
+      52.0,
+      53.0,
+      54.0
+     ]
+    },
+    "trade_close": {
+     "A": null,
+     "B": 54
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_OFF_CALENDAR",
+      "instrument": "A",
+      "date": "2026-01-02"
+     }
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+   }
+  },
+  {
+   "name": "D17_unknown_instrument",
+   "description": "A record for Z, which is not in the universe: reported, data_ok false; A is unaffected.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 101,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 102,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 103,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 104,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "Z",
+      "date": "2026-01-05",
+      "close": 5,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      101.0,
+      102.0,
+      103.0,
+      104.0
+     ]
+    },
+    "trade_close": {
+     "A": 104
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_UNKNOWN_INSTRUMENT",
+      "instrument": "Z",
+      "date": "2026-01-05"
+     }
+    ],
+    "mode": "operational",
+    "exceptions_version": null,
+    "exceptions_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
    }
   },
   {
    "name": "D14_holdout_path",
-   "description": "Holdout path inside the repository (even under gitignored data/) is refused; outside is accepted.",
+   "description": "Forbidden roots = the repository and every agent workspace (here /work). Anything inside any root is refused, including a sibling of the repo inside the workspace; /work2 is not inside /work.",
    "inputs": {
     "repo_root": "/work/Trading-bot",
+    "agent_workspaces": [
+     "/work"
+    ],
     "paths": [
      "/work/Trading-bot/data/holdout",
      "/work/Trading-bot",
+     "/work/Trading-bot-holdout",
+     "/work",
      "/srv/trading-holdout",
-     "/work/Trading-bot-holdout"
+     "/work2/holdout"
     ]
    },
    "expected": {
     "/work/Trading-bot/data/holdout": "HOLDOUT_PATH_FORBIDDEN",
     "/work/Trading-bot": "HOLDOUT_PATH_FORBIDDEN",
+    "/work/Trading-bot-holdout": "HOLDOUT_PATH_FORBIDDEN",
+    "/work": "HOLDOUT_PATH_FORBIDDEN",
     "/srv/trading-holdout": "OK",
-    "/work/Trading-bot-holdout": "OK"
+    "/work2/holdout": "OK"
+   }
+  }
+ ],
+ "invalid": [
+  {
+   "name": "DV1_empty_calendar",
+   "description": "Empty calendar.",
+   "inputs": {
+    "calendar": [],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "error": "INVALID_CALENDAR"
+   }
+  },
+  {
+   "name": "DV2_duplicate_session",
+   "description": "A session listed twice.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "error": "INVALID_CALENDAR"
+   }
+  },
+  {
+   "name": "DV3_unsorted_calendar",
+   "description": "Sessions out of order.",
+   "inputs": {
+    "calendar": [
+     "2026-01-06",
+     "2026-01-05",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "error": "INVALID_CALENDAR"
+   }
+  },
+  {
+   "name": "DV4_t_not_in_calendar",
+   "description": "t is a Saturday, not a session.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-10",
+    "universe": [
+     "A"
+    ],
+    "prices": [],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "error": "INVALID_CALENDAR"
+   }
+  },
+  {
+   "name": "DV5_research_without_version",
+   "description": "Research mode without an exceptions version.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [],
+    "distributions": [],
+    "exceptions": [],
+    "mode": "research"
+   },
+   "expected": {
+    "error": "INVALID_EXCEPTIONS_VERSION"
    }
   }
  ]
