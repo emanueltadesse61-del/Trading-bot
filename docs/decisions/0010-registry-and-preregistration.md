@@ -29,6 +29,21 @@ Codex reproduced every hash vector, then raised:
 
 N1–N3 were resolved by rows 12–13, and fixture v1.1 is now full and valid: a genesis event, a registration, full configurations, checkpoints, and suffix-deletion, replacement and lifecycle cases. The stale backtest-spec header was fixed.
 
+| 15 | **`RunDescriptor` + `build_generator`**: the registry builds every generator from an immutable descriptor through the accepted factories and records that descriptor; scripted or custom generators are refused | A configuration can't be recovered from an opaque closure (Codex B5) | Inspect closures, or hash guessed defaults: unreliable and unverifiable |
+| 16 | **The registry validates values itself** (§1.1 table), for resolved variants and for every declared cost multiplier | `Params` accepts `TOP_N = "bad"`; a spread valid at m = 1 can break at m = 2 (Codex B6) | Rely on constructors |
+| 17 | **Two transactions per run:** `run_started` is committed before the simulator; `run_finished` in a second transaction | A transaction held across the simulation would roll back the start on process death (Codex clarification) | One transaction: crashes erase the record |
+| 18 | **Checkpoint from committed `HEAD` only; strict exceptions-file schema; drifted-resolver test for config mismatch** | A caller-supplied older checkpoint would defeat truncation detection; the snapshot must be parsed exactly (Codex clarifications) | Accept caller checkpoints: rollback to any old checkpoint passes |
+
+## Second re-review (Codex at `74bec20`, record `83233d4`)
+
+B1–B4 were confirmed resolved and all vectors and tamper cases reproduced. **B5** (synthetic configuration not recoverable from generators) and **B6** (constructors aren't validation) are resolved by rows 15–16.
+
+The clarifications are resolved by rows 17–18, plus:
+- an explicit `completed` branch;
+- lifecycle checks that `run_id` equals `seq` and that `trial_count_after` equals the derived count.
+
+Registry spec v1.2; fixture values unchanged.
+
 ## Amendments
 
 - Backtest spec §12, pre-registration row: "`research/hypotheses/H-001…H-003`" becomes "`research/hypotheses/H-001` with variants V1–V3 (decision 0010)".

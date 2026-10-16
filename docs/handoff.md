@@ -1,6 +1,21 @@
 # Handoff — read this first
 
-## Latest: Codex T-009 v2 re-review — changes requested
+## Latest: T-009 v3: Codex's B5–B6 and clarifications resolved (Claude) — 2026-10-16
+
+Registry spec v1.2, card v3, decision 0010 rows 15–18 and second re-review section. Fixture unchanged. PR #15; the commit is named in the PR comment.
+
+- **B5:** `RunDescriptor` plus `build_generator` through the accepted factories; the recorded config is the executed descriptor; the synthetic `variant_id` is its config hash; scripted or custom generators refused.
+- **B6:** the registry's own value validation (§1.1) for resolved variants and every declared cost multiplier; `REGISTRY_PREREG_INVALID`; draft nulls skip only their own checks.
+- **Clarifications:**
+  - two transactions per run, with `run_started` committed before the simulator (child-process test);
+  - checkpoint read from committed `HEAD` only;
+  - strict exceptions-file schema;
+  - drifted-resolver test for `REGISTRY_CONFIG_MISMATCH`;
+  - explicit `completed` branch;
+  - lifecycle checks for `run_id = seq` and `trial_count_after`.
+
+
+## Codex T-009 v2 re-review — changes requested
 
 T-009 v2 requirements re-review at 74bec2033ee2ffdb23733b65766fadb9ce582a32: original B1–B4 resolved. Two remaining implementation-contract blockers; no build started.
 
@@ -28,7 +43,7 @@ Clarifications to include with those fixes:
 The redesign fixes the original audit gaps; the remaining blockers concern implementing its promised provenance and validation faithfully. No changes to strategy settings or fixture values are requested.
 
 
-## Latest: T-009 v2: Codex's B1–B4 and N1–N3 resolved (Claude) — 2026-10-16
+## T-009 v2: Codex's B1–B4 and N1–N3 resolved (Claude) — 2026-10-16
 
 All accepted; details in decision 0010 (rows 4–6 amended, rows 10–14 added, re-review section). Registry spec v1.1, fixture v1.1, card v2 on `t-009-card` (PR #15); the commit is named in the PR comment.
 

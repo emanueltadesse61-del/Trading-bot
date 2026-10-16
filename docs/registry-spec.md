@@ -1,6 +1,6 @@
-# Experiment Registry and Pre-registration Specification (v1.1)
+# Experiment Registry and Pre-registration Specification (v1.2)
 
-Status: **Review — v1.1 awaiting Codex's re-check (T-009).** Author: Claude. Last updated: 2026-10-16. Implements research protocol §1–2 and charter §6 permanent rule 1. Design choices: `docs/decisions/0010-registry-and-preregistration.md`. Reference vectors: `tests/fixtures/registry_cases.json` (v1.1). v1.1 resolves Codex's review B1–B4 and N1–N3 (decision 0010, re-review section).
+Status: **Review — v1.2 awaiting Codex's re-check (T-009).** Author: Claude. Last updated: 2026-10-16. Implements research protocol §1–2 and charter §6 permanent rule 1. Design choices: `docs/decisions/0010-registry-and-preregistration.md`. Reference vectors: `tests/fixtures/registry_cases.json` (v1.1). v1.1 resolves Codex's review B1–B4 and N1–N3; v1.2 resolves B5–B6 and the clarifications of the second re-review (decision 0010, re-review sections). Fixture values unchanged.
 
 **Purpose:**
 - Refuse any real-data run that does not match a frozen, **registered** pre-registration exactly.
@@ -27,21 +27,44 @@ Markdown for people, plus **exactly one** fenced block with info string `json pr
 | `universe` | Sorted, unique instrument ids |
 | `asset_class` | Keys exactly `universe`; values in `params.ASSET_CLASSES` |
 | `benchmarks` | Object; keys are among `sixty_forty`, `global_equity`, `moving_average_10m`, `cash`, with their instrument arguments (backtest spec §6.3) |
-| `params` | **Exactly** the `Params` fields; it must construct a valid `Params` |
-| `backtest_params` | **Exactly** the `BacktestParams` fields **except** `COST_MULTIPLIER`. `HALF_SPREAD` keys are exactly the universe plus the benchmark instruments. It must construct a valid `BacktestParams` |
+| `params` | **Exactly** the `Params` fields, each passing §1.1 |
+| `backtest_params` | **Exactly** the `BacktestParams` fields **except** `COST_MULTIPLIER`. `HALF_SPREAD` keys are exactly the universe plus the benchmark instruments. Passes §1.1 for **every** declared cost multiplier |
 | `variants` | Non-empty; unique `id`s; exactly one `role: "primary"`, the rest `"robustness"`; `schedule` is `weekly` or `monthly`; `overrides` keys are `Params` fields only, and the resolved `Params` must be valid |
 | `cost_multipliers` | The declared set, e.g. `[1, 2]`. It must contain 1; every value finite and > 0 |
 | `dataset` | `{dataset_id, manifest_digest}` |
 | `period` | `{start, end}` ISO dates, `start < end` |
 | `exceptions` | `{version, digest}` of the jump-exceptions snapshot (data spec §7.1) |
 
-Any failure gives `REGISTRY_PREREG_FORMAT`. A **frozen** file additionally must have no `null` anywhere (`REGISTRY_HYPOTHESIS_INCOMPLETE`). A draft may have nulls in `backtest_params`, `dataset`, `period` and `exceptions` only.
+A structural failure (block count, JSON, keys, field sets) gives `REGISTRY_PREREG_FORMAT`. A value failure (§1.1) gives `REGISTRY_PREREG_INVALID` naming the field. A **frozen** file additionally must have no `null` anywhere (`REGISTRY_HYPOTHESIS_INCOMPLETE`). A draft may have nulls in `backtest_params`, `dataset`, `period` and `exceptions` only; each null skips **only** the checks that need that value.
+
+### 1.1 Value validation (the registry's own; constructors are not validation)
+
+`Params` and `BacktestParams` constructors do not fully validate. The registry validates the **resolved** values: base `params`, then each variant's overrides applied. "Int" means a Python `int`, not `bool`. "Number" means a finite `int` or `float`, not `bool`.
+
+| Field | Rule |
+|---|---|
+| `ANNUALISATION` | int ≥ 1 |
+| `TREND_LOOKBACKS` | non-empty list of ints ≥ 1, strictly increasing |
+| `MOM_SKIP` | int ≥ 0 |
+| `MOM_LONG` | int > `MOM_SKIP` |
+| `VOL_WINDOW`, `COV_WINDOW` | int ≥ 2 |
+| `TOP_N` | int ≥ 1 |
+| `SLEEVE_TREND`, `SLEEVE_MOM` | number in [0, 1]; their sum within 1e-12 of 1 |
+| `ASSET_CAP`, `CLASS_CAP` | number in (0, 1] |
+| `VOL_CEILING` | number > 0 |
+| `BAND` | number in [0, 1) |
+| `MIN_VOL`, `BUY_BUFFER`, `COMMISSION_RESERVE` | number ≥ 0 |
+| `TOL`, `FLOOR_EPS`, `SYM_TOL`, `PSD_TOL` | number in [0, 1e-3] |
+| `ASSET_CLASSES` | non-empty list of unique strings, containing every `asset_class` value |
+| `BacktestParams` | Constructs without error, **and** for every `m` in `cost_multipliers`, `BacktestParams(…, COST_MULTIPLIER = m).validate_instruments(universe ∪ benchmark instruments)` passes. So a spread valid at m = 1 but giving a non-positive sell price at m = 2 is refused. A `null` spread or `DISTRIBUTION_LAG` in a draft skips only its own check |
+
+These rules do not change any strategy default; H-001's values pass them.
 
 The prose sections (mechanism, rules, expected behaviour, falsification, comparison) are required and reviewed, not parsed.
 
 ## 2. Configurations
 
-Each variant and each baseline resolves to one **configuration** object, hashed as `config_hash = SHA-256(canonical JSON)`. Canonical JSON = `json.dumps(x, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)`, UTF-8. Tuples are arrays; frozensets are sorted arrays.
+Each variant and each baseline resolves to one **configuration** object (the `RunDescriptor`, §2.1), hashed as `config_hash = SHA-256(canonical JSON)`. Canonical JSON = `json.dumps(x, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)`, UTF-8. Tuples are arrays; frozensets are sorted arrays.
 
 | Kind | Configuration |
 |---|---|
@@ -51,6 +74,17 @@ Each variant and each baseline resolves to one **configuration** object, hashed 
 `COST_MULTIPLIER` is **not** part of a configuration. It is a separate run field, checked against the registered set. Fixture `config_cases` gives full vectors for two strategy variants and one baseline.
 
 Baseline ids are `B:<generator>` (e.g. `B:sixty_forty`).
+
+### 2.1 Run descriptors: the configuration that is executed
+
+A configuration is **not** read back from a `Generator`: generators are opaque closures, and two strategy generators with different `TOP_N` look identical from outside. Instead the registry uses an immutable `RunDescriptor` holding exactly the §2 fields. The **only** way the registry obtains a generator is `build_generator(descriptor)`. It calls the accepted T-008 factory for that kind with the descriptor's values:
+- `strategy_generator(universe, asset_class, Params(**params))`;
+- `sixty_forty`, `global_equity` or `moving_average_10m` with their instrument arguments and `Params(**params)`;
+- `cash()`.
+
+It then passes `schedule` to `run_backtest`. The recorded `config` is the descriptor itself, so what is recorded is what is executed.
+
+**Supported generators:** `strategy`, `sixty_forty`, `global_equity`, `moving_average_10m`, `cash`. Scripted or custom generators are **refused** by the registry (`REGISTRY_UNSUPPORTED_GENERATOR`). They test the simulator, not strategies, and run outside the registry.
 
 ## 3. Storage and verification
 
@@ -70,7 +104,7 @@ Checked in order; the first failure raises:
 |---|---|
 | Rows are `seq` 1, 2, 3, … with no gaps; each body's `seq` equals the row's; each `prev_hash` and `row_hash` recomputes | `REGISTRY_CHAIN_BROKEN` (seq) |
 | seq 1 is the only `registry_created` | `REGISTRY_CHAIN_BROKEN` |
-| **Lifecycle:** event types are known. A `run_finished` names an earlier `run_started` that has no finish yet. A `supersedes` names an earlier `run_started` of the same hypothesis, variant or baseline, and kind. A hypothesis id is registered at most once | `REGISTRY_LIFECYCLE` (seq) |
+| **Lifecycle:** event types are known. Each `run_started` has `run_id` equal to its `seq`. A `run_finished` names an earlier `run_started` that has no finish yet. A `supersedes` names an earlier `run_started` of the same hypothesis, variant or baseline, and kind. A hypothesis id is registered at most once. Each registration's `trial_count_after` equals the count derived from all registrations up to it | `REGISTRY_LIFECYCLE` (seq) |
 | **Checkpoint**, if given: seq 1's `registry_id` equals the checkpoint's, and the row at the checkpoint's `seq` exists with the checkpoint's `row_hash` | `REGISTRY_CHECKPOINT_MISMATCH` |
 
 ### 3.3 Checkpoints and their limits
@@ -100,9 +134,25 @@ Checked in order; the first failure raises:
 
 ## 5. Operations
 
-All writing operations run inside one SQLite `BEGIN IMMEDIATE` transaction. That transaction holds the write lock across verification, every check, and the append, so two processes cannot both pass a budget or pin check. Every refusal happens **before** any row is written.
+**Transactions.** Every append is its own `BEGIN IMMEDIATE` … `COMMIT`, holding the write lock across that append's verification and checks, so two processes cannot both pass a budget or pin check:
+- **Registration:** one transaction (verify, checks, append `hypothesis_registered`).
+- **A run uses two separate transactions.** The first verifies, checks and appends `run_started`, then **commits before the simulator is called**. The simulator runs outside any transaction. The second `BEGIN IMMEDIATE` re-verifies and appends `run_finished`. A single transaction held across the simulation would roll back `run_started` on process death, so it is not allowed.
 
-### 5.1 `register_hypothesis(path, hypothesis_file, checkpoint)`
+Every refusal happens **before** any row is written.
+
+**Committed checkpoint.** Writing operations never accept a checkpoint argument from the caller. A `checkpoint_provider` reads `research/registry-checkpoint.json` from the **committed `HEAD`** of the clean checkout (`git show HEAD:…`), not from the working tree. Tests inject a provider.
+- Registration and real runs require one (`REGISTRY_CHECKPOINT_MISSING`).
+- Synthetic runs verify internal consistency only when none exists yet.
+
+The CLI `verify --checkpoint FILE` is a read-only manual check and is never used for writes.
+
+**Exceptions file** (`exceptions_file`): UTF-8 JSON, parsed strictly (no duplicate keys or non-finite values; exact keys):
+- `{"schema": "trading-bot/exceptions/v1", "version": <non-empty string>, "entries": [{"instrument", "date", "reason", "approved"}, …]}`;
+- `date` and `approved` are ISO `YYYY-MM-DD` that round-trip, decoded with `date.fromisoformat`;
+- the digest is the shared `exceptions_digest` over the decoded entries (data spec §7.1);
+- malformed → `REGISTRY_EXCEPTIONS_FORMAT`.
+
+### 5.1 `register_hypothesis(path, hypothesis_file, *, clock, checkpoint_provider, resolver)`
 
 1. `verify_registry` with the committed checkpoint.
 2. The checkout is clean (`REGISTRY_DIRTY_CHECKOUT`). The file is committed and unchanged in the working tree, and is `frozen` and complete (`REGISTRY_HYPOTHESIS_NOT_FROZEN`, `REGISTRY_HYPOTHESIS_INCOMPLETE`, `REGISTRY_PREREG_FORMAT`).
@@ -116,20 +166,21 @@ All writing operations run inside one SQLite `BEGIN IMMEDIATE` transaction. That
 
 Deleting, renaming or demoting a hypothesis file, or starting a new charter, never lowers it. Registered variants count whether or not they ever run. Baselines, cost-stress reruns and synthetic runs never count.
 
-### 5.3 Synthetic runs: `run_synthetic(path, *, market, generator, backtest_params, period, cost_multiplier, note, supersedes=None, clock)`
+### 5.3 Synthetic runs: `run_synthetic(path, *, market, descriptor, period, cost_multiplier, note, supersedes=None, clock, checkpoint_provider)`
 
-- Every instrument id in the market and the generator starts with `SYN_` (`REGISTRY_NOT_SYNTHETIC`).
-- `hypothesis_id = "SYNTHETIC"`; the configuration is derived from `generator` and `backtest_params` per §2.
+- `descriptor` is a `RunDescriptor` (§2.1) of a supported generator; the generator is built from it.
+- Every instrument id in the market and the descriptor starts with `SYN_` (`REGISTRY_NOT_SYNTHETIC`).
+- `hypothesis_id = "SYNTHETIC"` and `variant_id` = the descriptor's `config_hash`, so different configurations are distinct identities.
 - A dirty checkout is allowed but recorded (`checkout_clean = false`).
 - Synthetic runs never count toward the budget.
 
-### 5.4 Real-data runs: `run_registered(path, *, hypothesis_id, variant_or_baseline, dataset_dir, exceptions_file, cost_multiplier, checkpoint, note, supersedes=None, clock)`
+### 5.4 Real-data runs: `run_registered(path, *, hypothesis_id, variant_or_baseline, dataset_dir, exceptions_file, cost_multiplier, note, supersedes=None, clock, checkpoint_provider, resolver)`
 
 **The caller supplies no configuration, period or generator**: all come from the registered hypothesis. Checks, in order:
 1. `verify_registry` with the committed checkpoint.
 2. Clean checkout.
 3. The hypothesis is registered (`REGISTRY_NOT_REGISTERED`). Its file is present (`REGISTRY_HYPOTHESIS_MISSING`) with exactly the registered `file_sha256` (`REGISTRY_HYPOTHESIS_CHANGED`).
-4. The variant or baseline is registered (`REGISTRY_UNKNOWN_VARIANT`). Its configuration resolved from the file equals the registered `config_hash` (`REGISTRY_CONFIG_MISMATCH`).
+4. The variant or baseline is registered (`REGISTRY_UNKNOWN_VARIANT`). Its descriptor, resolved from the file by the `resolver`, has a `config_hash` equal to the registered one (`REGISTRY_CONFIG_MISMATCH`). The file's hash was already checked in step 3, so this catches **resolver drift**: code that now resolves the same file differently. Tests inject a drifted resolver.
 5. `cost_multiplier` is in the registered set (`REGISTRY_COST_UNDECLARED`).
 6. The dataset is read with `read_raw_dataset`. Its id and digest equal the registered ones (`REGISTRY_DATASET_MISMATCH`), and the partition is `development` (`REGISTRY_HOLDOUT`).
 7. The exceptions snapshot's version and §7.1 digest equal the registered ones (`REGISTRY_EXCEPTIONS_MISMATCH`).
@@ -140,9 +191,10 @@ The open-prices and payment-timing card will add schema v2 to `SUPPORTED_REAL_SC
 
 ### 5.5 Run lifecycle (synthetic now; real later)
 
-1. Append `run_started`.
-2. Call `run_backtest` with the resolved configuration. This is the existing simulator; there is no second one.
-3. Append `run_finished`:
+1. Append `run_started` with `run_id` equal to its `seq`, then **commit** (transaction 1).
+2. `build_generator(descriptor)`, then `run_backtest(market, generator, BacktestParams(…, COST_MULTIPLIER = cost_multiplier), start, end, schedule = descriptor.schedule)`. This is the existing simulator; there is no second one.
+3. Append `run_finished` in transaction 2:
+   - **Success:** `outcome = "completed"`, `metrics` and `totals` from the `BacktestResult`, `error = null`.
    - **Ordinary exception:** `outcome = "failed"` with the error code, then re-raise.
    - **Process death** (kill, power loss) between steps 1 and 3 leaves an **unfinished** run. It stays visible in every summary and is never relabelled.
    - **Failure logging fails** (the registry is unwritable after `run_started`): raise `RegistryError("REGISTRY_WRITE_FAILED")` chained to the original exception. The run then remains unfinished.
@@ -167,6 +219,6 @@ CLI: `trader-registry init PATH`, `trader-registry verify PATH [--checkpoint FIL
 | Group | Codes |
 |---|---|
 | Storage and verification | `REGISTRY_LOCATION`, `REGISTRY_CHAIN_BROKEN`, `REGISTRY_LIFECYCLE`, `REGISTRY_CHECKPOINT_MISMATCH`, `REGISTRY_WRITE_FAILED` |
-| Pre-registration files | `REGISTRY_PREREG_FORMAT`, `REGISTRY_HYPOTHESIS_NOT_FROZEN`, `REGISTRY_HYPOTHESIS_INCOMPLETE`, `REGISTRY_ALREADY_REGISTERED`, `REGISTRY_NOT_REGISTERED`, `REGISTRY_HYPOTHESIS_MISSING`, `REGISTRY_HYPOTHESIS_CHANGED` |
-| Run binding | `REGISTRY_UNKNOWN_VARIANT`, `REGISTRY_CONFIG_MISMATCH`, `REGISTRY_COST_UNDECLARED`, `REGISTRY_DATASET_MISMATCH`, `REGISTRY_HOLDOUT`, `REGISTRY_EXCEPTIONS_MISMATCH`, `REGISTRY_REAL_DATA_UNSUPPORTED` |
+| Pre-registration files | `REGISTRY_PREREG_FORMAT`, `REGISTRY_PREREG_INVALID`, `REGISTRY_HYPOTHESIS_NOT_FROZEN`, `REGISTRY_HYPOTHESIS_INCOMPLETE`, `REGISTRY_ALREADY_REGISTERED`, `REGISTRY_NOT_REGISTERED`, `REGISTRY_HYPOTHESIS_MISSING`, `REGISTRY_HYPOTHESIS_CHANGED` |
+| Run binding | `REGISTRY_UNSUPPORTED_GENERATOR`, `REGISTRY_EXCEPTIONS_FORMAT`, `REGISTRY_CHECKPOINT_MISSING`, `REGISTRY_UNKNOWN_VARIANT`, `REGISTRY_CONFIG_MISMATCH`, `REGISTRY_COST_UNDECLARED`, `REGISTRY_DATASET_MISMATCH`, `REGISTRY_HOLDOUT`, `REGISTRY_EXCEPTIONS_MISMATCH`, `REGISTRY_REAL_DATA_UNSUPPORTED` |
 | Other | `REGISTRY_DIRTY_CHECKOUT`, `REGISTRY_NOT_SYNTHETIC`, `TRIAL_BUDGET_EXCEEDED` |
