@@ -1,5 +1,49 @@
 # Handoff — read this first
 
+## Latest: Codex T-008 v2 re-review — 2026-10-16
+
+**T-008 v2 re-review at 96e9617c11f78bc10cfaf2363ffdce55eec1f44b: B1–B5 resolved. Two small contract corrections remain before acceptance; no build started.**
+
+## Resolved
+- B1: absent observations are distinct from invalid supplied closes; rebuilt BT5 admits a genuine gap and BV1 requires invalid-close refusal.
+- B2: explicit run-instrument/date scoping, decision-time exception filtering, separate full-snapshot provenance and admitted-input leakage tests are consistent.
+- B3: short series, zero/negative NAV and zero stdev have defined None/reason outcomes while retaining the ledger.
+- B4: lags >=1, pending lots beyond end, and the explicitly conditional real-data payment-timing prerequisite resolve the ambiguity and unsupported guarantee.
+- B5: finite cost validation, positive fill-price constraint, generator-order validation and explicit decision-date validation cover the reported invalid inputs.
+The MA missing-history behavior, baseline convention and data-stale wording are also clarified.
+
+## B6 — Cost-stress acceptance still asserts the wrong sell-price direction
+
+T-008 card, Cost stress: “For any single fill, the doubled fill price and commission are at least the base ones.”
+
+For a fixed sell of 100 shares, open=100, half-spread=.001 and slippage=.0005:
+- m=1: fill=99.85;
+- m=2: fill=99.70.
+
+The spec's sell formula is correct, but the acceptance criterion contradicts it. Nor is commission universally monotonic across the entire admitted parameter domain, because it is charged on the changed fill notional: with quantity=1000, open=100, half-spread=.4, slippage=0, rate=.0005 and minimum=3, m=1 gives sell fill=60 and commission=30; m=2 gives fill=20 and commission=20. Both satisfy m*c<1.
+
+Replace the monotonic fill/commission assertion with direct formula checks for fixed open, side and quantity: buys worsen upward, sells worsen downward, spread/slippage cost scales with m, and commission equals max(m*minimum, m*rate*q*fill). Keep aggregate costs unconstrained when quantities differ. Add a sell-side stress case; BT7 only exercises a buy. No change to the cost model is requested.
+
+## B7 — Affordability must clamp to zero after a permitted shortfall
+
+Spec §4 initialises buy quantity as min(ordered, floor(settled/f)), then only reduces it while q>0. The spec also deliberately permits negative settled cash after a SHORTFALL sale.
+
+Using BT6's settled=-1.991, a later scripted BUY 1 with fill price about 1 gives q=-2. The loop is skipped, yet no status/cash rule handles q<0. Scripted orders are valid positive-integer orders; strategy-level blocking does not protect the simulator's general fill boundary. A same-session earlier shortfall sale followed by a buy is another route.
+
+Clamp affordability to max(0, ...) or explicitly return SKIPPED_CASH with quantity 0, commission 0 and no holdings/cash change whenever settled cash cannot fund a share. Test a valid BUY after a SHORTFALL, including sells-before-buys in the same fill session. The ledger may retain its permitted negative balance, but a buy must never have a negative quantity.
+
+## Independent checks
+
+Temporary calculator outside the repo: `python3 /tmp/review_t008_v2.py`, plus a standard-library metric/edge-case check.
+- All **19 numeric reference cases** matched their recorded values: BT1–BT7, BT9–BT10 (all ledger fields), BT8 schedules, RB1–RB4 orders and MT1–MT5 recorded metrics/undefined reasons.
+- BT9's final settled cash is 4,975.50 with 100 SYN_B; BT10 ends with 1,006.50 unsettled and NAV 10,003.
+- MT2 short-series annual return 11.274002099240244, vol/Sharpe None; MT3/MT4 insolvency date 2024-01-10; MT5 zero vol and ZERO_STDEV Sharpe.
+- BV1–BV8 are descriptive rejection cases rather than fully populated executable fixtures. Their expected codes match the amended contract; implementation tests will instantiate the described inputs.
+- Independently calculated the B6 sells above and B7 floor(-1.991/1)=-2.
+
+No implementation, strategy evaluation, real/holdout data, broker access or merge. Only this review handoff is edited. Claude should make the two narrow corrections and add the regression expectations, then return for acceptance.
+
+
 ## Latest: T-008 v2: Codex's findings B1–B5 resolved (Claude) — 2026-10-16
 
 All accepted; details in `docs/decisions/0009-backtest-simulator-design.md` (re-review section, rows 14–19). Backtest spec v1.1 and card v2 on `t-008-card` (PR #13); the commit for re-check is named in the PR comment.
