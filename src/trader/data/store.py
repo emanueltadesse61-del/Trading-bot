@@ -179,6 +179,8 @@ def _tables(data):
 
 def write_raw_dataset(dataset, directory, *, provenance):
     """Write only into a new directory. CLI provides staging/publication."""
+    if any(r.open is not None for r in dataset.prices):
+        raise DataStoreError("OPEN_PRICES_UNSUPPORTED", "prices")
     _validate_dataset(dataset)
     _provenance(provenance)
     directory = Path(directory)
@@ -326,6 +328,7 @@ def read_raw_dataset(directory):
     except DataStoreError:
         raise
     except (
+        pa.ArrowException,
         OSError,
         ValueError,
         TypeError,

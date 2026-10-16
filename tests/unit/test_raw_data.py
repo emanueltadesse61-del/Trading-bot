@@ -83,6 +83,8 @@ def export(directory, parsed=None):
             writer.writeheader()
             for record in records:
                 row = {"date": record} if type(record) is date else asdict(record)
+                if isinstance(record, PriceRecord):
+                    assert row.pop("open") is None  # v1 CSV has no open column
                 row = {
                     k: (str(v).lower() if type(v) is bool else v)
                     for k, v in row.items()
@@ -781,3 +783,86 @@ def test_partial_instrument_partition_keeps_source_declaration(tmp_path):
     development, _ = read_raw_dataset(args["dev_out"])
     assert len(development.declarations) == 2
     assert all(p.instrument == "SYN_A" for p in development.prices)
+
+
+# T-008 follow-ups: storage remains v1 despite the richer canonical record.
+def test_storage_refuses_opens_before_publication(tmp_path):
+    dataset = raw()
+    dataset = replace(dataset, prices=(replace(dataset.prices[0], open=100.), *dataset.prices[1:]))
+    assert_error(DataStoreError, 'OPEN_PRICES_UNSUPPORTED', write_raw_dataset,
+                 dataset, tmp_path / 'out', provenance=PROVENANCE)
+    assert not (tmp_path / 'out').exists()
+
+
+def test_csv_open_column_still_refused(tmp_path):
+    source = export(tmp_path / 'source')
+    path = source / 'prices.csv'
+    path.write_text(path.read_text().replace('instrument,date,close,unit', 'instrument,date,close,unit,open'))
+    assert_error(DataImportError, 'IMPORT_BAD_HEADER', _parse_csv_dir, source)
+
+
+def test_arrow_exception_named(tmp_path, monkeypatch):
+    directory = tmp_path / 'dataset'
+    write_raw_dataset(raw(), directory, provenance=PROVENANCE)
+    def damaged(*a, **kw):
+        raise pa.ArrowException('synthetic damaged metadata')
+    monkeypatch.setattr(pq, 'read_table', damaged)
+    assert_error(DataStoreError, 'DATASET_MANIFEST_MISMATCH', read_raw_dataset, directory)
+
+
+def test_unreadable_source_publishes_nothing(tmp_path):
+    import os
+    if os.geteuid() == 0:
+        pytest.skip('root bypasses chmod permissions')
+    args = split_args(tmp_path)
+    path = args['source'] / 'prices.csv'
+    path.chmod(0)
+    try:
+        with pytest.raises((OSError, DataImportError)):
+            run_split(**args)
+    finally:
+        path.chmod(0o600)
+    assert not args['dev_out'].exists() and not args['holdout_out'].exists()
+    assert not list(tmp_path.rglob('*.staging-*'))
+
+
+def test_all_leftovers_reported(tmp_path):
+    from trader.data.split import SplitError, preflight
+    args = split_args(tmp_path)
+    outputs = [args['dev_out'], args['holdout_out']]
+    leftovers = [p.with_name(p.name + '.staging-old') for p in outputs]
+    for p in [*outputs, *leftovers]:
+        p.mkdir(parents=True)
+    check = {k: v for k, v in args.items() if k not in ('holdout_start', 'provenance')}
+    exc = assert_error(SplitError, 'SPLIT_OUTPUT_EXISTS', preflight, **check)
+    assert set(exc.paths) == set(map(str, [*outputs, *leftovers]))
+    for p in outputs:
+        p.rmdir()
+    exc = assert_error(SplitError, 'SPLIT_STAGING_EXISTS', preflight, **check)
+    assert set(exc.paths) == set(map(str, leftovers))
+
+
+def test_dirty_checkout_refused_before_read(tmp_path, monkeypatch, capsys):
+    import trader.data.split as split
+    checkout = tmp_path / 'checkout'
+    checkout.mkdir()
+    def git(*args):
+        return subprocess.run(['git', '-C', str(checkout), *args], check=True, capture_output=True, text=True).stdout.strip()
+    git('init')
+    git('config', 'user.name', 'Synthetic Test')
+    git('config', 'user.email', 'synthetic@example.invalid')
+    tracked = checkout / 'tracked.txt'
+    tracked.write_text('one')
+    git('add', '.')
+    git('commit', '-m', 'synthetic initial')
+    monkeypatch.setattr(split, '_code_checkout', lambda: checkout)
+    assert split._clean_commit() == git('rev-parse', 'HEAD')
+    (checkout / 'untracked.txt').write_text('ignored by the specified tracked-only guard')
+    assert split._clean_commit() == git('rev-parse', 'HEAD')
+    tracked.write_text('two')
+    monkeypatch.setattr(split, '_parse_csv_dir', lambda *a: pytest.fail('must refuse before reading'))
+    assert split.main(['--source', str(tmp_path / 'source'), '--repo-root', str(checkout),
+                       '--agent-workspace', str(tmp_path / 'agent'), '--propose-holdout']) == 1
+    assert 'SPLIT_DIRTY_CHECKOUT' in capsys.readouterr().err
+    git('add', '.')
+    assert_error(split.SplitError, 'SPLIT_DIRTY_CHECKOUT', split._clean_commit)

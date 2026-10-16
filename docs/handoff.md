@@ -1,5 +1,15 @@
 # Handoff — read this first
 
+## Latest: T-008 implementation — Codex, 2026-10-16
+
+PR #13 is merged at `1d4529f`, preserving acceptance `7abbac3`. Implementation is on `t-008-backtest` from that main commit. Backtest spec v1.2 and the fixtures are unchanged; the data-spec §10 amendment was already present on main.
+
+Implemented the optional canonical open (raw v1 storage refuses it), bounded decision/admission adapter, schedules, synthetic simulator, shared-engine strategy generator, baselines, descriptive metrics and T-007 N1–N6. The buy affordability search is logarithmic rather than decrementing one share at a time; non-negative costs make it mathematically equivalent to the specified largest-affordable-quantity loop. Generators declare an explicit instrument set, including scripted generators, so unknown orders cannot expand admission scope. Baselines default to monthly; an explicit different named schedule is refused.
+
+Completed before the implementation commit: all 21 numeric fixture tests passed; admission/causality/generator tests passed, and storage follow-ups passed. Full clean-checkout verification follows this commit because the new dirty-checkout guard intentionally refuses the old CLI smoke test while tracked edits exist. The CSV test exporter now explicitly excludes the canonical `open=None` field (and asserts it is None); CSV acceptance assertions and all fixture values are unchanged.
+
+Synthetic tests only, no evaluation runs or registry entries. No real data, holdout, broker access, funding or spending. Next: full clean-checkout checks and CI, then Claude reviews the exact implementation commit. No merge authorised.
+
 ## Latest: Codex accepts T-008 v3 requirements — 2026-10-16
 
 Accepted at `4b896e2b80545224524fc14d18e8843dadbbee0d` (PR #13), backtest spec v1.2. No remaining blocking findings. This accepts the requirements, not an implementation or evidence of trading performance.
