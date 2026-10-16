@@ -186,8 +186,6 @@ def preflight(source, dev_out, holdout_out, repo_root, agent_workspaces):
     if any(_overlap(a, b) for i, a in enumerate(roots) for b in roots[i + 1 :]):
         raise SplitError("SPLIT_PATHS_OVERLAP", roots)
     existing = [p for p in (dev_out, holdout_out) if os.path.lexists(p)]
-    if existing:
-        raise SplitError("SPLIT_OUTPUT_EXISTS", existing)
     leftovers = []
     for output in (dev_out, holdout_out):
         if output.parent.exists():
@@ -196,8 +194,9 @@ def preflight(source, dev_out, holdout_out, repo_root, agent_workspaces):
                 for p in output.parent.iterdir()
                 if p.name.startswith(output.name + ".staging-")
             )
-    if leftovers:
-        raise SplitError("SPLIT_STAGING_EXISTS", sorted(leftovers))
+    if existing or leftovers:
+        code = "SPLIT_OUTPUT_EXISTS" if existing else "SPLIT_STAGING_EXISTS"
+        raise SplitError(code, sorted(set(existing + leftovers)))
     # Staging paths also need containment checks, before the source is read.
     check_holdout_path(_staging(holdout_out), repo_root, agent_workspaces)
     all_paths = (*roots, _staging(dev_out), _staging(holdout_out))
@@ -278,6 +277,24 @@ def _parser():
     return parser
 
 
+def _code_checkout():
+    return Path(__file__).resolve().parents[3]
+
+
+def _clean_commit():
+    root = _code_checkout()
+    status = subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=no"],
+        check=True, capture_output=True, text=True,
+    ).stdout
+    if status.strip():
+        raise SplitError("SPLIT_DIRTY_CHECKOUT", [root])
+    return subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+
 def main(argv=None):
     parser = _parser()
     args = parser.parse_args(argv)
@@ -302,24 +319,12 @@ def main(argv=None):
         file=sys.stderr,
     )
     try:
+        code_commit = _clean_commit()
         if args.propose_holdout:
             _guard_source(args.source, args.repo_root, args.agent_workspace)
             proposal = propose_holdout(_parse_csv_dir(args.source))
             print(json.dumps(asdict(proposal), default=str, sort_keys=True))
             return 0 if proposal.holdout_start else 1
-        # Pin the installed checkout, not an arbitrary --repo-root's git HEAD.
-        code_commit = subprocess.run(
-            [
-                "git",
-                "-C",
-                str(Path(__file__).resolve().parents[3]),
-                "rev-parse",
-                "HEAD",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
         manifests = run_split(
             args.source,
             args.holdout_start,

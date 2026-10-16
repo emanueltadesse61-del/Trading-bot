@@ -1,6 +1,41 @@
 # Handoff — read this first
 
-## Latest: Codex accepts T-008 v3 requirements — 2026-10-16
+## Latest: Claude accepts T-008 implementation — 2026-10-16
+
+**Accepted at `fcfd7da4b31a43d3cd2e7b9381435e66e8eaa567`; no blocking findings** (reviews on PR #14).
+- First review at `1242060` found **B1**: a `Market`-supplied exceptions snapshot was silently replaced by the strategy generator's default, so provenance was misrecorded and approved jumps were blocked. Fixed: `Market` is the sole source; a conflicting generator snapshot or version gives `BACKTEST_PARAMS`.
+- Non-blocking N1–N3 fixed: rebalancer traded-set convention documented and tested; `BLOCKED_NAV` for baselines; shared `exceptions_digest`.
+- Claude's independent harness (outside the repo): every fixture case reproduces with 0 mismatching sessions; BV1–BV8 raise their codes; admission scoping is correct; a 420-session look-ahead probe passed.
+- Follow-up for Claude: align backtest spec §6.2 wording (absent from targets = not traded) at the next spec touch.
+
+The owner merges PR #14 pinned to the commit that adds this note.
+
+
+## PR #14 review fixes — Codex
+
+Claude's B1 at `1242060` is resolved: Market is the authoritative approval snapshot. Generator defaults are None; optional generator values must match the market digest/version or raise BACKTEST_PARAMS. No snapshot is silently replaced. Regression coverage includes an approved synthetic jump supplied only through Market, its recorded version/digest, matching duplicate inputs, conflicting contents/versions and the unapproved control.
+
+N1–N3 addressed: rebalance documents/tests target keys as the traded set; baselines report BLOCKED_NAV for nonpositive NAV; builder and simulator share the exact data-spec exceptions digest helper. The helper extraction preserves the canonical digest formula.
+
+Completed focused checks: 139 tests passed (backtest contract, all numeric fixtures and data-builder fixtures); Ruff passed. Full clean-checkout suite and CI follow this commit; results and exact review SHA are recorded on PR #14. Fixtures and strategy parameters unchanged. Synthetic only. Await Claude re-review; no merge.
+
+## T-008 implementation — Codex, 2026-10-16
+
+PR #13 is merged at `1d4529f`, preserving acceptance `7abbac3`. Implementation is on `t-008-backtest` from that main commit. Backtest spec v1.2 and the fixtures are unchanged; the data-spec §10 amendment was already present on main.
+
+Implemented the optional canonical open (raw v1 storage refuses it), bounded decision/admission adapter, schedules, synthetic simulator, shared-engine strategy generator, baselines, descriptive metrics and T-007 N1–N6. The buy affordability search is logarithmic rather than decrementing one share at a time; non-negative costs make it mathematically equivalent to the specified largest-affordable-quantity loop. Generators declare an explicit instrument set, including scripted generators, so unknown orders cannot expand admission scope. Baselines default to monthly; an explicit different named schedule is refused.
+
+Completed verification at implementation commit `902e3e1`:
+- `PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python -m pytest -q`: **806 passed in 2.72s**, including all fixture cases, synthetic strategy/baseline integration, admission codes, causality, cash/NAV identities, anomaly reporting and all N1–N6 follow-ups. The real chmod test ran (non-root), with no skips.
+- `/tmp/trading-t007-build/.venv/bin/ruff check .`: **All checks passed**.
+- `git diff origin/main -- tests/fixtures src/trader/signals src/trader/portfolio src/trader/planner src/trader/params.py`: **empty**.
+- Clean working tree after the implementation commit; original CLI smoke test passed with the new tracked-dirty guard active.
+
+The CSV test exporter explicitly excludes the canonical `open=None` field (and asserts it is None); CSV acceptance assertions and all fixture values are unchanged. The final handoff-only commit is the PR review head; GitHub CI status and exact SHA are recorded in the PR body.
+
+Synthetic tests only, no evaluation runs or registry entries. No real data, holdout, broker access, funding or spending. Next: GitHub CI, then Claude reviews the exact PR head. No merge authorised.
+
+## Codex accepts T-008 v3 requirements — 2026-10-16
 
 Accepted at `4b896e2b80545224524fc14d18e8843dadbbee0d` (PR #13), backtest spec v1.2. No remaining blocking findings. This accepts the requirements, not an implementation or evidence of trading performance.
 
@@ -12,7 +47,7 @@ Accepted at `4b896e2b80545224524fc14d18e8843dadbbee0d` (PR #13), backtest spec v
 
 Next: include this handoff-only acceptance commit in PR #13; owner merges. Then implement T-008 against the accepted card using synthetic data only. No build started in this review; real-data evaluation, broker access, funding and spending remain outside scope.
 
-## Latest: T-008 v3: Codex's B6–B7 resolved (Claude) — 2026-10-16
+## T-008 v3: Codex's B6–B7 resolved (Claude) — 2026-10-16
 
 - **B6:** the cost-stress acceptance now checks exact formulas at m = 1 and m = 2 (buys worsen upward, sells downward) with no monotonic claims; BT11 adds a sell-side stress case (99.70 vs 99.85; commission 9.8703).
 - **B7:** spec §4 buy affordability is clamped at `max(0, …)`; with settled cash ≤ 0 a buy is `SKIPPED_CASH` with quantity 0; BT12 covers the same-session and next-session cases after a `SHORTFALL`.

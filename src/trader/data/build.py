@@ -39,6 +39,17 @@ def _approval_valid(value: str) -> bool:
         return False
 
 
+def exceptions_digest(exceptions):
+    """Canonical full-snapshot fingerprint (data spec section 7.1)."""
+    entries = sorted(
+        [{"instrument": e.instrument, "date": e.date.isoformat(),
+          "reason": e.reason, "approved": e.approved} for e in exceptions],
+        key=lambda e: (e["instrument"], e["date"]),
+    )
+    return hashlib.sha256(json.dumps(entries, sort_keys=True, separators=(",", ":"),
+                                       ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
 def build_dataset(
     calendar: Sequence[date], t: date, universe: Sequence[str],
     prices: Sequence[PriceRecord], distributions: Sequence[DistributionRecord],
@@ -95,13 +106,7 @@ def build_dataset(
                 destination = price_values if is_price else dividends
                 destination[r.instrument, d] = float(value) * params.UNITS[r.unit]
 
-    entries = sorted(
-        [{"instrument": e.instrument, "date": e.date.isoformat(),
-          "reason": e.reason, "approved": e.approved} for e in exceptions],
-        key=lambda e: (e["instrument"], e["date"]),
-    )
-    digest = hashlib.sha256(json.dumps(entries, sort_keys=True, separators=(",", ":"),
-                                       ensure_ascii=False).encode("utf-8")).hexdigest()
+    digest = exceptions_digest(exceptions)
     approved = set()
     for e in exceptions:
         if (e.instrument not in names or e.date not in sessions

@@ -10,6 +10,7 @@ class PriceRecord:
     date: date
     close: float | None
     unit: str
+    open: float | None = None
 
 
 @dataclass(frozen=True)

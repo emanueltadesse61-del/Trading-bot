@@ -39,7 +39,7 @@ original full-history export outside the repo and **every** agent workspace.
 Supply every workspace root; the guard cannot discover ones you omit. Run one
 split at a time, without moving paths or changing symlinks while it runs.
 
-The source directory requires four UTF-8, comma-separated files:
+The source directory requires four UTF-8 without BOM, comma-separated files:
 
 | File | Header |
 |---|---|
@@ -110,3 +110,28 @@ provenance. The digest is returned separately, not written into its own hashed
 manifest. Integrity is relative to these pinned values; the files are not signed.
 The builder still reports price-quality errors; storage validity does not prove
 that prices are tradable or that a strategy works.
+
+T-007 safety follow-ups: `trader-split` refuses tracked local edits with
+`SPLIT_DIRTY_CHECKOUT` (including proposal mode). Commit or discard those edits
+before importing so the recorded code version identifies the running checkout.
+`SPLIT_PARTITION_MISMATCH` means verification found a missing, duplicated or
+changed record across the two partitions; neither output is published.
+
+## Synthetic backtest machinery
+
+`trader.backtest` implements backtest spec v1.2. Construct `Market` with canonical
+records and an exchange calendar, a generator with explicit instruments, and
+`BacktestParams(HALF_SPREAD=...)`. Call `run_backtest` with date-valued `start`
+and `end` and either `schedule="weekly"`/`"monthly"` or explicit `decision_dates`.
+Results contain the daily ledger, decisions, descriptive metrics, anomaly totals
+and input provenance. Strategy generation reuses the accepted portfolio engine.
+Only synthetic use is supported at this stage. Registry, Gate 3 statistics and
+real-data opens/pay-date prerequisites remain separate cards. Raw storage rejects
+non-None opens with `OPEN_PRICES_UNSUPPORTED`; CSV headers remain unchanged.
+
+Supply the frozen jump-approval snapshot and version on `Market`. The strategy
+generator defaults both optional approval arguments to `None`, so it uses that
+market snapshot unchanged. If supplied, generator approval arguments are assertions
+that must match the market snapshot/version; conflicts raise `BACKTEST_PARAMS`.
+`rebalance` trades only target keys: an omitted held instrument is retained; an
+explicit zero target requests an exit. Baselines report `BLOCKED_NAV` for NAV ≤ 0.
