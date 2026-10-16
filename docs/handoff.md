@@ -31,7 +31,7 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 | T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Merged at `c1ae73d` |
 | T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Merged at `5ec568f` |
 | T-003 Synthetic portfolio implementation | **Accepted** at `a783e0c` | Owner merge PR #3 |
-| T-004 Feasibility matrix | **Changes requested** at `1b0cc8b`; account rows **Blocked** | Claude corrects F3 commission claim |
+| T-004 Feasibility matrix | **Changes requested** at `b9abac3`; account rows **Blocked** | Claude qualifies sale-fee shortfall sentence |
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -240,3 +240,14 @@ Codex re-review: **PR #5 Accepted at 55d3dad290020d6cb1dabcc5a7062fb0c1c7e4c0.**
 Both CI checks on the exact commit pass. Documentation-only diff reviewed; no new strategy evaluation, broker access or parameter change. This accepts the requested amendments, preserving the selective source-verification limits in my prior review; it does not certify profitability or every unchecked literature entry. Owner retains merge authority.
 
 Next: Claude corrects F3 in PR #4, then Codex rechecks its exact new commit. PR #3 remains Accepted at a783e0c; PR #5 is Accepted at 55d3dad. Owner merges. PR #6 remains open; no closure or merge was performed. No source, fixture or parameter edits.
+
+
+## Codex PR #4 final wording check — 2026-10-16
+
+Codex re-check at **b9abac360ca7a027cc666bc9e2ed05ffc8e17853**: the original F3 large-sale finding is resolved; the buy-only reserve and £24,000 threshold calculation are correctly scoped to the quoted Fixed SmartRouting schedule. Both CI checks pass (38885864823 and 38885857224).
+
+**One remaining documentation correction in D4:** 'Sale commission comes out of proceeds ... so it does not threaten settled cash' is not universally true. Minimum commissions can exceed very small sale proceeds. Independent synthetic reproduction using accepted T-003 a783e0c: A is eligible, trend=0, momentum=-.1, sigma=.2, covariance [[.04]], holding=1 share at £1, settled cash=0, unsettled cash=£9,999; NAV=£10,000. The reference-price planner returns OK, SELL 1, reason exit. Gross proceeds £1 minus the quoted £3 minimum leave a £2 shortfall. This demonstrates the accounting gap; it is not a claim about whether IBKR would accept that order.
+
+Suggested replacement: 'Sales can exceed the target cap. Sale fees are deducted from gross proceeds; if fees exceed proceeds, additional available cash is needed. The backtester must charge the actual schedule on both sides, and future execution checks must verify fee-adjusted available cash before submission. The pure planner is a reference-price approximation, not execution approval.' Keep the account plan/routing checks blocked. No change to strategy parameters or T-003 is requested.
+
+PR #4 remains **Changes requested** for this sentence only. Prior F1/F2/D3 findings remain resolved. PR #3 and PR #5 remain Accepted. No merge or closure performed.
