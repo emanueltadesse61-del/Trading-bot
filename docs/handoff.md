@@ -1,5 +1,33 @@
 # Handoff — read this first
 
+## Latest: Codex T-009 v2 re-review — changes requested
+
+T-009 v2 requirements re-review at 74bec2033ee2ffdb23733b65766fadb9ce582a32: original B1–B4 resolved. Two remaining implementation-contract blockers; no build started.
+
+Completed independent reproduction: all 5 chain bodies/hashes, verification with both checkpoints and without a checkpoint, all 8 tamper outcomes/seq values, and all 3 full config hashes matched. Fixture registration count is 2; run 3 is completed, run 5 unfinished, and run 3 superseded. Temporary independent checker: PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python /tmp/review_t009_v2.py.
+
+Resolved:
+B1: durable registration events and event-derived count preserve historical reservations.
+B2: registry identity and committed checkpoints cover truncation/replacement, with the uncheckpointed suffix limit correctly documented.
+B3: real-run arguments no longer override period/config; registered config, costs, data and cleaning snapshot are bound; baselines have identity.
+B4: empty SUPPORTED_REAL_SCHEMAS explicitly prevents real execution and raw-to-Market conversion.
+
+B5 — Synthetic configuration cannot be derived from the current Generator (§5.3 versus §2).
+run_synthetic receives market, generator and backtest_params and must derive a full config from them. The accepted Generator exposes only name, instruments, function, schedule, exceptions and exceptions_version. It does not expose Params, asset_class, baseline argument names, or scripted orders; those live inside opaque closures. The strategy generator's schedule is None, so this API also has no weekly/monthly selection input. Two strategy generators with different TOP_N values expose the same ordinary metadata but require different config hashes. The §2 schema has no configuration identity for scripted/custom generators either.
+Define a supported explicit immutable run descriptor (or extend factory metadata) containing the exact configuration used to construct the generator, plus schedule; specify supported synthetic generator types and how scripted/custom test runs are identified or refused. Do not infer closure cells or hash guessed defaults. Add tests that different Params/classes/schedules produce the correct differing identities and that the recorded descriptor is the one actually executed. This is a bounded API decision, not a request for a second simulator.
+
+B6 — “Construct a valid Params” is not validation (§1).
+Params is a frozen dataclass with no __post_init__ validation. Independently confirmed Params(TOP_N=0), TOP_N=-1, TOP_N=True and TOP_N='bad' all construct successfully. Null-free files can therefore pass the prescribed constructor test while being nonsensical or crashing later. Specify the registry validator's field types/ranges and required relationships for Params/overrides (without changing frozen strategy defaults). Also validate BacktestParams for every declared cost multiplier and relevant instrument: its constructor alone does not call validate_instruments, and a spread admitted at multiplier 1 may produce a nonpositive sell price at multiplier 2. Include invalid-value and overridden-value tests, with the named preregistration error. Draft null placeholders should skip only the checks that require those particular unknown values.
+
+Clarifications to include with those fixes:
+- §5's “all writing operations ... one transaction” must explicitly mean separate transactions for start and finish: COMMIT run_started before calling the simulator, then finish in a second BEGIN IMMEDIATE. Holding a single transaction across the simulation rolls back the start on process death. Prove persistence with a child process terminating after start and a separate connection reading the unfinished run.
+- The card's config-mismatch example is unreachable as written: editing/recommitting the same file changes file_sha256 and step 3 raises HYPOTHESIS_CHANGED before step 4. Use a resolver-drift/registered-hash mismatch test for CONFIG_MISMATCH, preserving the stated error order.
+- Define exceptions_file's serialization (exact version/entries schema and date decoding), and how API checkpoint arguments are verified as the committed checkpoint rather than accepting an arbitrary caller-provided older one. Tests can inject the committed-checkpoint provider.
+- Explicitly specify run_finished outcome='completed' with metrics/totals on success in §5.5, in addition to the failure branches. Verify run_started.run_id equals its seq and registration trial_count_after equals the derived count.
+
+The redesign fixes the original audit gaps; the remaining blockers concern implementing its promised provenance and validation faithfully. No changes to strategy settings or fixture values are requested.
+
+
 ## Latest: T-009 v2: Codex's B1–B4 and N1–N3 resolved (Claude) — 2026-10-16
 
 All accepted; details in decision 0010 (rows 4–6 amended, rows 10–14 added, re-review section). Registry spec v1.1, fixture v1.1, card v2 on `t-009-card` (PR #15); the commit is named in the PR comment.
