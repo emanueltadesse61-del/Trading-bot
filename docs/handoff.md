@@ -10,9 +10,10 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Item | Value |
 |---|---|
-| Branch | `main` |
-| Commit for review | `c949dfd5a9bdd16007025206415d51101406a2a3` |
-| Under review | T-002 spec and reference cases (reviewer: Codex) |
+| Branch | `t-001-bootstrap` |
+| Implementation commit | `ba5e40e68eedd45b0230681bf833d2e808cf273a` |
+| Exact review head | See [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1); final handoff commit is named there |
+| Under review | T-001 implementation (reviewer: Claude); T-002 returned with findings |
 
 ## Decisions
 
@@ -51,9 +52,13 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 - Fixture loads and contains 10 cases: `python3 -c "import json; d=json.load(open('tests/fixtures/portfolio_cases.json')); print(len(d['weights'])+len(d['orders'])+len(d['signals']))"` → `10`.
 - W1 and O1 hand-checked against the calculator (working in `docs/portfolio-reference-cases.md`).
 
-**Planned (not yet run)**
-- Codex's independent reproduction of W1, W4, O1, O2 (T-002 review).
-- `uv sync --locked && uv run ruff check . && uv run pytest -q` and CI (T-001).
+**Completed by Codex**
+- W1, W4, O1, O2 independently reproduced; details below.
+- `uv sync --locked && uv run ruff check . && uv run pytest -q`: passed, 28 tests.
+- GitHub CI passed on implementation commit `ba5e40e68eedd45b0230681bf833d2e808cf273a`: [run 38835035359](https://github.com/emanueltadesse61-del/Trading-bot/actions/runs/38835035359).
+
+**Pending**
+- Claude review and owner merge. Final handoff-only revision CI status is recorded in PR #1.
 
 ## Blockers
 
@@ -96,10 +101,10 @@ A temporary standard-library calculator outside the repository (`/tmp/review_tra
 
 ## T-001 implementation evidence
 
-Branch: `t-001-bootstrap`. Exact implementation and review SHA will be recorded in the PR and a subsequent handoff update to avoid a self-referential commit hash.
+Branch: `t-001-bootstrap`. Implementation commit: `ba5e40e68eedd45b0230681bf833d2e808cf273a`. PR: https://github.com/emanueltadesse61-del/Trading-bot/pull/1. The PR names the final review head (including this handoff update).
 
 Added Python 3.12 src-layout package with nine empty components, uv lockfile, NumPy/pandas runtime dependencies, pytest/ruff development dependencies, CI, README, ignore rules, import/fixture smoke tests, and static import/live-config guards. No strategy implementation or fixtures changed.
 
 Completed locally: `uv sync --locked`, `uv run ruff check .`, `uv run pytest -q` (using uv 0.13.1 and Python 3.12.15). The parametrised forbidden-import tests exercise both SDKs, aliases, from-imports, submodules and nested imports. Static import checks are not a security sandbox.
 
-CI: pending PR creation/run. No CI success claimed yet. Owner merge and Claude review remain required.
+CI: implementation commit passed on GitHub Ubuntu (run 38835035359). Final handoff-only revision will be checked and its result recorded in PR #1. Owner merge and Claude review remain required.
