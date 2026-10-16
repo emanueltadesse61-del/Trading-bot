@@ -10,10 +10,8 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Item | Value |
 |---|---|
-| Branch | `t-001-bootstrap` |
-| Implementation commit | `ba5e40e68eedd45b0230681bf833d2e808cf273a` |
-| Exact review head | See [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1); final handoff commit is named there |
-| Under review | T-001 implementation (reviewer: Claude); T-002 returned with findings |
+| T-001 | [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1) at `3332ccd8ebce7479cc78aea471f58c905c362099`: Claude review posted, **no blocking findings**; awaiting owner merge |
+| T-002 v1.2 | [PR #2](https://github.com/emanueltadesse61-del/Trading-bot/pull/2), branch `t-002-spec-fixes`; exact commit named in the PR comment. Reviewer: Codex |
 
 ## Decisions
 
@@ -30,9 +28,9 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Task | State | Owner of next step |
 |---|---|---|
-| T-001 Repository bootstrap | **Review** | Claude reviews PR; owner merges |
-| T-002 Portfolio spec + reference cases | **Changes requested** | Claude resolves findings below in decision records |
-| T-003 Synthetic portfolio implementation | Draft (Ready when T-002 Accepted and T-001 merged) | — |
+| T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Owner merges PR #1 |
+| T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Owner merges PR #2 after PR #1 |
+| T-003 Synthetic portfolio implementation | Draft (T-002 Accepted; waiting for T-001 merge) | Owner merge; then Codex implementation |
 | T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
@@ -43,12 +41,15 @@ Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files r
 |---|---|---|
 | Bootstrap documents, templates, task cards | `c949dfd` | Files listed below |
 | T-002 deliverables (Claude) | `c949dfd` | Reference values computed by Claude's own calculator, kept outside the repo |
+| T-001 review (Claude) | `3332ccd` | [Review on PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1#pullrequestreview-5541923875) |
+| T-002 v1.1: spec, protocol §6, fixture (26 cases), decision 0002 | branch `t-002-spec-fixes` | `docs/decisions/0002-t002-review-resolutions.md` |
+| T-002 v1.2: B5 variance numerics (spec §2.2), W8, V9, T-002 card cleanup | branch `t-002-spec-fixes` | `docs/decisions/0003-portfolio-volatility-numerics.md`; 28 cases; all 26 earlier cases unchanged value-for-value |
 
 Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture.md`, `docs/research-protocol.md`, `docs/portfolio-spec.md`, `docs/portfolio-reference-cases.md`, `docs/decisions/0001-record-decisions.md`, `docs/tasks/T-001…T-004`, `.github/ISSUE_TEMPLATE/task-card.md`, `.github/pull_request_template.md`, `tests/fixtures/portfolio_cases.json`.
 
 ## Checks
 
-**Completed**
+**Historical bootstrap checks (10 cases at v1; current v1.2 has 28)**
 - Fixture loads and contains 10 cases: `python3 -c "import json; d=json.load(open('tests/fixtures/portfolio_cases.json')); print(len(d['weights'])+len(d['orders'])+len(d['signals']))"` → `10`.
 - W1 and O1 hand-checked against the calculator (working in `docs/portfolio-reference-cases.md`).
 
@@ -57,8 +58,13 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 - `uv sync --locked && uv run ruff check . && uv run pytest -q`: passed, 28 tests.
 - GitHub CI passed on implementation commit `ba5e40e68eedd45b0230681bf833d2e808cf273a`: [run 38835035359](https://github.com/emanueltadesse61-del/Trading-bot/actions/runs/38835035359).
 
+**Completed by Claude (T-002 v1.1)**
+- Fixture regenerated with Claude's independent calculator (outside the repo): 7 weight, 10 order, 1 signal and 8 invalid-input cases; strict JSON (`allow_nan=False`).
+- All v1 expected weights and orders unchanged. Only O1 `k`/`buy_need` and O2 `buy_need` moved, because of the commission reserve.
+- `tests/unit/test_smoke.py` fixture-name list updated for the new cases and passes. Claude's workspace can't reach PyPI, so the full `uv` run is left to CI on the T-002 PR.
+
 **Pending**
-- Claude review and owner merge. Final handoff-only revision CI status is recorded in PR #1.
+- Owner merges PR #1, then accepted PR #2. No specification blockers remain from this review.
 
 ## Blockers
 
@@ -67,12 +73,12 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Claude: resolve T-002 findings below with spec amendments/evidence and decision records.
-2. Claude: review T-001 at the exact full SHA in the PR handoff.
-3. Owner: decide the stop-date convention and budget when ready; neither blocks T-001.
-4. T-003 remains Draft until T-002 is accepted and T-001 is merged.
+1. Owner: merge PR #1 (T-001), then PR #2 (T-002) once Codex accepts it.
+2. T-002 v1.2 accepted by Codex at the exact revision recorded below; no further spec review requested.
+3. When T-002 is Accepted and T-001 merged, T-003 becomes Ready for Codex.
+4. Owner: decide the stop-date convention and budget when ready; neither blocks the work above.
 
-## Codex T-002 review — 2026-10-16
+## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
 Review base: `c949dfd5a9bdd16007025206415d51101406a2a3`; checkout base `8b7d331` adds only the handoff SHA. No spec or fixture changes made. T-002 is **Changes requested**, not Accepted. Findings do not block the independent empty T-001 skeleton.
 
@@ -108,3 +114,50 @@ Added Python 3.12 src-layout package with nine empty components, uv lockfile, Nu
 Completed locally: `uv sync --locked`, `uv run ruff check .`, `uv run pytest -q` (using uv 0.13.1 and Python 3.12.15). The parametrised forbidden-import tests exercise both SDKs, aliases, from-imports, submodules and nested imports. Static import checks are not a security sandbox.
 
 CI: implementation commit passed on GitHub Ubuntu (run 38835035359). Final handoff-only revision will be checked and its result recorded in PR #1. Owner merge and Claude review remain required.
+
+## Codex v1.1 re-review — 2026-10-16
+
+**Reviewed exact revision:** `c457ca55448cd46cace5c64a39cc3f9c687256ab` (PR #2). B1, B2, B3 and B4 are resolved for their reported scenarios; N1's commission-reserve scope and N2's added coverage are accepted. One newly introduced numerical boundary needs a defined outcome. T-002 remains **Changes requested**; no T-003 implementation started. PR #1 was still open/unmerged when checked.
+
+### B5 — Blocking: tolerated covariance can produce undefined volatility
+
+**Sections:** portfolio spec §2.1 (`PSD_TOL`) and §5.6 / §6.3 (quadratic-form square roots).
+
+The validity rule accepts a smallest eigenvalue as low as −1e-12, but the downstream formula unconditionally evaluates `sqrt(w.T @ cov @ w)`. An accepted input can therefore have no real-valued result. Example: two assets, covariance `[[0.04, -0.0400000000005], [-0.0400000000005, 0.04]]`, weights `[0.25, 0.25]`. The smallest eigenvalue is approximately −5e-13 (within tolerance), while variance is approximately −6.25e-14. Both diagonal variances are positive; direct square root fails. A still smaller one-asset counterexample is covariance `[[-5e-13]]`, weight .25: accepted eigenvalue, variance −3.125e-14, `math.sqrt` raises `ValueError`.
+
+**Requested resolution:** define one consistent tolerance-safe volatility calculation for targets and both planner checks (for example, after covariance validity checks, symmetrise within the permitted asymmetry and clamp tolerated negative quadratic-form roundoff to zero), or reject all negative eigenvalues and revise the tolerance rule. State the chosen policy in the decision record and add a boundary reference case. Codex has not chosen or implemented the policy.
+
+### Non-blocking documentation cleanup
+
+T-002's task card still describes 5/4/1 fixtures and old subsection numbers, while v1.1 has 7 weight, 10 order, 1 signal and 8 invalid-input cases. The handoff's earlier 10-case load entry is historical, not a current count. Update these labels during the amendment; no fixture result depends on them.
+
+### Independent reproduction and checks
+
+Temporary calculation script outside the repository: `/tmp/review_t002_v11.py`; command `python3 /tmp/review_t002_v11.py` passed all assertions, then reproduced B5 with a caught square-root domain error. Only synthetic fixtures were used.
+
+- S1: 253 distinct ordered dates; STALE is missing at index 252 (decision date), GAP at index 100. Both independently classify as `missing_data`. SHORT has leading missing values 0–52 and is `insufficient_history`. All three eligible series' returns, trend scores, momentum, volatility, and the entire annualised covariance matrix match within 1e-8.
+- O7: empty eligible set and held P -> `BLOCKED_HELD_INELIGIBLE`; no sale.
+- O9: NAV £10,000; proposed Y buy 250 shares; buffered need plus reserve £2,515.50; settled cash zero -> k=0. Actual X weight .25 has volatility .125; Y is already in S, so nothing new can be added -> `BLOCKED_CONSTRAINTS` after one pass, no orders.
+- V2: covariance asymmetry 1e-6 > SYM_TOL 1e-12 -> `INVALID_COVARIANCE`.
+- `uv sync --locked --offline`: passed using cached dependencies.
+- `uv run --offline ruff check .`: all checks passed.
+- `uv run --offline pytest -q`: 28 passed. These are skeleton/guard/fixture-name tests; no trading implementation exists yet.
+- GitHub CI on c457ca5: push run 38835875431 and PR run 38835897171 both succeeded.
+
+Specs, reference fixtures, and source code unchanged by this review. The only repository edit is this handoff update; the PR comment records the reviewed spec SHA separately from the handoff commit. No orders, real data, holdout access, purchases, merge or deployment.
+
+## Codex v1.2 acceptance — 2026-10-16
+
+**T-002 Accepted.** Reviewed specification revision: `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` in PR #2. B5 is resolved by decision 0003 and spec §2.2. No blocking findings remain. The target calculation (§5 step 6), actual-portfolio check (§6.3 step 3) and post-trade check (§6.3 step 6) all reference the shared volatility rule; zero volatility explicitly skips scaling. Materially invalid covariance still fails validation rather than being hidden by clamping.
+
+Independent calculator: `/tmp/review_t002_v12.py`, outside the repository. Command: `python3 /tmp/review_t002_v12.py`. Used the analytic eigenvalue formula for a symmetric 2x2 matrix and direct quadratic-form summation, independent of Claude's calculator.
+
+- W8: minimum eigenvalue −4.999958780338432e-13; variance −6.24994847542304e-14; accepted within tolerance, volatility 0, scale 1, weights .25/.25, cash .50. Matches fixture.
+- V9: minimum eigenvalue −1.000000082740371e-11, below −1e-12; `INVALID_COVARIANCE`. Matches fixture.
+- Compared all 26 pre-existing fixture cases against c457ca5: unchanged, including inputs, expectations and descriptions. Two cases added; total now 28.
+- `uv sync --locked --offline`: passed.
+- `uv run --offline ruff check .`: all checks passed.
+- `uv run --offline pytest -q`: 28 passed. These remain skeleton/guard/fixture-list checks, not an implemented strategy test suite.
+- GitHub CI on the exact reviewed revision: push run 38836464917 and PR run 38836469395 both succeeded.
+
+Only this handoff was edited for acceptance; no spec, fixture or source changes. PR #1 and PR #2 remained open/unmerged at review time. T-003 has not started and remains blocked by the T-001 merge prerequisite. Owner should merge PR #1 then PR #2; acceptance does not authorise trading, spending, deployment or an agent merge.
