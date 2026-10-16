@@ -1,0 +1,73 @@
+{
+ "version": "1.0",
+ "generator": "Claude reference (outside the repo)",
+ "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+ "canonical_json": "json.dumps(x, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)",
+ "row_hash": "sha256(prev_hash + '\\n' + body) over UTF-8, hex",
+ "chain": [
+  {
+   "seq": 1,
+   "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+   "body": "{\"checkout_clean\":true,\"code_commit\":\"7d0e020dfb3536deb9bd9a3ae4be324a104e939c\",\"config_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"cost_multiplier\":1,\"data\":{\"dataset_id\":null,\"kind\":\"synthetic\",\"manifest_digest\":null,\"partition\":\"synthetic\"},\"exceptions_digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"exceptions_version\":\"synthetic-v1\",\"hypothesis_commit\":null,\"hypothesis_id\":\"SYNTHETIC\",\"hypothesis_sha256\":null,\"kind\":\"strategy\",\"note\":\"Prix fixe £10,000 — UTF-8 check\",\"period\":{\"end\":\"2024-01-19\",\"start\":\"2024-01-08\"},\"run_id\":1,\"schedule\":\"weekly\",\"seq\":1,\"supersedes\":null,\"timestamp_utc\":\"2026-10-16T21:00:00Z\",\"type\":\"run_started\",\"variant_id\":\"S1\"}",
+   "row_hash": "a1b0ccba4c13bdb67d2d1d64881eb331b9f84cce8d514223cb067ddea355de1b"
+  },
+  {
+   "seq": 2,
+   "prev_hash": "a1b0ccba4c13bdb67d2d1d64881eb331b9f84cce8d514223cb067ddea355de1b",
+   "body": "{\"error\":null,\"metrics\":{\"ann_return\":0.0123,\"sharpe\":null,\"undefined\":{\"sharpe\":\"SHORT_SERIES\"}},\"outcome\":\"completed\",\"run_id\":1,\"seq\":2,\"timestamp_utc\":\"2026-10-16T21:00:05Z\",\"totals\":{\"commission\":6.0},\"type\":\"run_finished\"}",
+   "row_hash": "46203bbf9559451fd0be41fc1871b2ae5df7fba770c01fa29f343b352eb6eaed"
+  },
+  {
+   "seq": 3,
+   "prev_hash": "46203bbf9559451fd0be41fc1871b2ae5df7fba770c01fa29f343b352eb6eaed",
+   "body": "{\"checkout_clean\":false,\"code_commit\":\"7d0e020dfb3536deb9bd9a3ae4be324a104e939c\",\"config_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"cost_multiplier\":2,\"data\":{\"dataset_id\":null,\"kind\":\"synthetic\",\"manifest_digest\":null,\"partition\":\"synthetic\"},\"exceptions_digest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"exceptions_version\":\"synthetic-v1\",\"hypothesis_commit\":null,\"hypothesis_id\":\"SYNTHETIC\",\"hypothesis_sha256\":null,\"kind\":\"strategy\",\"note\":\"\",\"period\":{\"end\":\"2024-01-19\",\"start\":\"2024-01-08\"},\"run_id\":3,\"schedule\":\"weekly\",\"seq\":3,\"supersedes\":1,\"timestamp_utc\":\"2026-10-16T21:01:00Z\",\"type\":\"run_started\",\"variant_id\":\"S1\"}",
+   "row_hash": "d16608e499a3656198f8ec864a0bbee1431b6bc162882e2ba2db6481e2c6eb36"
+  }
+ ],
+ "tamper_cases": [
+  {
+   "name": "edit_body",
+   "description": "Change seq 2 outcome to 'failed' in the stored body",
+   "first_bad_seq": 2
+  },
+  {
+   "name": "delete_row",
+   "description": "Remove seq 2",
+   "first_bad_seq": 2
+  },
+  {
+   "name": "swap_rows",
+   "description": "Exchange the bodies of seq 1 and 3",
+   "first_bad_seq": 1
+  }
+ ],
+ "config_hash_case": {
+  "config": {
+   "schedule": "weekly",
+   "universe": [
+    "SYN_A",
+    "SYN_B"
+   ],
+   "asset_class": {
+    "SYN_A": "equity",
+    "SYN_B": "bond"
+   },
+   "params": {
+    "TREND_LOOKBACKS": [
+     63,
+     126,
+     252
+    ],
+    "TOP_N": 4
+   },
+   "backtest_params": {
+    "HALF_SPREAD": {
+     "SYN_A": 0.001,
+     "SYN_B": 0.001
+    },
+    "COST_MULTIPLIER": 1
+   }
+  },
+  "config_hash": "47bc6cde5522b62a0cf3e87846bbc4bc256e4a5f30a2f52760c042987c036488"
+ }
+}

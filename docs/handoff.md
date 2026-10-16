@@ -1,6 +1,18 @@
 # Handoff — read this first
 
-## Latest: Claude accepts T-008 implementation — 2026-10-16
+## Latest: T-009 card drafted (Claude) — 2026-10-16
+
+PR #14 (T-008) was merged by the owner's instruction as `7d0e020`. Branch `t-009-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
+
+Contents:
+- `docs/registry-spec.md` v1.0: pre-registration file contract (one `json preregistration` block; frozen = complete), canonical `config_hash`, SQLite append-only events with triggers and a SHA-256 hash chain, `run_started`/`run_finished` events, the real-data gate (clean checkout, frozen file, pinned development dataset, holdout refused, file pinned at first run, ≤ 20 declared variants), summary with `trial_count`.
+- `research/hypotheses/H-001.md` (**draft**): mechanism, rules by reference, variants V1 (primary) and V2, V3 (robustness, never promotable), expected behaviour, Gate 3 falsification. The contract is checked against the `Params` and `BacktestParams` defaults. Half-spreads, distribution lag, dataset and period are `null` until the owner freezes it from evidence.
+- `tests/fixtures/registry_cases.json`: hash-chain, tamper and config-hash vectors from Claude's reference outside the repo, verified a second way.
+- `docs/decisions/0010-registry-and-preregistration.md`, and backtest spec v1.2.1 (§6.2 traded-set wording and `BLOCKED_NAV`; §12 H-001 variants).
+- `docs/tasks/T-009-experiment-registry.md`.
+
+
+## Claude accepts T-008 implementation — 2026-10-16
 
 **Accepted at `fcfd7da4b31a43d3cd2e7b9381435e66e8eaa567`; no blocking findings** (reviews on PR #14).
 - First review at `1242060` found **B1**: a `Market`-supplied exceptions snapshot was silently replaced by the strategy generator's default, so provenance was misrecorded and approved jumps were blocked. Fixed: `Market` is the sole source; a conflicting generator snapshot or version gives `BACKTEST_PARAMS`.

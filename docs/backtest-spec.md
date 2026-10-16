@@ -1,6 +1,6 @@
-# Backtest Specification (v1.2)
+# Backtest Specification (v1.2.1)
 
-Status: **Review — v1.2 awaiting Codex's re-check (T-008).** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections).
+Status: **Review — v1.2 awaiting Codex's re-check (T-008).** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections). v1.2.1 aligns §6.2 with the accepted T-008 implementation (Claude's review note N1, `BLOCKED_NAV`) and §12 with decision 0010. No behaviour change.
 
 This document defines how the daily simulator turns market records, a schedule and an order generator into fills, cash, daily equity and metrics. It reuses the accepted signal, target and planner code unchanged (`docs/portfolio-spec.md`) and the data layer (`docs/data-spec.md`). Reference cases: `tests/fixtures/backtest_cases.json`, computed by Claude's own calculator outside the repository (§11).
 
@@ -152,10 +152,12 @@ At decision `d`:
 ### 6.2 Baseline rebalancer
 
 Baselines use one simple rebalancer, **not** the strategy planner. The planner's volatility ceiling would block a 60/40 portfolio, and baselines have no ceiling. Given target weights `w`, at decision `d`:
+- If NAV ≤ 0, record `BLOCKED_NAV`; no orders.
 - Build with the point-in-time inputs of §2.3 over the baseline's instruments. If `data_ok` is false, record `BLOCKED_DATA`; no orders.
 - `NAV` as in §3.4. Actual weights `a_i = q_i P_i / NAV`, with `P_i = trade_close` at `d`.
 - Instruments with no `P_i` at `d` are **not traded**: never sold or bought for missing data.
-- Trade set: `|a_i − w_i| > BAND + TOL`, or `w_i = 0` and `q_i > 0`. Target shares `q*_i = floor(w_i × NAV / P_i + FLOOR_EPS)`.
+- **The keys of `w` are the traded set.** An instrument absent from `w` is not traded at `d`, even if held; only an explicit `w_i = 0` exits (this is how the moving-average rule says "not traded").
+- Trade set, among the keys of `w`: `|a_i − w_i| > BAND + TOL`, or `w_i = 0` and `q_i > 0`. Target shares `q*_i = floor(w_i × NAV / P_i + FLOOR_EPS)`.
 - Settled-cash limit exactly as portfolio spec §6.3 step 5 (`BUY_BUFFER`, `COMMISSION_RESERVE` per buy, scale factor `k`, floor).
 - Drop zero deltas. Sells first, then buys, each in ascending `id`.
 
@@ -252,4 +254,4 @@ Produced by Claude's independent calculator; tolerance 1e-12 relative, 1e-9 abso
 | Data: open prices in raw datasets | Raw-dataset schema v2 with `open`; CSV column; T-007 split and reader updated; distribution **pay-date** evidence, or an owner-approved `DISTRIBUTION_LAG` approximation with a sensitivity run | Any backtest on real data |
 | Gate 3 statistics | Paired monthly ΔSR, stationary block bootstrap, walk-forward windows by calendar year, simpler-rule test | Any Gate 3 result |
 | Experiment registry | SQLite append-only rows (protocol §2), with code commit (clean-checkout rule), config hash, dataset ids and manifest digests | Any run on real data |
-| Pre-registration | `research/hypotheses/H-001…H-003` (primary and two comparisons, decision 0008) | Any run on real data |
+| Pre-registration | `research/hypotheses/H-001` with variants V1–V3 (decisions 0008, 0010), frozen by the owner from evidence | Any run on real data |
