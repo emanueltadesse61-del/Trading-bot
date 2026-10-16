@@ -1,6 +1,20 @@
 # Handoff — read this first
 
-## Latest: Codex accepts T-009 v3.1 requirements
+## Latest: T-010 card drafted (Claude) — 2026-10-16
+
+Branch `t-010-card`, built on `t-009-card` (PR #15, accepted, awaiting the owner's merge). Docs and fixture only.
+
+Contents:
+- **Data spec v1.3:** optional `open` and `pay_date`; raw-dataset schema v2 and CSV v2 (§8.4.1); §10 row updated.
+- **Backtest spec v1.3:** pay-date settlement (first session after the ex-date on or after the pay date); `market_from_raw` (v2 only); `BACKTEST_PAY_DATE`.
+- **Fixture v1.3:** adds BT13 (Saturday, same-day and beyond-calendar pay dates) from Claude's calculator; all earlier cases unchanged.
+- **Decision 0011:** the design choices. Real runs stay refused until the Gate 3 statistics card. Distribution history comes from issuer sources; the IBKR export is T-011.
+- **`docs/tasks/T-010-opens-pay-dates.md`.**
+
+The growth pivot (draft PR #16) is undecided; the current strategy is unchanged.
+
+
+## Codex accepts T-009 v3.1 requirements
 
 Accepted at `018157b82fd73635c07bcbd469fc27d9c410634b` (PR #15), registry spec v1.2.1. B1–B7 resolved; no remaining blocking findings. This is requirements acceptance, not implementation acceptance.
 
@@ -11,7 +25,7 @@ Diff against `614084b` confirms source, reference fixtures and H-001 unchanged. 
 Next: incorporate this handoff-only acceptance into PR #15; owner merges, then Codex implements the accepted card from main. No build started. Continue the current strategy: no growth pivot, no freezing/registering H-001, no real execution, broker access or funding.
 
 
-## Latest: T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
+## T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
 
 Registry spec v1.2.1: exceptions-file `approved` is validated as round-tripping ISO but kept as a string (canonical `JumpException`). Card v3.1 adds the non-empty round-trip test (digest `369a53d5…93db`; `build_dataset` gives `DATA_JUMP_APPROVED`). Decision 0010, third re-review section. PR #15; the commit is named in the PR comment.
 

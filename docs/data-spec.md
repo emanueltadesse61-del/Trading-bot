@@ -1,4 +1,4 @@
-# Data Layer Specification (v1.2.1)
+# Data Layer Specification (v1.3)
 
 Status: **v1.2.1 in review (T-007 requirements); §1–6 and §9 accepted in v1.1.1; §7.1 has a one-sentence provenance correction.** Author: Claude. Last updated: 2026-10-16.
 
@@ -29,8 +29,10 @@ A list of trading-session dates for the exchange (London Stock Exchange, `XLON`)
 
 ### 2.2 Canonical records (what every adapter produces)
 
-**Price record:** `instrument`, `date`, `close` (unadjusted last close), `unit`.
-**Distribution record:** `instrument`, `ex_date`, `amount` (per share), `unit`.
+**Price record:** `instrument`, `date`, `close` (unadjusted last close), `unit`, and (v1.3) optional `open` (unadjusted official open, same unit; `None` = unknown).
+**Distribution record:** `instrument`, `ex_date`, `amount` (per share), `unit`, and (v1.3) optional `pay_date`. `pay_date` is the date the cash is paid, which must be on or after `ex_date`. It is announced with the distribution, so it is an attribute of that event, not a separate market observation.
+
+`build_dataset` ignores `open` and `pay_date`. They are used only by the backtester (backtest spec §3).
 
 - `unit` comes from the **feed's metadata** for that record or instrument. It is never inferred from a fund name or a web page (feasibility D3).
 - Allowed units: `GBP` and `GBX` (pence). Any other unit is an error.
@@ -183,6 +185,33 @@ Declaration dates (`corporate_actions_none_through`, `checked_on`) are **attesta
 
 These checks give **integrity** against a pinned manifest, not authenticity. Someone able to replace both the files and the manifest can forge a dataset, so runs pin `dataset_id` (and `manifest_digest` where provenance matters).
 
+### 8.4.1 Schema v2: opens and pay dates (v1.3, T-010)
+
+Schema `trading-bot/raw-dataset/v2` is identical to v1 except:
+
+| File | v2 change |
+|---|---|
+| `prices.parquet` | Adds column `open` (float64, nullable) |
+| `distributions.parquet` | Adds column `pay_date` (date32, **not null**) |
+| `manifest.json` | `schema` = `trading-bot/raw-dataset/v2` |
+
+Rules:
+- `dataset_id` uses the same formula with the v2 schema string, so a v2 dataset never shares an id with a v1 one.
+- `read_raw_dataset` reads **both** schemas. v1 records get `open = None` and `pay_date = None`. A v2 dataset additionally requires every `pay_date ≥ ex_date` (`DATASET_MANIFEST_MISMATCH`, field `pay_date`).
+- `write_raw_dataset(dataset, directory, *, provenance, schema)` takes `schema` as `"v1"` or `"v2"`, with no default:
+  - **v1** keeps refusing non-`None` opens (`OPEN_PRICES_UNSUPPORTED`) and refuses any `pay_date` (`PAY_DATES_UNSUPPORTED`);
+  - **v2** requires a `pay_date` on every distribution (`DATASET_MANIFEST_MISMATCH`, field `pay_date`).
+- Partition rules (§8.4) still apply to market events only: `date` and `ex_date`, not `open` or `pay_date`. A development distribution whose `pay_date` falls on or after `holdout_start` is allowed: the payment date was announced before the ex-date and carries no later price information.
+
+**CSV format v2** (canonical import, T-007 extended). The version is chosen by the `prices.csv` header, and `distributions.csv` must match it (otherwise `IMPORT_BAD_HEADER`):
+
+| File | v1 header | v2 header |
+|---|---|---|
+| `prices.csv` | `instrument,date,close,unit` | `instrument,date,open,close,unit` |
+| `distributions.csv` | `instrument,ex_date,amount,unit` | `instrument,ex_date,pay_date,amount,unit` |
+
+In v2, an empty `open` means `None`; any other value must be a decimal number (`IMPORT_BAD_NUMBER`). `pay_date` is required ISO (`IMPORT_BAD_DATE`) and must be ≥ `ex_date` (`IMPORT_PAY_BEFORE_EX`). A v2 import produces a v2 raw dataset through `trader-split`; a v1 import still produces v1.
+
 ### 8.5 Declarations required for real data (v1.2)
 
 Each instrument in an import needs one row in `declarations.csv`, stored as `declarations.parquet`, made by the owner from source evidence:
@@ -240,5 +269,5 @@ Every case also gives the expected `exceptions_digest`.
 | Share splits and other non-cash corporate actions | Not supported. Real use requires a §8.5 declaration that none occurred; otherwise the instrument is unusable until split support is specified |
 | Incomplete distribution history | Real use requires `distributions_complete = true` (§8.5); a missing export is never treated as "no payments" |
 | Distributions in a currency other than GBP or GBX | Rejected by `DATA_UNKNOWN_UNIT` |
-| Next-session open prices for fills | T-008 adds an optional `open` field to the canonical price record. Raw-dataset storage and CSV import refuse non-`None` opens until a data card adds raw-dataset schema v2. No backtest result on real data is used before that card is merged (decision 0009) |
+| Next-session open prices for fills | Raw-dataset schema v2 and CSV v2 (§8.4.1, T-010). Real-data backtests remain refused by the registry until the Gate 3 statistics card enables them |
 | FX conversion, intraday data | Not in v1 |

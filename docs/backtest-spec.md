@@ -1,6 +1,6 @@
-# Backtest Specification (v1.2.1)
+# Backtest Specification (v1.3)
 
-Status: **Accepted (T-008); implemented and merged at `7d0e020`.** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections). v1.2.1 aligns §6.2 with the accepted T-008 implementation (Claude's review note N1, `BLOCKED_NAV`) and §12 with decision 0010. No behaviour change.
+Status: **v1.2.1 accepted and implemented (T-008, `7d0e020`); v1.3 (pay dates, `market_from_raw`) in review (T-010).** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections). v1.2.1 aligns §6.2 with the accepted T-008 implementation (Claude's review note N1, `BLOCKED_NAV`) and §12 with decision 0010. No behaviour change.
 
 This document defines how the daily simulator turns market records, a schedule and an order generator into fills, cash, daily equity and metrics. It reuses the accepted signal, target and planner code unchanged (`docs/portfolio-spec.md`) and the data layer (`docs/data-spec.md`). Reference cases: `tests/fixtures/backtest_cases.json`, computed by Claude's own calculator outside the repository (§11).
 
@@ -46,6 +46,17 @@ There is no commission maximum and no stamp duty in v1.x. Both are UNVERIFIED in
 - **Distribution records** and **jump exceptions:** as in the data spec.
 - **`universe`, `asset_class`, `HALF_SPREAD`:** for every instrument any generator may trade.
 
+### 2.1.1 From a raw dataset (v1.3)
+
+`market_from_raw(raw_dataset, exceptions_snapshot) -> Market` is the **only** route from stored data to the simulator. It requires a schema-v2 dataset (`BacktestInputError("BACKTEST_RAW_SCHEMA")` for v1) and builds the market as follows:
+- the calendar is the dataset's calendar;
+- prices, with their opens, and distributions, with their pay dates, are passed through unchanged;
+- exceptions come from the parsed snapshot (registry spec §5 exceptions-file format), with its version.
+
+It never fills, adjusts or drops a record; admission (§2.2) then validates. Real-data use stays refused by the registry until the Gate 3 statistics card enables `SUPPORTED_REAL_SCHEMAS`.
+
+Admission also refuses a distribution whose `pay_date` is earlier than its `ex_date` (`BACKTEST_PAY_DATE`).
+
 ### 2.2 Admission (before the first session)
 
 Admission uses only the **run's instrument set**: the strategy universe for the strategy, or the baseline's own instruments (§6.3). Records of other instruments in the bundle are ignored; for example VWRL is not part of the strategy run. It also uses only records dated **≤ `end`**: prices by `date`, distributions by `ex_date`, exceptions by `date`. Later records are ignored, never validated and never used. `run_backtest` raises `BacktestInputError(code, detail)` and simulates nothing if:
@@ -57,6 +68,7 @@ Admission uses only the **run's instrument set**: the strategy universe for the 
 | `BACKTEST_DATA_EXCLUDED` | `build_dataset` at `t = end` over the bounded inputs of §2.3 (calendar sessions ≤ `end`) reports any instrument-**excluding** code (data spec §3) for a run instrument |
 | `BACKTEST_OPEN` | An `open` that is not `None` is non-finite or ≤ 0 (after unit conversion) |
 | `BACKTEST_SPREAD` | A run instrument has no `HALF_SPREAD` |
+| `BACKTEST_PAY_DATE` | A distribution with `pay_date` before its `ex_date` |
 | `BACKTEST_COSTS` | The cost validity rule of §1 fails |
 | `BACKTEST_PARAMS` | A parameter of the wrong type or range: lags not integers ≥ 1, `INITIAL_CASH` not finite and > 0, `ANNUALISATION` not a positive integer |
 
@@ -83,7 +95,9 @@ The **exchange calendar** is the one input used beyond `d`, and only for two thi
 For each session `d` from `start` to `end`, in order:
 
 1. **Settle.** Every unsettled lot whose settlement session is `d` or earlier moves to settled cash. Lags are ≥ 1, so a lot created during `d` never settles at `d`. Lots due after `end`, including beyond the supplied calendar, stay unsettled and are counted in NAV (BT10).
-2. **Distributions.** For each instrument with a distribution whose `ex_date = d`: the entitled shares are the holding **at the start of `d`**, before this session's fills. Cash = shares × amount in GBP. It is added as an unsettled lot settling at `d + DISTRIBUTION_LAG` sessions. Shares bought at `d`'s open are **not** entitled.
+2. **Distributions.** For each instrument with a distribution whose `ex_date = d`: the entitled shares are the holding **at the start of `d`**, before this session's fills. Cash = shares × amount in GBP. It is added as an unsettled lot. Shares bought at `d`'s open are **not** entitled. The lot's settlement session (v1.3):
+   - **With `pay_date`:** the first session in `calendar` that is **after `d`** and **on or after `pay_date`**. A Saturday pay date settles on the next session; a pay date equal to the ex-date settles at the next session. If no such session exists in the supplied calendar, the lot never settles inside the run and stays in NAV as unsettled (BT13). `DISTRIBUTION_LAG` is not used.
+   - **Without `pay_date`** (synthetic records only): `d + DISTRIBUTION_LAG` sessions, as in v1.2.
 3. **Fills at the open.** Orders produced at the previous session's decision are executed (§4): all sells first, then all buys, each group in ascending `id`. Orders live for exactly one session; nothing is carried forward.
 4. **Valuation at the close.**
    - `NAV_d = settled + Σ unsettled lots + Σ_i q_i × close_i`, where `close_i` is the unadjusted close at `d` in GBP.
@@ -241,6 +255,7 @@ Produced by Claude's independent calculator; tolerance 1e-12 relative, 1e-9 abso
 | BT10_lots_pending_at_end | Lots still pending at `end` | Sale proceeds 996.50 and distribution 10.00 unsettled at `end`; NAV 10,003.00 |
 | BT11_sell_cost_stress_2x | Sell-side stress | Sell fill 99.70 at m = 2 (99.85 at m = 1): stress lowers a sell price; commission 9.8703 |
 | BT12_buy_after_shortfall | Buy after a permitted negative balance | Same-session buy after a `SHORTFALL` sell, and next-session buy: both `SKIPPED_CASH`, quantity 0 |
+| BT13_distribution_pay_dates (key `pay_date_cases`) | Settlement by pay date | Saturday pay date → settles Monday 15th; pay date on the ex-date → settles the next session; pay date after the supplied calendar → stays unsettled at `end` |
 | BT8_schedules | ISO-week and month ends with holidays and a year boundary | Weekly: 2025-12-19, 12-24, 2026-01-02, 01-09, 01-16, 01-23, 01-29; monthly: 2025-12-31, 2026-01-29; the final session is never included |
 | RB1–RB4 | Baseline rebalancer | Band trades with `k` scaling (15 VWRL, 238 VGOV); unsettled cash unusable (1 VGOV); inside the band no trade; exit and no trade on a missing price |
 | MT1_metrics | Metric definitions | Values in the fixture, cross-checked by a second independent computation |
