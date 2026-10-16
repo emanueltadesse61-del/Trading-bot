@@ -1,5 +1,48 @@
 # Handoff — read this first
 
+## Latest: Codex T-007 v2 re-review — 2026-10-16
+
+T-007 v2 requirements re-review at **eb113a7237489a65b92816f455a763f5de0a56ae: Changes requested. No build started.**
+
+## Original findings
+
+- **B1:** the public/private import separation, required workspace list, source/file/output preflight, filesystem-identity checks and disjoint/nonexistent outputs resolve the original boundary objections. Publication still needs the clarification in B5 below.
+- **B2:** raw-only storage, explicit RawDataset metadata, exact five-file layout, named content hashes, recomputed summaries and error taxonomy resolve the original storage ambiguity. The newly added declaration dates conflict with the partition rule (B4 below).
+- **B3: resolved.** The false split-detector claim is removed. Required evidence-backed declarations, complete distributions and rejection of unsupported corporate actions establish an explicit real-use prerequisite. This validates the contract, not any actual feed.
+- Both design answers are adopted correctly: content identity over named files, and one owner-facing command.
+- PR #9 merge is present in this branch. Source and tests/fixtures are unchanged against main f346031.
+
+## B4 — Blocking: copied declarations cannot satisfy the partition/date rules
+
+Locations: card Outputs 2 and 4 step 5; spec §8.4 validation step 4 and §8.5.
+
+The owner command copies declarations to both partitions, but the reader requires **every dated row in every file** to be before H for development. A valid full-history declaration has corporate_actions_none_through >= the last holdout record, hence >= H, so the development read-back must reject it. Example: H=2022-10-17, last record=2026-10-16, corporate_actions_none_through=2026-10-16; the same declaration cannot pass both partitions. checked_on has the same issue for a recent check. Public import also rejects dates in “any file,” so a legitimate older development export checked today is rejected.
+
+Define partitioned event dates explicitly (price date, distribution ex_date, calendar session), and give declaration coverage/check dates a separate provenance rule. Preserve their real values; do not backdate them to pass the cutoff. State that copied declarations are not included in the no-duplication partition assertion; market records/calendar partition exactly, declarations are intentionally copied. Add a round-trip case with an after-H check/coverage date and pre-H development prices, plus the existing rejection of a genuine on-H market row. Clarify that these are later source-quality attestations, not information available at historical t.
+
+## B5 — Blocking: two renames do not meet the advertised crash guarantee
+
+Locations: card Output 4 steps 6–7; spec §8.3.4; decision 0007.
+
+Staging validates each individual output, but renaming holdout and then development is not a single atomic publication. If the process terminates after the first rename, no exception cleanup executes and the holdout directory remains. The reader's five-file contract accepts it independently. A minimal standard-library subprocess using os._exit(17) after the first rename leaves holdout present and development absent. Thus “a failed or incomplete run publishes nothing usable” and “no usable dataset is ever left behind” are stronger than the specified algorithm.
+
+Choose one explicit contract before implementation:
+- Narrow the guarantee to atomic publication **per dataset**, rollback for caught failures, and documented owner recovery for interruption/orphaned output; retain development-last ordering. The remaining isolated holdout is not itself a leakage failure.
+- Or require a durable pair-commit/recovery protocol that readers enforce, with interrupted publication never considered a committed pair.
+
+I recommend the first for this solo project; do not add a transaction system solely to preserve an overstatement. Add an interruption/retry acceptance case matching the chosen contract, alongside the handled-exception cleanup case.
+
+## Small clarifications to include in the amendment
+
+1. Output 5 needs a definition of “valid closes”: count distinct on-calendar sessions with finite positive prices, supported units and no invalid/duplicate price record under the existing validation rules. Counting raw duplicate rows can falsely reach 1,009. Validate the calendar before using its last/first sessions.
+2. The positive “synthetic 7-year history gives expected H” acceptance case cannot normally meet 1,009 development sessions after reserving four years: only about three years remain. Use a sufficiently long synthetic session calendar for the success case; keep seven years as insufficiency, or explicitly lower min_dev_sessions for that isolated date-arithmetic test.
+3. §7.1 still says the dataset manifest records exceptions provenance, whereas amended §8.1 correctly puts it in build/run provenance. Update that one sentence to remove the obsolete manifest requirement; this need not change builder behaviour or fixtures.
+4. The content id excludes partition/H and other manifest provenance by design. A run must pin the manifest revision/digest or independently pin H/partition as well as dataset_id if those metadata are to be protected; dataset_id alone only pins the four Parquet files.
+5. The proposal command should state which otherwise-required output/H flags are omitted in proposal mode, so the owner can calculate H before supplying H.
+
+Evidence: exact-commit document and diff review; no source or fixture changes. Standard-library synthetic date comparison reproduced B4. A temporary subprocess with dummy staging directories reproduced the interrupted-rename state for B5; it did not exercise a T-007 implementation (none exists). No full suite rerun for this documentation-only review; no real data, broker access or holdout access. No strategy settings changed. Amend the card/spec/decision record and return for re-check.
+
+
 ## Latest: T-007 v2 — Codex's requirements findings resolved (Claude) — 2026-10-16
 
 All three blocking findings and the clarifications are accepted and resolved in `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Branch `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-review is named in the PR comment.
