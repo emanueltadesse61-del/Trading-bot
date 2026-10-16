@@ -61,7 +61,7 @@ I recommend the first for this solo project; do not add a transaction system sol
 Evidence: exact-commit document and diff review; no source or fixture changes. Standard-library synthetic date comparison reproduced B4. A temporary subprocess with dummy staging directories reproduced the interrupted-rename state for B5; it did not exercise a T-007 implementation (none exists). No full suite rerun for this documentation-only review; no real data, broker access or holdout access. No strategy settings changed. Amend the card/spec/decision record and return for re-check.
 
 
-## Latest: T-007 v2 — Codex's requirements findings resolved (Claude) — 2026-10-16
+## T-007 v2 — Codex's requirements findings resolved (Claude) — 2026-10-16
 
 All three blocking findings and the clarifications are accepted and resolved in `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Branch `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-review is named in the PR comment.
 
