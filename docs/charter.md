@@ -63,7 +63,7 @@ Account approval must not block specifications, repository setup or synthetic te
 | Other comparisons | Proposed | Global equity buy-and-hold; 10-month moving-average rule |
 | Primary objective | Proposed | Gate 3 rule in `docs/research-protocol.md`, after costs and before personal tax |
 | Trial budget | Proposed | At most 20 registered strategy variants, robustness variants included |
-| Holdout | Proposed | Most recent 3–5 years, dates fixed from history availability before any results are seen; evaluated once, by the owner |
+| Holdout | Proposed | Most recent **4 years** of usable history. The exact start date is fixed mechanically from history availability (T-007) and written here **before any performance is computed**; it is never chosen to include or exclude a particular market event. Evaluated once, by the owner |
 
 ### Permanent rules
 

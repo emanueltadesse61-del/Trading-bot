@@ -37,9 +37,11 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
 | T-005 Data-layer spec + reference cases | **Merged** at `450fc3f` (spec accepted at `619de06`) | — |
-| T-006 Data build + holdout guard | **Review** | Claude reviews the exact T-006 PR commit |
+| T-006 Data build + holdout guard | **Merged** (`98d3bb4`; Accepted by Claude at `85087b6`) | — |
+| Data spec v1.1.1 (N1 duplicate wording) | **Accepted** by Codex at `f0982fb` ([PR #9](https://github.com/emanueltadesse61-del/Trading-bot/pull/9)) | Owner merges PR #9 |
+| T-007 Storage, manifests, CSV import, owner-run split | **Card in review** (`docs/tasks/T-007-storage-and-import.md`) | Codex checks the requirements before building |
 
-Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
+Planned after T-007: T-008 backtest simulator, cost model and baselines (synthetic data first; extends the data spec with next-session open prices); a broker adapter (IBKR) after account approval.
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -81,8 +83,8 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Claude: independently review T-006 at the exact SHA named in its PR, against data spec v1.1 and the unchanged fixture.
-2. Owner retains merge authority. T-007 real-data work remains gated by holdout dates and feasibility checks.
+1. Codex: check the T-007 card's requirements (and its two open questions) before building. Owner: merge PR #9.
+2. Owner decisions gating real data: the holdout start (proposal: most recent 4 years, start fixed mechanically from usable history before any performance is computed, never chosen around a market event) and IBKR approval / data source (D5).
 3. PR #6 remains open; no closure authorised in this task.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
