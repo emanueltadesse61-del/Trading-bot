@@ -10,7 +10,7 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Item | Value |
 |---|---|
-| T-001 | [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1) at `3332ccd8ebce7479cc78aea471f58c905c362099`: Claude review posted, **no blocking findings**; awaiting owner merge |
+| T-001 | [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1) at `3332ccd8ebce7479cc78aea471f58c905c362099`: Claude review posted, **no blocking findings**; merged at `c1ae73d` |
 | T-002 v1.2 | [PR #2](https://github.com/emanueltadesse61-del/Trading-bot/pull/2), branch `t-002-spec-fixes`; exact commit named in the PR comment. Reviewer: Codex |
 
 ## Decisions
@@ -28,10 +28,10 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Task | State | Owner of next step |
 |---|---|---|
-| T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Owner merges PR #1 |
-| T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Owner merges PR #2 after PR #1 |
-| T-003 Synthetic portfolio implementation | Draft (T-002 Accepted; waiting for T-001 merge) | Owner merge; then Codex implementation |
-| T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
+| T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Merged at `c1ae73d` |
+| T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Merged at `5ec568f` |
+| T-003 Synthetic portfolio implementation | **Accepted** at `a783e0c` | Owner merge PR #3 |
+| T-004 Feasibility matrix | **Changes requested** at `8aa48b9`; account rows **Blocked** | Claude fixes F1/F2 |
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -73,10 +73,9 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Owner: merge PR #1 (T-001), then PR #2 (T-002) once Codex accepts it.
-2. T-002 v1.2 accepted by Codex at the exact revision recorded below; no further spec review requested.
-3. When T-002 is Accepted and T-001 merged, T-003 becomes Ready for Codex.
-4. Owner: decide the stop-date convention and budget when ready; neither blocks the work above.
+1. T-003 Accepted at `a783e0c`; owner retains merge authority for PR #3.
+2. Claude: address PR #4 findings F1/F2 and PR #5 findings R1/R2 below.
+3. Owner: account checks, budget and stop-date decisions remain pending.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
@@ -181,3 +180,48 @@ Only this handoff was edited for acceptance; no spec, fixture or source changes.
 - Independently executed the three counterexamples above; all were incorrectly accepted.
 
 No source or fixture changes made by this review. Next: Claude fixes B1/B2 on PR #3; Codex rechecks the exact new head. Owner merge remains outstanding. PRs #4 and #5 have not been reviewed in this session. No broker calls, market data, holdout, purchases, experiments or merge.
+
+
+## Codex re-review and document reviews — 2026-10-16
+
+This section supersedes the earlier open B1/B2 findings. Reviews are anchored to exact commits; no implementation or specification changes were made by Codex.
+
+### PR #3
+
+Codex independent re-review: **T-003 Accepted at a783e0ca556428cfbcf9ea313e951e2935d493a1.** B1 and B2 are resolved. Decision 0005 and the v1.3 coverage rules agree with the fixes. Independently reran the three original counterexamples: INVALID_ASSET_CLASS, INVALID_SIGMA and INVALID_COVARIANCE respectively. Planner duplicate/NaN/non-PSD matrices are rejected, and the valid one-asset volatility remains 0.05.
+
+Actual Python 3.12 pytest: 575 passed; ruff passed. Both CI checks succeeded on this exact SHA (runs 38884531994 and 38884520964). Fixture and Params unchanged from the previous reviewed head. No blocking findings remain in this re-review.
+
+Non-blocking cleanup: the PR description still names 9eb3e11, the spec status line still says v1.2 awaiting review, and the handoff's current-state table predates the merges. The refreshed PR #6 handoff records the current review state. Owner retains merge authority; this accepts the synthetic implementation only, not live trading or strategy performance.
+
+Posted review: https://github.com/emanueltadesse61-del/Trading-bot/pull/3#pullrequestreview-5546213795
+
+### PR #4
+
+Codex review at 8aa48b96312fc0fd5f6c87597617cc88568adb6e: **Changes requested.**
+
+**F1 — Restore the required feasibility fields (Table B).** T-004 requires currency hedging, KID availability, typical-spread source, account availability, and history source/first date per candidate. These columns are omitted rather than recorded as UNVERIFIED/BLOCKED. The global account-block note is useful but does not preserve the row-level checklist needed for Phase 1. Add the fields; unknown values may remain explicitly UNVERIFIED. A share-class inception date does not establish usable price-history coverage.
+
+**F2 — Source or mark unverified the data-option claims (Table C).** Assertions about download availability, price adjustment, costs and licence restrictions have no dated supporting links. Examples: issuer NAV/distribution histories being 'usually downloadable', IBKR personal-use rights, and aggregator automation restrictions. These are exactly the access/licensing assumptions this task is meant to check. Add source/date per claim, or mark UNVERIFIED and state what evidence is needed. No purchase or account access is requested.
+
+Public-source spot checks support the gold ETC distinction and VDTS inception, but this is not a certification of every instrument cell. Follow-up: IBKR does publish a UK commission table at https://www.interactivebrokers.com/en/pricing/commissions-stocks.php ; replace D4's search gap with that dated public source while keeping the owner's actual plan/routing/entitlements blocked. An issuer listing currency and a vendor's price unit are different fields: GBX conversion must use the chosen feed's metadata, not assume every feed expresses SGLN/CSP1 in pence.
+
+CI is green. Account-dependent checks correctly remain blocked. These findings concern completion of the document, not approval of any instrument.
+
+Posted review: https://github.com/emanueltadesse61-del/Trading-bot/pull/4#pullrequestreview-5546214468
+
+### PR #5
+
+Codex review at 047b298c57945dcdf4f9758f302c8c6c6e5b5a8c: **Changes requested.**
+
+**R1 — Preserve the exact cost-stress metric and boundary.** backtesting_standards.md §3 says the doubled-cost 'result must not turn negative'; protocol §6 instead fails when **paired-monthly ΔSR versus 60/40 is <= 0 at 2x costs**. Positive absolute returns with ΔSR=-0.02 still fail, and ΔSR=0 also fails. Name the exact statistic, comparator, same-cost convention and <= boundary. 'Sensitivity only' must not imply removal of the protocol's existing hard-failure condition.
+
+**R2 — Reconcile proposed and mandatory DSR status.** decision_log.md R-008 says Proposed, while standards §5 and the literature review call DSR required in every Gate 3 report. Keep it explicitly proposed pending a pre-registered calculation contract, or record its adoption and define inputs. Raw registry run count is not automatically the number of independent strategy trials: repeated cost runs and correlated variants need a stated treatment. The paper also uses cross-trial Sharpe dispersion and return moments. This need not become another gate or change strategy parameters. Source: https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf .
+
+Non-blocking: R-006 says bands are the only reason weekly rebalancing trades; exits and risk-cap/volatility overrides can trade inside the band. R-003 should label Daniel/Moskowitz as motivation rather than evidence that this exact positive-return filter prevents crashes, consistent with the evidence map's Hypothesis label.
+
+Source review supports the central trend-study construction and its long/short-vs-ETF caveat, the McLean/Pontiff 26%/58% figures, and Chan's 2021 edition date. I checked available author/publisher sources for DSR, Cederburg, the 2021 overfitting article and French's library. Some NBER/SSRN full-text fetches failed; their search-index abstracts corroborated the broad summaries, so I am not certifying every Checked sentence or every book entry. No parameter changes or experiments were run. CI is green. Fix the protocol/status conflicts before accepting this as an operational checklist.
+
+Posted review: https://github.com/emanueltadesse61-del/Trading-bot/pull/5#pullrequestreview-5546214891
+
+Next: owner may merge accepted PR #3; Claude resolves F1/F2 in PR #4 and R1/R2 in PR #5, then Codex reviews exact new commits. No broker access, funding, spending, holdout access, experiment or merge occurred. Public-source verification was selective as described above, not exhaustive certification of all documentary facts.
