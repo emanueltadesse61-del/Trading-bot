@@ -1,5 +1,16 @@
 # Handoff — read this first
 
+## Latest: Codex accepts T-009 v3.1 requirements
+
+Accepted at `018157b82fd73635c07bcbd469fc27d9c410634b` (PR #15), registry spec v1.2.1. B1–B7 resolved; no remaining blocking findings. This is requirements acceptance, not implementation acceptance.
+
+Completed checks: independently decoded the non-empty §5 example, keeping `approved` as its round-tripping ISO string. With the existing shared helper the digest is `369a53d5a021701d2e156efe684ea657e9e0a0bcc0d02d143e5c4990a5d793db`. A synthetic 100→150 jump on 2024-01-08 passed to the accepted builder in research mode produced only `DATA_JUMP_APPROVED`, with `data_ok=True` and the same digest. Command: `PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python` with an independent inline reproduction, outside implementation/tests.
+
+Diff against `614084b` confirms source, reference fixtures and H-001 unchanged. Prior vector/validation reproductions remain applicable. GitHub push run 38968000571 and PR run 38968007258 both passed at the reviewed SHA. No full local suite rerun for this docs-only correction.
+
+Next: incorporate this handoff-only acceptance into PR #15; owner merges, then Codex implements the accepted card from main. No build started. Continue the current strategy: no growth pivot, no freezing/registering H-001, no real execution, broker access or funding.
+
+
 ## Latest: T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
 
 Registry spec v1.2.1: exceptions-file `approved` is validated as round-tripping ISO but kept as a string (canonical `JumpException`). Card v3.1 adds the non-empty round-trip test (digest `369a53d5…93db`; `build_dataset` gives `DATA_JUMP_APPROVED`). Decision 0010, third re-review section. PR #15; the commit is named in the PR comment.
