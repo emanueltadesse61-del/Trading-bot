@@ -26,7 +26,7 @@ The file is committed, and its commit hash recorded, before the first run.
 ## 3. Data and periods
 
 - Development period: from the first date with full history for the universe, up to the holdout start. Proxy (index) history is allowed for research only and is reported separately from real-ETF results.
-- **Holdout:** the most recent 3–5 years, with exact dates fixed in Phase 1 from history availability, **before any performance is computed**. The dates are written into the charter.
+- **Holdout:** the most recent **4 years** (owner-confirmed, decision 0008), with the start computed by the T-007 proposal rule. Sequence: owner-only proposal → owner confirms the date in the charter → split → only then may development data enter an agent-accessible location. The date is therefore fixed before any performance is computed.
 - The holdout dataset is stored outside the repository and every agent workspace. Only the owner runs the one-time evaluation on it, using the frozen evaluation script at a recorded commit.
 - **An inspected holdout is consumed.** It is never treated as unseen again under a new charter, a renamed strategy or a fallback rule.
 
