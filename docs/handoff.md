@@ -31,7 +31,7 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 | T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Merged at `c1ae73d` |
 | T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Merged at `5ec568f` |
 | T-003 Synthetic portfolio implementation | **Accepted** at `a783e0c` | Owner merge PR #3 |
-| T-004 Feasibility matrix | **Changes requested** at `8aa48b9`; account rows **Blocked** | Claude fixes F1/F2 |
+| T-004 Feasibility matrix | **Changes requested** at `1b0cc8b`; account rows **Blocked** | Claude corrects F3 commission claim |
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -74,7 +74,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 ## Next
 
 1. T-003 Accepted at `a783e0c`; owner retains merge authority for PR #3.
-2. Claude: address PR #4 findings F1/F2 and PR #5 findings R1/R2 below.
+2. Claude: correct PR #4 F3 commission claim. PR #5 Accepted at `55d3dad`; owner merge.
 3. Owner: account checks, budget and stop-date decisions remain pending.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
@@ -225,3 +225,18 @@ Source review supports the central trend-study construction and its long/short-v
 Posted review: https://github.com/emanueltadesse61-del/Trading-bot/pull/5#pullrequestreview-5546214891
 
 Next: owner may merge accepted PR #3; Claude resolves F1/F2 in PR #4 and R1/R2 in PR #5, then Codex reviews exact new commits. No broker access, funding, spending, holdout access, experiment or merge occurred. Public-source verification was selective as described above, not exhaustive certification of all documentary facts.
+
+
+## Codex PR #4/#5 re-review — 2026-10-16
+
+Codex re-review at **1b0cc8bd9a5955eaca2ebd6cbc3d823fe6cb2efe**: F1, F2 and D3 are resolved. Table B2 restores the candidate-level checks; Table C explicitly marks unproven claims and evidence needed; feed units are correctly separated from display units. CI passes on this exact commit.
+
+**Changes requested — F3 (D4): target caps do not cap every order's notional.** The public Fixed SmartRouting rate is correctly sourced, but 'no order exceeds £2,500' and '£3 minimum always applies' are false. Reproduced against accepted T-003 a783e0c: eligible A, 700 shares at £10, settled cash £3,000, no unsettled cash, valid covariance [[.04]], sigma .2, trend 0 and momentum -.1. NAV=£10,000; target A=0; planner returns OK and SELL 700 (£7,000), with exit and risk-override reasons. Under max(£3, 0.0005 × notional), commission is £3.50. Drifted/overweight holdings can be sold beyond the target cap; NAV can also grow beyond its starting value.
+
+Please qualify D4 and decision item 4: £3 is the Fixed SmartRouting minimum and supports the present small-buy reserve assumption at £10,000 NAV, conditional on the account's actual plan/routing. It is not a flat fee for all orders. The later cost model must apply the actual schedule to each buy and sell; larger orders, NAV growth and execution conditions need fresh validation. No change to Params or the accepted engine is requested. Source checked 2026-10-16: https://www.interactivebrokers.com/en/pricing/commissions-stocks.php (United Kingdom table). All account-dependent checks remain blocked.
+
+Codex re-review: **PR #5 Accepted at 55d3dad290020d6cb1dabcc5a7062fb0c1c7e4c0.** R1 and R2 are resolved, along with the two non-blocking notes. The doubled-cost test now names paired-monthly ΔSR versus 60/40, doubles costs on both sides, and correctly fails at <=0. DSR is consistently proposed, not required or reported pending its pre-registered calculation contract; the independent-trial distinction and required inputs match the cited author's paper (including Appendix A.3). Band overrides and the momentum-filter evidence caveat are corrected.
+
+Both CI checks on the exact commit pass. Documentation-only diff reviewed; no new strategy evaluation, broker access or parameter change. This accepts the requested amendments, preserving the selective source-verification limits in my prior review; it does not certify profitability or every unchecked literature entry. Owner retains merge authority.
+
+Next: Claude corrects F3 in PR #4, then Codex rechecks its exact new commit. PR #3 remains Accepted at a783e0c; PR #5 is Accepted at 55d3dad. Owner merges. PR #6 remains open; no closure or merge was performed. No source, fixture or parameter edits.
