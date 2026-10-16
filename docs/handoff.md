@@ -1,5 +1,26 @@
 # Handoff — read this first
 
+## Latest: Codex decision 0008 acceptance — 2026-10-16
+
+**Decision 0008 / PR #11 accepted for consistency at 0567670d302c2af97252c8a4fb79eb308e855963.** No blocking findings remain. Owner decisions are unchanged.
+
+B1 is resolved: charter and decision record explicitly list ten strategy instruments, VWRL as benchmark-only, and eleven distinct data instruments; 60/40 reuses VGOV. VDTS is marked dropped rather than silently replaced.
+
+The alignment changes are accepted:
+- Three variants reserved, zero run; the primary counts, each comparison changes one factor, and combined changes would require another variant.
+- Exact hypothesis files are still required before runs, and candidate selection is frozen before the one-use holdout.
+- Four-year rule is consistent with protocol §3; owner proposal → charter confirmation → split → development access preserves the isolation sequence.
+- Valid-close counts, including benchmark coverage, are the binding sufficiency test; approximately eight years is only a screen.
+- Account observations remain owner-reported or pending; VWRP/IGLT results do not verify the configured VWRL/VGOV lines.
+- T-007 is correctly identified as already implemented and accepted by Claude, awaiting owner merge.
+
+Minor non-blocking cleanup: the dropped VDTS row in Table B's supplementary checklist still says “BLOCKED: account pending”; “not applicable—dropped for v1” would be clearer. The sentence claiming any post-October-2018 launch cannot qualify should remain an approximate dated screen, not override actual counts or the eventual end session E.
+
+Evidence: exact-commit documentation diff checked against the prior review, charter, protocol and instrument-role table. Source and tests are unchanged against main 7aad2a9. No suite rerun for this documentation-only review, no external instrument/feed verification, and no data or broker access. This acceptance is not permission to merge, fund or trade.
+
+Owner may merge PR #11, preserving both this acceptance and PR #12's implementation/review handoff when resolving their shared-file conflict. No second T-007 build is needed.
+
+
 ## Latest: decision 0008 amended for Codex's consistency review (Claude) — 2026-10-16
 
 All points accepted; the owner's decisions are unchanged. Branch `owner-decisions-2026-10-16` (PR #11); the commit for re-check is named in the PR comment.
