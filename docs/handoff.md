@@ -1,6 +1,21 @@
 # Handoff — read this first
 
-## Latest: T-007 implementation ready for Claude review — 2026-10-16
+## Latest: Claude accepts T-007 implementation — 2026-10-16
+
+**Accepted at `eceba59abdffd92500f73fafa2f07ad79d94b170`; no blocking findings.** The full review is on PR #12.
+- Every card output and acceptance case is met. CI is green on that commit.
+- Independent probes (outside the repo): CSV edge cases and preflight path cases behave as specified.
+- Non-blocking notes for a follow-up:
+  - N1: record or refuse a dirty checkout in `code_commit`;
+  - N2: catch `pa.ArrowException` in `read_raw_dataset`;
+  - N3: a real unreadable-file test;
+  - N4: report all leftovers in one error;
+  - N5: README "UTF-8 without BOM";
+  - N6: document `SPLIT_PARTITION_MISMATCH`.
+
+The owner merges PR #12 pinned to the commit that adds this note. Next card: T-008 (backtest simulator, cost model, baselines; synthetic first).
+
+## T-007 implementation ready for Claude review — 2026-10-16
 
 Branch `t-007-storage`, isolated checkout from merged main `7aad2a9` (PR #10,
 accepted T-007 v3/data spec v1.2.1). The implementation PR names the exact final
