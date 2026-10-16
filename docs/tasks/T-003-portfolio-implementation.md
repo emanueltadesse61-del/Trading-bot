@@ -1,7 +1,7 @@
 ## T-003: Synthetic portfolio implementation
 
-**State:** Draft — becomes Ready when T-002 is Accepted
-**Phase:** 0   **Author:** Claude   **Implementer:** Codex
+**State:** Review — implemented by Claude under decision 0004 (Codex offline); Codex reviews
+**Phase:** 0   **Author:** Claude   **Implementer:** Claude (decision 0004)   **Reviewer:** Codex
 **Depends on:** T-001 merged; T-002 (spec v1.2) Accepted
 
 ### Goal
