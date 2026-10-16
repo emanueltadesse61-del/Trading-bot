@@ -1,6 +1,25 @@
 # Handoff — read this first
 
-## Latest: Codex T-007 requirements review — 2026-10-16
+## Latest: T-007 v2 — Codex's requirements findings resolved (Claude) — 2026-10-16
+
+All three blocking findings and the clarifications are accepted and resolved in `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Branch `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-review is named in the PR comment.
+
+- **B1:** two import paths. The public `import_csv` refuses a missing holdout start (`IMPORT_HOLDOUT_REQUIRED`); only `trader-split` uses the private full-history parser.
+  - Preflight runs before any read. It guards the source directory, every resolved input file and the holdout output, and requires source, dev and holdout locations to be disjoint by text and by identity.
+  - Existing outputs are refused, and at least one workspace is required.
+  - Publishing is staged, verified and atomic. Preflight tests prove refusal using a source that would fail to parse.
+- **B2:** T-007 stores raw imports only. Spec §8.1 separates the raw-dataset manifest from build provenance (run registry, T-008).
+  - §8.4 fixes the five-file layout, the `dataset_id` canonical JSON over four Parquet files, and the manifest fields.
+  - Validation on read re-derives every summary and applies the partition rules to every row.
+  - Empty partitions are refused. The limitation is stated: integrity, not authenticity.
+- **B3:** my split-detection claim was wrong (4:3 gives exactly −25%, which is not flagged). Real use is gated by per-instrument owner declarations (§8.5).
+- **Clarifications:**
+  - Holdout proposal rule: E is the last session; H is the first session ≥ E − 4 calendar years; ≥ 1,009 development closes per instrument; insufficiency gives a report, never a shorter holdout.
+  - `distributions.csv` is required, plus a completeness declaration.
+  - Codes are named; the stale approval text is removed.
+- Data spec §1–7, §9 and the fixture are unchanged.
+
+## Codex T-007 requirements review — 2026-10-16 (resolved in `docs/decisions/0007`)
 
 Requirements review at 9b534c96097910ccdd6778917dba9146ef9e1b99: **Changes requested; T-007 is not accepted and no build has started.**
 
@@ -45,14 +64,14 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | Item | Value |
 |---|---|
 | T-005 | [PR #7](https://github.com/emanueltadesse61-del/Trading-bot/pull/7): v1 reviewed at `3dceea8` (B1 holdout, B2 jump-approval timing); v1.1 resolves both (decision 0006). Re-review commit named in the PR. Reviewer: Codex |
-| Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728` (each pinned to the accepted commit) |
-| Open | PR #6 (Codex's T-003 review record): stays open until the owner authorises closing it |
+| Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728`; PR #7 `450fc3f`; PR #8 `98d3bb4`; PR #9 `f346031` (each pinned to the accepted commit). PR #6 closed by the owner |
+| Open | PR #10 (T-007 card v2 + data spec v1.2): Codex re-checks the requirements |
 
 ## Decisions
 
 **Confirmed** (owner): UK residence; IBKR account approved 2026-10-16 (no funding authorised); Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
 
-**Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; £600/year data-and-hosting ceiling; ~12 UCITS ETFs, GBP lines only; weekly rebalance; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20; holdout 3–5 most recent years.
+**Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; £600/year data-and-hosting ceiling; ~12 UCITS ETFs, GBP lines only; weekly rebalance; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20; holdout the most recent 4 years (exact start by the T-007 proposal rule, confirmed by the owner before any performance is computed).
 
 **Pending** (owner decides):
 1. Research stop rule: week 20 counted in **calendar** weeks from an agreed start date, or in **worked** weeks logged here with a hard calendar cap. Also: the start date.
@@ -70,8 +89,8 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
 | T-005 Data-layer spec + reference cases | **Merged** at `450fc3f` (spec accepted at `619de06`) | — |
 | T-006 Data build + holdout guard | **Merged** (`98d3bb4`; Accepted by Claude at `85087b6`) | — |
-| Data spec v1.1.1 (N1 duplicate wording) | **Accepted** by Codex at `f0982fb` ([PR #9](https://github.com/emanueltadesse61-del/Trading-bot/pull/9)) | Owner merges PR #9 |
-| T-007 Storage, manifests, CSV import, owner-run split | **Card in review** (`docs/tasks/T-007-storage-and-import.md`) | Codex checks the requirements before building |
+| Data spec v1.1.1 (N1 duplicate wording) | **Merged** (`f346031`; Accepted by Codex at `f0982fb`) | — |
+| T-007 Storage, CSV import, owner-run split | **Card v2 in review** (Codex's v1 findings B1–B3 resolved in decision 0007; data spec v1.2) | Codex re-checks the requirements before building |
 
 Planned after T-007: T-008 backtest simulator, cost model and baselines (synthetic data first; extends the data spec with next-session open prices); a broker adapter (IBKR) after account approval.
 
@@ -115,9 +134,11 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Codex: check the T-007 card's requirements (and its two open questions) before building. Owner: merge PR #9.
-2. Owner decisions gating real data: the holdout start (proposal: most recent 4 years, start fixed mechanically from usable history before any performance is computed, never chosen around a market event) and the data source (D5), which depends on the owner's Table A results, especially API historical-bar depth and market-data cost for LSE ETFs.
-3. PR #6 remains open; no closure authorised in this task.
+1. Codex: re-check the T-007 v2 requirements on PR #10 at the commit named in the PR comment; build only once accepted.
+2. Owner decisions gating real data (not the build):
+   - the holdout start, computed by the T-007 proposal rule and confirmed in the charter before any performance is computed;
+   - the data source (D5), which depends on the owner's Table A results, especially API historical-bar depth and market-data cost for LSE ETFs;
+   - `declarations.csv` evidence for each instrument.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 

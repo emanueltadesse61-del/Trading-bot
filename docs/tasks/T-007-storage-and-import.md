@@ -1,111 +1,144 @@
-## T-007: Storage, manifests, canonical CSV import and the owner-run split
+## T-007: Raw-dataset storage, canonical CSV import and the owner-run split
 
-**State:** Review: card drafted by Claude; **Codex checks the requirements before building**
+**State:** Review, v2 (Codex requirements findings B1–B3 and clarifications resolved in decision 0007). **Codex re-checks before building.**
 **Phase:** 1   **Author:** Claude   **Implementer:** Codex   **Reviewer:** Claude
-**Depends on:** T-006 merged (`98d3bb4`). Real-data use additionally depends on the two pending owner decisions below; the code does not.
+**Depends on:** T-006 merged (`98d3bb4`); data spec v1.2 §8 and §10 (this PR). Real-data **use** additionally depends on the owner decisions below; the **build** does not.
 
 ### Goal
-Turn the pure data layer into something that can hold real history safely:
-- versioned on-disk datasets with tamper-evident manifests;
-- one source-agnostic importer for a canonical CSV format that any vendor export can be converted to;
-- the **owner-run split** that keeps the holdout out of every agent workspace (data spec §8.3).
+Make real history storable without breaking isolation:
+- one owner-run command that parses, validates and splits a canonical CSV export into a development raw dataset and a holdout raw dataset, published atomically;
+- a reader that verifies a raw dataset completely before anything uses it;
+- a public import path that refuses holdout-period rows.
 
-A broker-specific adapter (IBKR) is a later card, after account approval.
+A broker- or vendor-specific adapter is a later card.
 
-### Pending owner decisions (do not block building; block real-data use)
-| Decision | Proposal | Rule |
-|---|---|---|
-| Holdout period | **Proposed: the most recent 4 years** of usable history | Exact start date fixed **mechanically** from usable history: the latest session such that every universe instrument has usable data for both the development and holdout periods. It is written into the charter **before any performance is computed**. The window is **never** chosen to include or exclude a particular market event (Codex correction, 2026-10-16) |
-| Data source | IBKR historical bars if adequate (feasibility D5), otherwise an approved alternative | Account approval pending; any paid source needs owner approval (charter §5) |
-
-Until the holdout date is in the charter, the importer refuses non-synthetic use (see `holdout_start` below).
+### Pending owner decisions (gate real-data use only)
+| Decision | Proposal / rule |
+|---|---|
+| Holdout start | Proposed 4 years, computed by the rule in **Output 5** and confirmed by the owner in the charter **before any performance is computed**. It is never chosen around a market event, and is never silently shortened if history is insufficient |
+| Data source | Decided after the owner's Table A checks (feasibility D5). IBKR's account approval (2026-10-16) does not by itself establish that the data is adequate |
+| Declarations | The owner prepares `declarations.csv` from source evidence (data spec §8.5) |
 
 ### Inputs
-- `docs/data-spec.md` v1.1.1 §2, §3, §8 (manifests, guard, isolation boundary)
-- `trader.data` (T-006): `build_dataset`, records, `check_holdout_path`
-- Deferred T-006 review notes N2 and N3
+- `docs/data-spec.md` v1.2: §2–3 records, §8.1–8.5 storage, isolation and declarations, §10 gates
+- `trader.data` (T-006): records, `build_dataset`, `check_holdout_path`
+- T-006 review notes N2 (`INVALID_MODE`) and N3 (boundary type validation)
 
 ### Outputs
 
-**1. Canonical CSV format** (`trader/data/csv_import.py`). UTF-8, header row, comma-separated, ISO dates:
+**1. Canonical CSV parsing** (`trader/data/csv_import.py`). UTF-8, header row, comma-separated, ISO dates. Four required files:
 - `prices.csv`: `instrument,date,close,unit`
-- `distributions.csv`: `instrument,ex_date,amount,unit` (file optional; absent = no distributions)
+- `distributions.csv`: `instrument,ex_date,amount,unit` (header-only allowed)
 - `calendar.csv`: `date`
+- `declarations.csv`: the §8.5 fields
 
-`import_csv(directory, *, holdout_start, synthetic=False) -> ImportResult` returns typed records and the calendar.
+Internal `parse_csv_dir(directory) -> ParsedImport` does pure parsing and validation; it is used by both paths below. Errors are `DataImportError(code, file, line)`:
 
-**N3 (boundary validation).** Every row is type-checked at import. A malformed row raises `DataImportError(code, file, line)` with one of:
-- `IMPORT_MISSING_COLUMN`: a required column is absent;
-- `IMPORT_BAD_DATE`: a date is not ISO `YYYY-MM-DD`;
-- `IMPORT_BAD_NUMBER`: a close or amount is not a decimal number. An empty `close` is allowed and becomes `None`, which `build_dataset` then reports as `DATA_INVALID_PRICE`.
+| Code | Condition |
+|---|---|
+| `IMPORT_MISSING_FILE` | A required file is absent |
+| `IMPORT_BAD_HEADER` | Missing, extra or duplicated columns |
+| `IMPORT_MALFORMED_ROW` | Wrong field count, or bad quoting |
+| `IMPORT_BAD_DATE` | Not ISO `YYYY-MM-DD` |
+| `IMPORT_BAD_NUMBER` | Not a decimal number. An empty `close` becomes `None`, so `build_dataset` reports `DATA_INVALID_PRICE` |
+| `IMPORT_DECLARATION_MISSING` | An instrument in prices or distributions has no declaration row |
+| `IMPORT_DECLARATION_INVALID` | A declaration breaks a §8.5 rule, including `corporate_actions_none_through` earlier than the instrument's last record |
 
-Nothing is coerced or skipped silently. Valid-but-wrong data (bad units, off-calendar dates and so on) is left for `build_dataset` to report as usual.
+Nothing is coerced or skipped silently. Valid-but-wrong data (units, off-calendar dates and so on) is left to `build_dataset` (N3).
 
-**Holdout leak guard.**
-- `holdout_start` is required unless `synthetic=True`.
-- Any price, distribution or calendar row dated on or after `holdout_start` raises `DataImportError("IMPORT_HOLDOUT_LEAK", file, line)`, and nothing is returned.
-- `synthetic=True` is for tests only. It requires every instrument id to start with `SYN_`, otherwise `IMPORT_NOT_SYNTHETIC`.
+**`ParsedImport`** (frozen): `prices`, `distributions`, `calendar`, `declarations`.
 
-This is how an agent-run import is refused before holdout dates exist.
+**`RawDataset`** (frozen): the same four fields plus `partition` (`development` | `holdout` | `synthetic`) and `holdout_start` (date | None).
 
-**2. Dataset storage and manifests** (`trader/data/store.py`; adds the `pyarrow` dependency).
+**2. Public development import**: `import_csv(directory, *, holdout_start: date | None, synthetic: bool = False) -> RawDataset`.
+- `holdout_start=None` without `synthetic=True` → `DataImportError("IMPORT_HOLDOUT_REQUIRED")`.
+- `synthetic=True` requires every instrument id to start with `SYN_` (`IMPORT_NOT_SYNTHETIC`), and gives partition `synthetic`.
+- Otherwise any dated row on or after `holdout_start`, in any file, gives `IMPORT_HOLDOUT_LEAK` (file, line). The partition is `development`.
 
-`write_dataset(result, out_dir, manifest_path, *, source, adapter_version, code_commit, retrieved_at) -> Manifest` writes Parquet files (`prices.parquet`, `distributions.parquet`, `calendar.parquet`) and a manifest JSON:
+**3. Raw-dataset storage** (`trader/data/store.py`, adds `pyarrow`, version pinned in `uv.lock`).
 
-```json
-{
-  "schema": "trading-bot/dataset-manifest/v1",
-  "dataset_id": "<sha256 of the sorted file digests, hex>",
-  "source": "...", "adapter_version": "...", "code_commit": "...",
-  "retrieved_at": "<ISO-8601 UTC, supplied by caller>",
-  "date_range": {"first": "YYYY-MM-DD", "last": "YYYY-MM-DD"},
-  "holdout_start": "YYYY-MM-DD or null (synthetic)",
-  "instruments": {"ID": {"units_seen": ["GBP"], "price_rows": 0, "distribution_rows": 0}},
-  "files": {"prices.parquet": {"sha256": "...", "rows": 0}}
-}
+`write_raw_dataset(dataset, directory, *, provenance) -> Manifest`:
+- writes the five files of data spec §8.4, rows sorted by (instrument, date) and the calendar by date;
+- pins the writer settings (no compression or a named codec, fixed row-group size, no wall-clock metadata);
+- computes `dataset_id` exactly as in §8.4.
+
+`provenance` is supplied by the caller: `source`, `adapter_version`, `code_commit`, `retrieved_at`. There is no clock inside.
+
+`read_raw_dataset(directory) -> (RawDataset, Manifest)` performs **every** §8.4 validation step. Any failure → `DataStoreError("DATASET_MANIFEST_MISMATCH", field)`.
+
+**4. Owner-run split**: one command, `trader-split`.
+
+```
+trader-split --source DIR --holdout-start YYYY-MM-DD --dev-out DIR --holdout-out DIR \
+             --repo-root DIR --agent-workspace DIR [--agent-workspace DIR ...] \
+             --source-label TEXT --adapter-version TEXT --retrieved-at ISO8601
 ```
 
-- `retrieved_at` is supplied by the caller, so the function stays deterministic and testable (no clock).
-- Rows are written in a fixed order: (instrument, date). The same input therefore gives identical files, digests and `dataset_id`.
+Order of operations. Nothing is read before step 4.
+1. Require at least one `--agent-workspace` (`SPLIT_WORKSPACES_REQUIRED`).
+2. **Guard** `--source`, each of the four resolved input files, and `--holdout-out` with `check_holdout_path` against the repo and all workspaces. `--dev-out` may be inside the repo.
+3. **Disjointness** (`SPLIT_PATHS_OVERLAP`): source, dev-out and holdout-out must not be equal to, inside, or an alias of one another, judged by both resolved text and filesystem identity. Neither output may already exist (`SPLIT_OUTPUT_EXISTS`).
+4. Parse with `parse_csv_dir` (the private full-history path; it prints that it is owner-only).
+5. Partition by `holdout_start`: development has every dated row strictly before it, holdout the rest. If either partition has zero calendar sessions, raise `SPLIT_EMPTY_PARTITION`. Declarations go to both partitions.
+6. Write each partition to a staging directory (`<out>.staging-<pid>`) beside its target. Read each back with `read_raw_dataset`, and verify that the two partitions' rows exactly partition the source (no row lost or duplicated).
+7. Publish by renaming the holdout staging directory, then the development one. If anything fails, remove the staging directories and any partition already renamed, and exit non-zero. **No usable dataset is ever left behind by a failed run.**
 
-`read_dataset(manifest_path, data_dir) -> ImportResult` recomputes every file's SHA-256 and row count. Any mismatch, missing file or extra file raises `DataStoreError("DATASET_MANIFEST_MISMATCH", file)`. A dataset without a matching manifest is never returned.
+`trader-split --propose-holdout --source DIR ...` runs steps 1–4, then prints the Output 5 proposal (or the insufficiency report) and writes nothing.
 
-**3. Owner-run split** (`trader/data/split.py`, CLI entry point `trader-split`).
+**5. Holdout proposal rule** (`propose_holdout(parsed, years=4, min_dev_sessions=1009)`):
+- **E** = the last calendar session in the import.
+- **H** = the first calendar session on or after E's date minus `years` calendar years (same month and day; 29 Feb becomes 28 Feb).
+- **Sufficiency:** every declared instrument must have ≥ `min_dev_sessions` valid closes before H (253 warm-up + 756 ≈ 3 years of evaluable development), and at least one valid close on or after H.
+- If insufficient, return a report naming each failing instrument and its count, and **no date**. The owner decides (drop the instrument, use proxy history, or amend the charter); the rule never shortens the holdout on its own.
 
-`split_records(result, holdout_start) -> (development, holdout)`: development holds rows strictly before `holdout_start`; holdout holds the rest, including calendar rows.
-
-`trader-split --source <owner_import_dir> --holdout-start YYYY-MM-DD --dev-out <dir> --holdout-out <dir> --repo-root <path> --agent-workspace <path>...`:
-- calls `check_holdout_path(holdout_out, repo_root, agent_workspaces)` **before reading anything**, and fails closed;
-- reads the owner's full-history import with `holdout_start=None`. This is the one place a full import is allowed: owner-run, and the CLI prints a warning saying so;
-- writes the development dataset and manifest to `--dev-out`, and the holdout dataset and its manifest to `--holdout-out`;
-- verifies the written development manifest's `date_range.last` < `holdout_start`, and that the two datasets' rows partition the source exactly (no row lost or duplicated);
-- **requires** at least one `--agent-workspace`, so a run that forgets the workspaces is refused (`SPLIT_WORKSPACES_REQUIRED`).
-
-**4. N2:** an unknown `mode` in `build_dataset` raises `InvalidInputError("INVALID_MODE")`. Add the code to `INPUT_ERROR_CODES`.
+**6. N2:** an unknown `mode` in `build_dataset` raises `InvalidInputError("INVALID_MODE")`. Add the code.
 
 ### Evidence
-Not applicable (engineering). The 4-year proposal is a judgement about a sample-size trade-off, recorded in the charter when fixed.
+Not applicable (engineering). The 4-year proposal and `min_dev_sessions` are judgements, recorded in the charter when the owner confirms them.
 
 ### Constraints
-- **Splits and other non-cash corporate actions are not supported.** A split of 1.33:1 or more moves the price ≥ 25% and is caught by the jump check. Such a jump must **not** be cleared with an exception, because the total-return series would be wrong. The dataset is unusable for that instrument until split support is specified. State this in `docs/data-spec.md` §10 and in the `trader-split` warning text.
-- Non-GBP/GBX distributions are already rejected by `DATA_UNKNOWN_UNIT`; no change needed.
-- No network calls, downloads or broker access anywhere in this card.
-- Synthetic fixtures only in tests. **No real market data is committed or used in CI.**
+- No network, downloads or broker access. No real market data in the repo or in CI; tests are synthetic only.
+- The jump check is not split detection (spec §8.5). Never approve a split-induced jump as cleaning.
 
 ### Acceptance criteria
-- [ ] CSV import: a valid synthetic directory round-trips into records equal to those built in code; each `IMPORT_*` code is triggered by a test with the right file and line number.
-- [ ] Holdout leak: a row dated on `holdout_start` triggers `IMPORT_HOLDOUT_LEAK`, and so does a row the day after. A row the day before is accepted. Calling without `holdout_start` and without `synthetic=True` is refused.
-- [ ] Storage: `write_dataset` twice on the same input gives byte-identical files and the same `dataset_id`.
-- [ ] Tamper tests: changing one byte, deleting a file, adding an extra file, or editing a manifest row count each gives `DATASET_MANIFEST_MISMATCH`.
-- [ ] `read_dataset` output fed into `build_dataset` gives the same `DataBuild` as building from the original records.
-- [ ] Split: development and holdout partition the source exactly; development's last date < `holdout_start`; the guard refuses a `--holdout-out` inside the repo or a workspace **before any file is read** (test with a source directory that would fail to read); a missing `--agent-workspace` is refused.
-- [ ] `INVALID_MODE` raised for an unknown mode.
-- [ ] `docs/data-spec.md` §10: the split limitation and the "don't clear split jumps" rule recorded. `README.md`: a short "importing real data (owner only)" section describing the split command.
+- [ ] **Parsing:** each `IMPORT_*` code is triggered by a test with the expected file and line. A valid synthetic directory parses to records equal to those built in code.
+- [ ] **Public import:** `IMPORT_HOLDOUT_REQUIRED` without `holdout_start`; `IMPORT_HOLDOUT_LEAK` for a row on, and a row after, the start in each file; a row the day before is accepted; `IMPORT_NOT_SYNTHETIC` for a non-`SYN_` id in synthetic mode.
+- [ ] **Storage:** writing twice gives byte-identical files and the same `dataset_id`; `dataset_id` matches an independent computation of the §8.4 formula.
+- [ ] **Storage tamper cases**, each → `DATASET_MANIFEST_MISMATCH` with the field:
+  - one changed byte;
+  - a missing file, and an extra file;
+  - an edited row count;
+  - `date_range.last` moved earlier;
+  - an edited `instruments` entry;
+  - a wrong `schema`;
+  - an edited `dataset_id`;
+  - a development dataset containing a row on `holdout_start`.
+- [ ] **Round trip:** `read_raw_dataset` then `build_dataset` gives the same `DataBuild` as building from the original records.
+- [ ] **Split preflight** (synthetic), each refused **before any content is read**, proved with a source whose files would fail to parse:
+  - source inside a workspace;
+  - a symlinked input file pointing into a workspace;
+  - holdout-out inside the repo;
+  - dev-out equal to holdout-out;
+  - dev-out inside holdout-out;
+  - holdout-out inside source;
+  - an output already existing;
+  - no `--agent-workspace`.
+
+  Plus: an unreadable source file gives a clean failure with nothing published.
+- [ ] **Split result:**
+  - exact partition;
+  - development last date < start; holdout first date ≥ start;
+  - both read back cleanly;
+  - `SPLIT_EMPTY_PARTITION` when the start is after the last session or on or before the first;
+  - a simulated failure during publish leaves no target directory.
+- [ ] **Proposal:**
+  - a synthetic 7-year history gives the expected H;
+  - a 29-Feb E date maps correctly;
+  - a short instrument gives an insufficiency report and no date.
+- [ ] **Declarations:** missing, invalid `price_semantics`, `distributions_complete=false`, `corporate_actions_none_through` before the last record, and an empty `evidence_source` each refuse the import.
+- [ ] `INVALID_MODE` is raised for an unknown mode.
+- [ ] `README.md`: a short "importing real data (owner only)" section showing the split and proposal commands and the declarations file.
 - [ ] CI green; `docs/handoff.md` updated.
 
 ### Exclusions
-IBKR or any other broker or vendor adapter; downloads; real data; backtesting (T-008); next-session open prices (T-008 extends the data spec).
-
-### Open questions for Codex's requirements check
-1. Should `dataset_id` hash the file digests only, or the manifest minus `retrieved_at`? (Draft: file digests only, so re-importing identical data gives the same id.)
-2. Is a single `trader-split` CLI enough for the owner, or should the importer and the split be one command so the full history never sits in an intermediate directory?
+Broker or vendor adapters, downloads, real data, backtesting (T-008), next-session open prices (T-008), split adjustment.
