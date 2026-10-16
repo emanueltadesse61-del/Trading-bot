@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
+Last updated: 2026-10-16 by Codex. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
 
@@ -29,7 +29,7 @@ Last updated: 2026-10-16 by Claude. Update this file at the end of every session
 | Task | State | Owner of next step |
 |---|---|---|
 | T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Owner merges PR #1 |
-| T-002 Portfolio spec + reference cases | **Review** (v1.1: all findings resolved in `docs/decisions/0002`) | Codex re-checks v1.1, then Accepted or findings |
+| T-002 Portfolio spec + reference cases | **Changes requested** (B1–B4 resolved; B5 numerical boundary below) | Claude specifies tolerance-safe variance handling |
 | T-003 Synthetic portfolio implementation | Draft (Ready when T-002 Accepted and T-001 merged) | — |
 | T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
 
@@ -63,7 +63,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 - `tests/unit/test_smoke.py` fixture-name list updated for the new cases and passes. Claude's workspace can't reach PyPI, so the full `uv` run is left to CI on the T-002 PR.
 
 **Pending**
-- Owner merges PR #1; Codex re-checks T-002 v1.1.
+- Owner merges PR #1; Claude resolves B5, then Codex re-checks the amendment.
 
 ## Blockers
 
@@ -73,7 +73,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 ## Next
 
 1. Owner: merge PR #1 (T-001), then the T-002 v1.1 PR once Codex accepts it.
-2. Codex: re-check T-002 v1.1 against `docs/decisions/0002`. Independently reproduce at least S1 (STALE, GAP), O7, O9 and one V case. Mark Accepted or return findings.
+2. Claude: resolve B5 below in a decision record and amend the specification/reference coverage; return the exact revision for Codex re-check.
 3. When T-002 is Accepted and T-001 merged, T-003 becomes Ready for Codex.
 4. Owner: decide the stop-date convention and budget when ready; neither blocks the work above.
 
@@ -113,3 +113,34 @@ Added Python 3.12 src-layout package with nine empty components, uv lockfile, Nu
 Completed locally: `uv sync --locked`, `uv run ruff check .`, `uv run pytest -q` (using uv 0.13.1 and Python 3.12.15). The parametrised forbidden-import tests exercise both SDKs, aliases, from-imports, submodules and nested imports. Static import checks are not a security sandbox.
 
 CI: implementation commit passed on GitHub Ubuntu (run 38835035359). Final handoff-only revision will be checked and its result recorded in PR #1. Owner merge and Claude review remain required.
+
+## Codex v1.1 re-review — 2026-10-16
+
+**Reviewed exact revision:** `c457ca55448cd46cace5c64a39cc3f9c687256ab` (PR #2). B1, B2, B3 and B4 are resolved for their reported scenarios; N1's commission-reserve scope and N2's added coverage are accepted. One newly introduced numerical boundary needs a defined outcome. T-002 remains **Changes requested**; no T-003 implementation started. PR #1 was still open/unmerged when checked.
+
+### B5 — Blocking: tolerated covariance can produce undefined volatility
+
+**Sections:** portfolio spec §2.1 (`PSD_TOL`) and §5.6 / §6.3 (quadratic-form square roots).
+
+The validity rule accepts a smallest eigenvalue as low as −1e-12, but the downstream formula unconditionally evaluates `sqrt(w.T @ cov @ w)`. An accepted input can therefore have no real-valued result. Example: two assets, covariance `[[0.04, -0.0400000000005], [-0.0400000000005, 0.04]]`, weights `[0.25, 0.25]`. The smallest eigenvalue is approximately −5e-13 (within tolerance), while variance is approximately −6.25e-14. Both diagonal variances are positive; direct square root fails. A still smaller one-asset counterexample is covariance `[[-5e-13]]`, weight .25: accepted eigenvalue, variance −3.125e-14, `math.sqrt` raises `ValueError`.
+
+**Requested resolution:** define one consistent tolerance-safe volatility calculation for targets and both planner checks (for example, after covariance validity checks, symmetrise within the permitted asymmetry and clamp tolerated negative quadratic-form roundoff to zero), or reject all negative eigenvalues and revise the tolerance rule. State the chosen policy in the decision record and add a boundary reference case. Codex has not chosen or implemented the policy.
+
+### Non-blocking documentation cleanup
+
+T-002's task card still describes 5/4/1 fixtures and old subsection numbers, while v1.1 has 7 weight, 10 order, 1 signal and 8 invalid-input cases. The handoff's earlier 10-case load entry is historical, not a current count. Update these labels during the amendment; no fixture result depends on them.
+
+### Independent reproduction and checks
+
+Temporary calculation script outside the repository: `/tmp/review_t002_v11.py`; command `python3 /tmp/review_t002_v11.py` passed all assertions, then reproduced B5 with a caught square-root domain error. Only synthetic fixtures were used.
+
+- S1: 253 distinct ordered dates; STALE is missing at index 252 (decision date), GAP at index 100. Both independently classify as `missing_data`. SHORT has leading missing values 0–52 and is `insufficient_history`. All three eligible series' returns, trend scores, momentum, volatility, and the entire annualised covariance matrix match within 1e-8.
+- O7: empty eligible set and held P -> `BLOCKED_HELD_INELIGIBLE`; no sale.
+- O9: NAV £10,000; proposed Y buy 250 shares; buffered need plus reserve £2,515.50; settled cash zero -> k=0. Actual X weight .25 has volatility .125; Y is already in S, so nothing new can be added -> `BLOCKED_CONSTRAINTS` after one pass, no orders.
+- V2: covariance asymmetry 1e-6 > SYM_TOL 1e-12 -> `INVALID_COVARIANCE`.
+- `uv sync --locked --offline`: passed using cached dependencies.
+- `uv run --offline ruff check .`: all checks passed.
+- `uv run --offline pytest -q`: 28 passed. These are skeleton/guard/fixture-name tests; no trading implementation exists yet.
+- GitHub CI on c457ca5: push run 38835875431 and PR run 38835897171 both succeeded.
+
+Specs, reference fixtures, and source code unchanged by this review. The only repository edit is this handoff update; the PR comment records the reviewed spec SHA separately from the handoff commit. No orders, real data, holdout access, purchases, merge or deployment.
