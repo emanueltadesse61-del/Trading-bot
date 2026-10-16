@@ -49,7 +49,7 @@ def build_dataset(
             or any(a >= b for a, b in zip(calendar, calendar[1:])) or t not in calendar):
         raise InvalidInputError("INVALID_CALENDAR", "Expected increasing sessions containing t")
     if mode not in {"operational", "research"}:
-        raise ValueError("mode must be operational or research")
+        raise InvalidInputError("INVALID_MODE", "mode must be operational or research")
     if mode == "research" and (not isinstance(exceptions_version, str)
                                or not exceptions_version.strip()):
         raise InvalidInputError("INVALID_EXCEPTIONS_VERSION", "Research requires a snapshot version")
