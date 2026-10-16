@@ -1,5 +1,28 @@
 # Handoff — read this first
 
+## Latest: Codex T-010 requirements review — changes requested
+
+T-010 requirements review at d739684390e00fedcdeedf9bb9687287f9f91ddf: changes requested; no build started.
+
+Independent checks: BT13 matches every ledger field. Saturday payment credits Monday 15 Jan; same-ex-date payment credits Tuesday 16 Jan; the 2 Feb payment remains unsettled at the 26 Jan end. Earlier simulator, schedule, rebalancer, metric and invalid-input fixture sections are JSON-identical to de8f8dc. Independent calculator /tmp/review_t010.py also reproduced all 11 earlier simulator cases, schedules, RB1–RB4 and MT1. No market data used.
+
+B1 — Schema provenance is missing from the proposed bridge's input.
+market_from_raw(raw_dataset, exceptions_snapshot) must reject v1 and accept v2, but accepted RawDataset has only prices/distributions/calendar/declarations/partition/holdout_start; read_raw_dataset returns the manifest separately. Neither RawDataset nor ParsedImport carries a schema version. A v2 dataset with all opens None and no distributions has exactly the same record content as a v1 dataset, so inspecting fields cannot distinguish them. Likewise trader-split cannot infer the original CSV version from an empty-distributions/all-missing-opens import.
+Specify explicit schema propagation from header -> parsed import -> partitions -> read result -> bridge, or change the bridge to consume a validated dataset-plus-manifest envelope. Do not infer version from non-None records or let an unverified caller label substitute for manifest validation. Include empty-distribution and all-None-open tests proving v2 remains v2 and an equivalent v1 is refused; preserve v1 byte identities.
+
+B2 — A date-only payment field does not prove cash is available at that session's open.
+The rule credits cash at the start of the pay-date session before fills. For an ordinary weekday pay date, an account credited later that same day would nevertheless fund a morning buy in this simulator. A payment date alone cannot distinguish those two cases. The spec also assumes every final historical pay date was announced before ex-date, but neither the declarations nor event schema establishes this.
+Keep BT13 as a test of the declared model if desired, but explicitly label same-pay-date opening availability as an assumption, not a guarantee that cash is never used early. Before real activation, require evidence of broker spendable-cash timing or an owner-approved lag/next-session convention with a sensitivity check. Specify evidence that exported pay dates reflect the schedule known at ex-date, or explicitly gate use of retrospectively revised dates. Pay_date can remain an event attribute exempt from holdout partitioning; the exemption needs a stated point-in-time evidence condition. No network/broker work is requested in T-010.
+
+Contract cleanups to settle with the revision:
+N1 — Requiring schema with no default breaks every existing write_raw_dataset call (including tests); adding pay_date also changes asdict-based CSV test exporters. “Existing tests unchanged and pass” cannot coexist with this API change. Choose compatibility or explicitly authorize mechanical caller/helper migrations while keeping all prior assertions and fixture answers. Also name the error for unknown schema arguments.
+N2 — Backtest §2.1 still says raw storage refuses every non-None open until a later card, contradicting the new v2 support. Registry §5.4 still says the open-prices card enables SUPPORTED_REAL_SCHEMAS whereas T-010 now defers activation to statistics; align it without enabling real runs. Decision 0011 row 3 references decision 0010 row 18, which does not establish the lag rule (the relevant discussion was decision 0009).
+N3 — Define BACKTEST_PAY_DATE for wrong-type non-None values, not only pay_date < ex_date, to avoid unlabelled TypeError for direct canonical inputs. Specify v2 writer validation of both missing and pre-ex-date payments and tests for invalid pay dates outside the run instrument/end scope being ignored consistently with admission.
+N4 — “T-009 and T-010 share no code” is inaccurate if T-010 moves the exceptions parser into trader.data for registry reuse. Assign that shared parser location/ownership before parallel builds, or make that small integration sequential. The accepted digest and approved-string contract must remain unchanged.
+
+PR #15 is still awaiting the owner's merge; this review does not authorize either merge or build. Current strategy remains unchanged; real execution remains blocked.
+
+
 ## Latest: T-010 card drafted (Claude) — 2026-10-16
 
 Branch `t-010-card`, built on `t-009-card` (PR #15, accepted, awaiting the owner's merge). Docs and fixture only.
