@@ -222,3 +222,12 @@ Local checks: `PYTHONPATH=src /tmp/trading-bot-codex/.venv/bin/python -m pytest 
 Routine interface choices: canonical record/session dates use datetime.date; approval dates remain ISO strings so malformed approvals can be reported. Invalid mode values (outside the two specified modes) raise ValueError; missing/blank research versions raise INVALID_EXCEPTIONS_VERSION. Identical issue triples are emitted once, matching duplicate-record fixture reporting. Defaults use a read-only units map. The guard uses Path.resolve and does not claim to prevent later filesystem changes or authorise holdout access.
 
 Data: synthetic only; no experiments. No new dependencies, storage, downloads, real-feed adapter, broker calls, holdout access, funding, deployment or merges. The guard cannot discover omitted workspace roots; callers must supply all roots and enforce the owner-run boundary before real ingestion. Claude review remains outstanding.
+
+
+## T-006 Claude review B1 fix — 2026-10-16
+
+Reviewed implementation was `a43aefdb89b2a28a3e75795aec346929f12d4ca9`; Claude requested one guard correction in review 5551443923. The guard now retains resolved lexical containment and additionally calls os.path.samefile for the destination and each ancestor against every resolved forbidden root. Missing paths are skipped so nonexistent leaves are supported; other filesystem errors propagate rather than implying safety. No paths are created.
+
+Regression coverage simulates case-insensitive identity for both repository and agent-workspace roots, includes nonexistent destination children and a permitted prefix sibling, and checks that access errors are not swallowed. Existing real symlink tests remain. Local Python 3.12 pytest: **625 passed**; ruff and git diff --check passed. Specs, fixtures and builder logic unchanged. CI for the exact fix commit is recorded in PR #8.
+
+N1 remains Claude's spec clarification. N2 (mode error taxonomy) and N3 (typed-record adapter validation) are deferred to the adapter boundary rather than changing the accepted interface here. No new input-error code is introduced. T-006 remains Review pending Claude's re-check of B1. No merge, downloads, holdout access, broker calls or spending.

@@ -230,3 +230,46 @@ def test_operational_approval_cutoff_changes_only_authorization():
     assert future.tr_close == current.tr_close
     assert not future.data_ok and current.data_ok
     assert future.exceptions_digest != current.exceptions_digest
+
+
+@pytest.mark.parametrize("root_kind", ["repo", "workspace"])
+def test_holdout_case_insensitive_identity(tmp_path, monkeypatch, root_kind):
+    import os
+
+    root = tmp_path / "Trading-Bot"
+    root.mkdir()
+    real_samefile = os.path.samefile
+    checked = []
+
+    def case_insensitive_samefile(a, b):
+        # Model an existing directory reachable through either case spelling.
+        # The destination's new children still do not exist.
+        a, b = Path(a), Path(b)
+        checked.append(a)
+        if str(a).casefold() == str(root).casefold():
+            a = root
+        if str(b).casefold() == str(root).casefold():
+            b = root
+        return real_samefile(a, b)
+
+    monkeypatch.setattr(os.path, "samefile", case_insensitive_samefile)
+    alias = tmp_path / "trading-bot"
+    destination = alias / "new-data" / "holdout"
+    repo = root if root_kind == "repo" else tmp_path / "another-repo"
+    workspaces = [] if root_kind == "repo" else [root]
+    with pytest.raises(HoldoutPathError):
+        check_holdout_path(destination, repo, workspaces)
+    assert alias in checked
+    assert not (root / "new-data").exists()
+    check_holdout_path(tmp_path / "trading-bot-other" / "holdout", repo, workspaces)
+
+
+def test_holdout_identity_error_is_not_ignored(tmp_path, monkeypatch):
+    import os
+
+    def denied(a, b):
+        raise PermissionError("synthetic access denied")
+
+    monkeypatch.setattr(os.path, "samefile", denied)
+    with pytest.raises(PermissionError):
+        check_holdout_path(tmp_path / "outside", tmp_path / "repo", [])
