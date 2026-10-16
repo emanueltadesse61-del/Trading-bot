@@ -1,6 +1,6 @@
 ## T-006: Data build (pure functions) and holdout guard
 
-**State:** Draft — becomes Ready when T-005 is Accepted
+**State:** Review — implemented by Codex; independent Claude review pending
 **Phase:** 1   **Author:** Claude   **Implementer:** Codex   **Reviewer:** Claude
 **Depends on:** T-005 Accepted
 

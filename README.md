@@ -15,3 +15,10 @@ uv run pytest -q
 Read [the current handoff](docs/handoff.md) first, then [agent working rules](AGENTS.md) and the assigned task card. Claude and Codex use separate checkouts; the owner approves merges.
 
 The import guard detects direct Python imports of forbidden SDKs under `src/`. It is a regression check, not a sandbox or a guarantee against dynamic imports or network access. Broker credentials and holdout data must remain outside agent and CI environments.
+
+
+The data component now builds engine inputs from canonical synthetic price and
+cash-distribution records (data spec v1.1), with explicit feed units, session gaps,
+quality reports and exception-snapshot digests. Its holdout-path guard checks
+repository and supplied workspace containment; it does not authorise data access.
+Storage and real-feed integration remain future work.
