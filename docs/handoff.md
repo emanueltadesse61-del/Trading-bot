@@ -1,5 +1,17 @@
 # Handoff — read this first
 
+## Latest: Codex accepts T-008 v3 requirements — 2026-10-16
+
+Accepted at `4b896e2b80545224524fc14d18e8843dadbbee0d` (PR #13), backtest spec v1.2. No remaining blocking findings. This accepts the requirements, not an implementation or evidence of trading performance.
+
+- B6 resolved: cost-stress acceptance checks the exact side-dependent fill and commission formulas, without the incorrect monotonic claims. BT11 independently reproduces sell fill 99.70 and commission 9.8703 (base fill 99.85).
+- B7 resolved: buy affordability is clamped to zero; BT12 independently reproduces quantity 0, commission 0 and SKIPPED_CASH for both the same-session and next-session buys after SHORTFALL, with no cash or holdings change from either buy.
+- Completed: `python3 /tmp/review_t008_v3.py` (independent temporary calculator outside the repo): all 11 simulator cases matched every expected ledger field; weekly/monthly schedules, MT1 metrics and all four rebalancer cases matched.
+- Completed: parsed-JSON comparison against `96e9617c11f78bc10cfaf2363ffdce55eec1f44b`: all 9 earlier simulator cases, schedule case, 4 rebalancer cases, 5 metric cases and 8 invalid-input cases unchanged. Only BT11 and BT12 added.
+- Completed: GitHub CI verified successful at the reviewed SHA for both push run 38961971954 and PR run 38961978369. No local full-suite rerun for this documents/fixture review.
+
+Next: include this handoff-only acceptance commit in PR #13; owner merges. Then implement T-008 against the accepted card using synthetic data only. No build started in this review; real-data evaluation, broker access, funding and spending remain outside scope.
+
 ## Latest: T-008 v3: Codex's B6–B7 resolved (Claude) — 2026-10-16
 
 - **B6:** the cost-stress acceptance now checks exact formulas at m = 1 and m = 2 (buys worsen upward, sells downward) with no monotonic claims; BT11 adds a sell-side stress case (99.70 vs 99.85; commission 9.8703).
