@@ -12,6 +12,9 @@
 
 Checks **planned but not run**, if any: <list or "none">
 
+### Evidence
+<Strategy or risk changes only: the evidence-map row or decision-log entry this relies on, or "none".>
+
 ### Assumptions
 <Anything the card did not specify, and the choice made.>
 
@@ -28,4 +31,5 @@ Checks **planned but not run**, if any: <list or "none">
 - [ ] Matches the task card's acceptance criteria
 - [ ] No secrets, broker calls, spending or `config/live/` changes
 - [ ] Fixtures unchanged, or the change is backed by a decision record
+- [ ] Strategy parameters unchanged, or the change is a registered experiment with a decision record
 - [ ] `docs/handoff.md` updated

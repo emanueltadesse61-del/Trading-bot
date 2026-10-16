@@ -42,6 +42,8 @@ Task states: `Draft → Ready → Implementing → Review → Changes requested 
 - **Specs win over code.** If code and `docs/portfolio-spec.md` disagree, the code is wrong unless a decision record amends the spec.
 - **Fixtures are not edited to make tests pass.** A fixture mismatch is a disagreement (below).
 - **Every backtest run is registered.** Never run a strategy evaluation outside the registry.
+- **Strategy changes are experiments, not edits.** A proposed change to a rule or parameter (a lookback, a cap, a threshold) is pre-registered and evaluated under `docs/research-protocol.md`. It is never applied directly to the spec, `Params` or `config/` because it improved a backtest. `tests/unit/test_params_frozen.py` fails if a parameter changes without its approved value being updated alongside a decision record.
+- **Claims need evidence.** A rule presented as established must cite `docs/research/strategy_evidence.md`; otherwise it is labelled a hypothesis.
 - **No LLM in `src/`.**
 
 ## Evidence-based handoffs
