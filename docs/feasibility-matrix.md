@@ -1,6 +1,6 @@
 # Feasibility Matrix (T-004)
 
-Status: **Draft v2 — Review (Claude under decision 0004; revised for Codex findings F1, F2 on 8aa48b9).** Public facts checked 2026-10-16. Account checks: **Blocked** until the owner's IBKR account is approved.
+Status: **Draft v2 — Review (Claude under decision 0004; revised for Codex findings F1, F2 on 8aa48b9).** Public facts checked 2026-10-16. Account checks: the owner reports the IBKR account **approved 2026-10-16**; the account checks below are **pending with the owner** and none is verified here.
 
 Cell values follow the T-004 rule. A cell holds a value with its source, `UNVERIFIED`, or `BLOCKED: <reason>`. **No check is recorded as passed without a source.** Nothing here has been verified inside the owner's account.
 
@@ -18,21 +18,21 @@ Cell values follow the T-004 rule. A cell holds a value with its source, `UNVERI
 
 | Check | Evidence needed | Status | Public notes |
 |---|---|---|---|
-| IBKR UK account approved; cash account (no margin) | Account settings or statement | BLOCKED: account pending | — |
-| Paper account available and linked | Paper login works | BLOCKED: account pending | — |
-| Permissions: LSE-listed UCITS ETFs (and an ETC, if D1(a)) | Permissions page. Note: options and other complex products are **not** needed | BLOCKED: account pending | — |
-| API access enabled for paper | Successful connection from a test script on the owner's machine, not an agent workspace | BLOCKED: account pending | — |
-| IB Gateway login method and re-authentication frequency | Owner observation over 2 weeks | BLOCKED: account pending | UNVERIFIED |
-| Market data: free, delayed or subscription for LSE ETFs; monthly cost | Market data page and account entitlements | BLOCKED: account pending | Unsubscribed paper data is delayed; real-time subscriptions need an approved, fully funded account ([IBKR](https://www.interactivebrokers.com/en/trading/papertrader-delayed-data.php)) |
-| Historical daily bars via API: depth per instrument, pacing limits | Test request results | BLOCKED: account pending | UNVERIFIED |
-| Commission plan, routing and entitlements actually applied to the account | Account pricing settings, with date | BLOCKED: account pending | Public UK schedule recorded in D4; the account's plan is not yet known |
+| IBKR UK account approved; cash account (no margin) | Account settings or statement | Owner-reported: approved 2026-10-16. Cash-account (no margin) status UNVERIFIED | — |
+| Paper account available and linked | Paper login works | Owner-reported 2026-10-16: paper login works on IB Gateway. Not independently verified | — |
+| Permissions: LSE-listed UCITS ETFs (and an ETC, if D1(a)) | Permissions page. Note: options and other complex products are **not** needed | PENDING: owner check. D1(a) chosen, so the SGLN ETC permission must be confirmed | — |
+| API access enabled for paper | Successful connection from a test script on the owner's machine, not an agent workspace | Owner-reported 2026-10-16: read-only IB Gateway connection (port 4002) from the owner's machine succeeded. Not independently verified | — |
+| IB Gateway login method and re-authentication frequency | Owner observation over 2 weeks | PENDING: owner observation | UNVERIFIED |
+| Market data: free, delayed or subscription for LSE ETFs; monthly cost | Market data page and account entitlements | PENDING: owner check. Entitlements UNVERIFIED | Unsubscribed paper data is delayed; real-time subscriptions need an approved, fully funded account ([IBKR](https://www.interactivebrokers.com/en/trading/papertrader-delayed-data.php)) |
+| Historical daily bars via API: depth per instrument, pacing limits | Test request results | Owner-reported partial 2026-10-16: VWRP and IGLT returned daily bars, unsubscribed. These are **not** the configured lines; depth for the 11 data instruments and pacing are UNVERIFIED | UNVERIFIED |
+| Commission plan, routing and entitlements actually applied to the account | Account pricing settings, with date | PENDING: owner check | Public UK schedule recorded in D4; the account's plan is not yet known |
 | Can unsettled sale proceeds fund buys in a cash account? | IBKR documentation | UNVERIFIED | The spec does not use them either way (portfolio spec §6.3 step 5) |
 | Withdrawals can be disabled for the API user | IBKR documentation or settings | UNVERIFIED | — |
 | UK stamp duty on ETF purchases | HMRC or broker statement | UNVERIFIED | Commonly reported as not charged on ETFs; confirm before setting the cost model |
 
 ## Table B — Instrument matrix (candidates, not decisions)
 
-Fields come from issuer or broker pages fetched on 2026-10-16. "Charge" is the ongoing charge as displayed; AJ Bell shows it without a unit, and it is read as % a year. **Available in account** is BLOCKED for every row until the owner checks.
+Fields come from issuer or broker pages fetched on 2026-10-16. "Charge" is the ongoing charge as displayed; AJ Bell shows it without a unit, and it is read as % a year. **Available in account** is PENDING the owner's checks for every row.
 
 | Role | Candidate | ISIN | LSE ticker and unit shown on source page | Income | Charge | Structure | Share-class inception | Source |
 |---|---|---|---|---|---|---|---|---|
@@ -42,7 +42,7 @@ Fields come from issuer or broker pages fetched on 2026-10-16. "Charge" is the o
 | Japan equity | Vanguard FTSE Japan UCITS ETF | IE00B95PGT31 | VJPN, £ | Quarterly | 0.1 | UCITS (from name) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:VJPN) |
 | Emerging-markets equity | Vanguard FTSE Emerging Markets UCITS ETF | IE00B3VVMM84 | VFEM, £ | Quarterly | 0.17 | UCITS (from name) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:VFEM) |
 | UK gilts | Vanguard U.K. Gilt UCITS ETF | IE00B42WWV65 | VGOV, £ | Monthly | 0.05 | UCITS (from name) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:VGOV) |
-| US Treasuries, GBP-hedged | Vanguard USD Treasury Bond UCITS ETF GBP Hedged Distributing | IE000S0PSP47 | VDTS, GBP | Distributing, monthly | 0.08% | Irish UCITS | **08 Feb 2022** (D2) | [Vanguard](https://www.vanguard.co.uk/professional/product/etf/bond/E024/usd-treasury-bond-ucits-etf-gbp-hedged-distributing) |
+| ~~US Treasuries, GBP-hedged~~ **DROPPED for v1 (decision 0008)** | Vanguard USD Treasury Bond UCITS ETF GBP Hedged Distributing | IE000S0PSP47 | VDTS, GBP | Distributing, monthly | 0.08% | Irish UCITS | **08 Feb 2022** (D2) | [Vanguard](https://www.vanguard.co.uk/professional/product/etf/bond/E024/usd-treasury-bond-ucits-etf-gbp-hedged-distributing) |
 | Inflation-linked bonds | iShares £ Index-Linked Gilts UCITS ETF GBP (Dist) | IE00B1FZSD53 | INXG, £ | Semi-annual | 0.1 | UCITS (from name) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:INXG) |
 | Gold | iShares Physical Gold ETC | IE00B4ND3602 | SGLN, **pence** | None | 0.12 | **ETC, "UCITS: No"** (D1) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:SGLN) |
 | Broad commodities | Invesco Bloomberg Commodity UCITS ETF (GBP) | UNVERIFIED | CMOP, **pence** | UNVERIFIED | UNVERIFIED | UCITS (from name); replication UNVERIFIED | UNVERIFIED | [HL](https://hl.co.uk/shares/shares-search-results/i/invesco-bloomberg-commodity-ucits-etf-gbp) |
@@ -56,18 +56,18 @@ Share-class inception is **not** evidence of usable price history. History cover
 
 | Role | Ticker | Currency hedging | KID available | Typical spread source | Available in account | History source and first usable date |
 |---|---|---|---|---|---|---|
-| UK equity | VUKE | None stated on source page — UNVERIFIED | UNVERIFIED | UNVERIFIED (measure from feed in Phase 1) | BLOCKED: account pending | UNVERIFIED |
-| US equity | CSP1 | None stated ("USD" share class name) — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Europe ex-UK equity | VERX | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Japan equity | VJPN | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Emerging-markets equity | VFEM | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| UK gilts | VGOV | Not applicable (GBP assets) — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| US Treasuries, GBP-hedged | VDTS | GBP hedged (fund name, [Vanguard](https://www.vanguard.co.uk/professional/product/etf/bond/E024/usd-treasury-bond-ucits-etf-gbp-hedged-distributing)); method UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED; cannot predate 08 Feb 2022 without proxy (D2) |
-| Inflation-linked bonds | INXG | Not applicable (GBP assets) — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Gold | SGLN | None stated — UNVERIFIED | UNVERIFIED (ETC; KID requirement may differ, D1) | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Broad commodities | CMOP | UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Global property | IWDP | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
-| Benchmark: global equity | VWRL | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| UK equity | VUKE | None stated on source page — UNVERIFIED | UNVERIFIED | UNVERIFIED (measure from feed in Phase 1) | PENDING: owner check | UNVERIFIED |
+| US equity | CSP1 | None stated ("USD" share class name) — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Europe ex-UK equity | VERX | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Japan equity | VJPN | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Emerging-markets equity | VFEM | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| UK gilts | VGOV | Not applicable (GBP assets) — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| ~~US Treasuries, GBP-hedged~~ **DROPPED (0008)** | VDTS | GBP hedged (fund name, [Vanguard](https://www.vanguard.co.uk/professional/product/etf/bond/E024/usd-treasury-bond-ucits-etf-gbp-hedged-distributing)); method UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED; cannot predate 08 Feb 2022 without proxy (D2) |
+| Inflation-linked bonds | INXG | Not applicable (GBP assets) — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Gold | SGLN | None stated — UNVERIFIED | UNVERIFIED (ETC; KID requirement may differ, D1) | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Broad commodities | CMOP | UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Global property | IWDP | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
+| Benchmark: global equity | VWRL | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | PENDING: owner check | UNVERIFIED |
 
 Every UNVERIFIED cell must hold a sourced value before Phase 1 fixes the holdout dates.
 
@@ -83,7 +83,7 @@ None of the access, adjustment, cost or licence properties below has been verifi
 
 | Source | Coverage | Total return or price only | Cost | Licence and automation limits | Evidence needed | Verdict |
 |---|---|---|---|---|---|---|
-| IBKR API historical bars | UNVERIFIED (D5) | UNVERIFIED | UNVERIFIED: may need a market-data subscription | UNVERIFIED | Test requests on the paper account; IBKR market-data and API terms, dated | Preferred candidate if depth and adjustments suffice. BLOCKED: account pending |
+| IBKR API historical bars | UNVERIFIED (D5) | UNVERIFIED | UNVERIFIED: may need a market-data subscription | UNVERIFIED | Test requests on the paper account; IBKR market-data and API terms, dated | Preferred candidate if depth and adjustments suffice. PENDING: owner's full-history check (partial owner-reported probe under D5) |
 | Issuer NAV and distribution history (Vanguard, iShares) | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | Locate the download for one fund; read the issuer site's terms of use, dated | Candidate second source for Gate 1 cross-checks |
 | Free aggregators (e.g. Yahoo Finance) | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | The provider's terms of service, dated | Research comparison only, never authoritative, until terms are checked |
 | Index proxy history (e.g. FTSE, Bloomberg indices) | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | Index-provider licence and data terms, dated | Only where D2-style gaps exist, labelled as proxy, reported separately |

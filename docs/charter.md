@@ -57,13 +57,13 @@ Account approval must not block specifications, repository setup or synthetic te
 
 | Item | Status | Entry |
 |---|---|---|
-| Market | Confirmed | **11 instruments**: liquid UCITS ETFs plus **one named non-UCITS exception, the iShares Physical Gold ETC (SGLN)**, if the account can trade it. GBP-hedged US Treasuries dropped for v1. Each instrument needs ≈ 8 years of history (holdout rule) (decision 0008) |
+| Market | Confirmed | **10 strategy instruments**: VUKE, CSP1, VERX, VJPN, VFEM, VGOV, INXG, SGLN, CMOP, IWDP. Liquid UCITS ETFs plus **one named non-UCITS exception, the iShares Physical Gold ETC (SGLN)**, if the account can trade it. GBP-hedged US Treasuries dropped for v1. **Benchmark-only:** VWRL (never selected by the strategy), giving **11 distinct data instruments**. Eligibility is the actual valid-history count under the holdout rule (decision 0008) |
 | Rebalancing | Confirmed | Weekly (primary); monthly pre-registered as a robustness variant; decision time, execution session and holiday rules fixed in Phase 0 (decision 0008) |
 | Deciding benchmark | Proposed | 60/40 equity/gilt portfolio, monthly rebalanced, same cost conventions |
 | Other comparisons | Proposed | Global equity buy-and-hold; 10-month moving-average rule |
 | Primary objective | Proposed | Gate 3 rule in `docs/research-protocol.md`, after costs and before personal tax |
-| Trial budget | Proposed | At most 20 registered strategy variants, robustness variants included. Committed so far: trend lookbacks 1/3/12 and monthly rebalancing as robustness variants (decision 0008) |
-| Holdout | Confirmed (rule) | Most recent **4 years** of usable history. The exact start date is fixed mechanically from history availability (T-007) and written here **before any performance is computed**; it is never chosen to include or exclude a particular market event. Exact date: **not yet set** (needs real data). Evaluated once, by the owner (decision 0008) |
+| Trial budget | Proposed | At most 20 registered strategy variants, robustness variants included. **3 reserved, 0 run:** the primary (3/6/12, weekly) and two one-change comparisons (1/3/12 weekly; 3/6/12 monthly) (decision 0008) |
+| Holdout | Confirmed (rule) | Most recent **4 years** of usable history. The exact start date is fixed mechanically from history availability (T-007) and written here **before any performance is computed**; it is never chosen to include or exclude a particular market event. Sequence: owner-only proposal → owner confirms the date here → split → only then may development data enter an agent-accessible location. Exact date: **not yet set** (needs real data). Evaluated once, by the owner (decision 0008) |
 
 ### Permanent rules
 
