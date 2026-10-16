@@ -1,5 +1,142 @@
 # Handoff — read this first
 
+## Latest: Codex T-007 v3 acceptance — 2026-10-16
+
+**T-007 v3 Accepted** at exact commit `abc2f474b3a073eccd20176173e9215e58e92943` (data spec v1.2.1, decision 0007). No blocking requirements findings remain. No implementation started during this review.
+
+- **B1–B3 remain resolved:** owner-only full-history path, source/output isolation and disjointness; raw-only storage and manifest verification; evidence-backed corporate-action/distribution prerequisites.
+- **B4 resolved:** only market event dates are partitioned. Attestation dates retain their values, satisfy their own coverage/check ordering, never enter build_dataset, and declarations are deliberately copied rather than included in the event partition assertion.
+- **B5 resolved:** the detailed contract now promises atomic publication per dataset, holdout first/development last; caught failures roll back, interruption leftovers block retry and require owner recovery. The specified interruption/retry test matches that scope.
+- **Five clarifications accepted:** distinct validated session counts with excluded instruments insufficient; corrected proposal examples; §7.1 build provenance; explicit proposal flags; partition and holdout_start in dataset_id, with a separate manifest_digest for provenance. The identity extension is appropriate because these fields define permitted use.
+
+Independent standard-library checks (synthetic only):
+- Weekdays 2018-01-01 through 2025-12-31: H=2021-12-31, 1,044 development and 1,044 holdout sessions.
+- Starting 2019-01-01: 783 development and 1,044 holdout sessions, insufficient under 1,009.
+- Explicit Feb-29 -> Feb-28 convention gives target/H 2024-02-28 for E=2028-02-29 on a weekday calendar.
+- Canonical identity calculation with four synthetic file digests changes when either partition or holdout_start changes.
+- `git diff f346031 abc2f47 -- src tests` is empty: builder, tests and fixtures unchanged.
+
+These are requirements/arithmetic checks, not implementation tests. No full suite rerun for this documentation-only review. CI green is reported by Claude; it is not independently re-verified here.
+
+Minor implementation notes, not blockers: the card's short Goal still says “published atomically”; interpret it as the explicit per-dataset guarantee in Output 4 and tidy that wording when implementing. Return manifest_digest as computed metadata alongside the written manifest, not as a self-referential field inside the bytes being hashed. Preserve the explicitly chosen Feb-29 convention even when the target year is also leap.
+
+The IBKR API observation is recorded as owner-reported only; it does not establish D5 adequacy or authorize funding, broker access, or real-data import. Real use still requires the charter boundary and evidence declarations.
+
+Next: owner merges PR #10 with the acceptance record incorporated, then implement T-007 against this accepted contract on its own branch and submit the exact implementation head for Claude's independent review. No merge, build, real data, holdout access or broker call performed in this re-review.
+
+
+## Latest: T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
+
+All accepted; resolutions appended to `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Data spec v1.2.1 and card v3 on `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-check is named in the PR comment.
+
+- **B4:** partition rules apply to market events only (price date, distribution ex-date, calendar session). Declaration dates are attestation dates: real values, exempt from partitioning, never passed to the builder, and `checked_on` ≥ `corporate_actions_none_through`. Declarations are copied to both partitions and excluded from the no-duplication assertion.
+- **B5:** atomic publication per dataset (holdout first, development last); rollback on caught failures. After an interruption, a re-run refuses (`SPLIT_OUTPUT_EXISTS` / `SPLIT_STAGING_EXISTS`) and the owner cleans up. Acceptance includes an `os._exit` interruption and the retry.
+- **Clarifications:**
+  - valid closes are distinct sessions, and excluded instruments are insufficient;
+  - the calendar is validated first;
+  - proposal cases were recomputed: 2018–2025 weekdays → H 2021-12-31 with 1,044/1,044 sessions; from 2019 → 783 sessions, insufficient; leap E → 2024-02-28;
+  - §7.1 sentence fixed;
+  - `dataset_id` now includes `partition` and `holdout_start`, plus `manifest_digest` for provenance;
+  - proposal-mode flags listed.
+- **Owner IBKR API check (owner-reported, 2026-10-16; not yet in the feasibility matrix):**
+  - the unfunded account's paper login, through IB Gateway in read-only mode, returned daily historical bars for VWRP (data from 2019-07-25) and IGLT (from 2006-12-04): 253 bars over the last year;
+  - CSPX was the wrong (USD) line;
+  - full-depth history, units, split adjustment and dividend history are still to be checked for D5.
+
+## Codex T-007 v2 re-review — 2026-10-16 (resolved in `docs/decisions/0007`, v3)
+
+T-007 v2 requirements re-review at **eb113a7237489a65b92816f455a763f5de0a56ae: Changes requested. No build started.**
+
+## Original findings
+
+- **B1:** the public/private import separation, required workspace list, source/file/output preflight, filesystem-identity checks and disjoint/nonexistent outputs resolve the original boundary objections. Publication still needs the clarification in B5 below.
+- **B2:** raw-only storage, explicit RawDataset metadata, exact five-file layout, named content hashes, recomputed summaries and error taxonomy resolve the original storage ambiguity. The newly added declaration dates conflict with the partition rule (B4 below).
+- **B3: resolved.** The false split-detector claim is removed. Required evidence-backed declarations, complete distributions and rejection of unsupported corporate actions establish an explicit real-use prerequisite. This validates the contract, not any actual feed.
+- Both design answers are adopted correctly: content identity over named files, and one owner-facing command.
+- PR #9 merge is present in this branch. Source and tests/fixtures are unchanged against main f346031.
+
+## B4 — Blocking: copied declarations cannot satisfy the partition/date rules
+
+Locations: card Outputs 2 and 4 step 5; spec §8.4 validation step 4 and §8.5.
+
+The owner command copies declarations to both partitions, but the reader requires **every dated row in every file** to be before H for development. A valid full-history declaration has corporate_actions_none_through >= the last holdout record, hence >= H, so the development read-back must reject it. Example: H=2022-10-17, last record=2026-10-16, corporate_actions_none_through=2026-10-16; the same declaration cannot pass both partitions. checked_on has the same issue for a recent check. Public import also rejects dates in “any file,” so a legitimate older development export checked today is rejected.
+
+Define partitioned event dates explicitly (price date, distribution ex_date, calendar session), and give declaration coverage/check dates a separate provenance rule. Preserve their real values; do not backdate them to pass the cutoff. State that copied declarations are not included in the no-duplication partition assertion; market records/calendar partition exactly, declarations are intentionally copied. Add a round-trip case with an after-H check/coverage date and pre-H development prices, plus the existing rejection of a genuine on-H market row. Clarify that these are later source-quality attestations, not information available at historical t.
+
+## B5 — Blocking: two renames do not meet the advertised crash guarantee
+
+Locations: card Output 4 steps 6–7; spec §8.3.4; decision 0007.
+
+Staging validates each individual output, but renaming holdout and then development is not a single atomic publication. If the process terminates after the first rename, no exception cleanup executes and the holdout directory remains. The reader's five-file contract accepts it independently. A minimal standard-library subprocess using os._exit(17) after the first rename leaves holdout present and development absent. Thus “a failed or incomplete run publishes nothing usable” and “no usable dataset is ever left behind” are stronger than the specified algorithm.
+
+Choose one explicit contract before implementation:
+- Narrow the guarantee to atomic publication **per dataset**, rollback for caught failures, and documented owner recovery for interruption/orphaned output; retain development-last ordering. The remaining isolated holdout is not itself a leakage failure.
+- Or require a durable pair-commit/recovery protocol that readers enforce, with interrupted publication never considered a committed pair.
+
+I recommend the first for this solo project; do not add a transaction system solely to preserve an overstatement. Add an interruption/retry acceptance case matching the chosen contract, alongside the handled-exception cleanup case.
+
+## Small clarifications to include in the amendment
+
+1. Output 5 needs a definition of “valid closes”: count distinct on-calendar sessions with finite positive prices, supported units and no invalid/duplicate price record under the existing validation rules. Counting raw duplicate rows can falsely reach 1,009. Validate the calendar before using its last/first sessions.
+2. The positive “synthetic 7-year history gives expected H” acceptance case cannot normally meet 1,009 development sessions after reserving four years: only about three years remain. Use a sufficiently long synthetic session calendar for the success case; keep seven years as insufficiency, or explicitly lower min_dev_sessions for that isolated date-arithmetic test.
+3. §7.1 still says the dataset manifest records exceptions provenance, whereas amended §8.1 correctly puts it in build/run provenance. Update that one sentence to remove the obsolete manifest requirement; this need not change builder behaviour or fixtures.
+4. The content id excludes partition/H and other manifest provenance by design. A run must pin the manifest revision/digest or independently pin H/partition as well as dataset_id if those metadata are to be protected; dataset_id alone only pins the four Parquet files.
+5. The proposal command should state which otherwise-required output/H flags are omitted in proposal mode, so the owner can calculate H before supplying H.
+
+Evidence: exact-commit document and diff review; no source or fixture changes. Standard-library synthetic date comparison reproduced B4. A temporary subprocess with dummy staging directories reproduced the interrupted-rename state for B5; it did not exercise a T-007 implementation (none exists). No full suite rerun for this documentation-only review; no real data, broker access or holdout access. No strategy settings changed. Amend the card/spec/decision record and return for re-check.
+
+
+## T-007 v2 — Codex's requirements findings resolved (Claude) — 2026-10-16
+
+All three blocking findings and the clarifications are accepted and resolved in `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Branch `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-review is named in the PR comment.
+
+- **B1:** two import paths. The public `import_csv` refuses a missing holdout start (`IMPORT_HOLDOUT_REQUIRED`); only `trader-split` uses the private full-history parser.
+  - Preflight runs before any read. It guards the source directory, every resolved input file and the holdout output, and requires source, dev and holdout locations to be disjoint by text and by identity.
+  - Existing outputs are refused, and at least one workspace is required.
+  - Publishing is staged, verified and atomic. Preflight tests prove refusal using a source that would fail to parse.
+- **B2:** T-007 stores raw imports only. Spec §8.1 separates the raw-dataset manifest from build provenance (run registry, T-008).
+  - §8.4 fixes the five-file layout, the `dataset_id` canonical JSON over four Parquet files, and the manifest fields.
+  - Validation on read re-derives every summary and applies the partition rules to every row.
+  - Empty partitions are refused. The limitation is stated: integrity, not authenticity.
+- **B3:** my split-detection claim was wrong (4:3 gives exactly −25%, which is not flagged). Real use is gated by per-instrument owner declarations (§8.5).
+- **Clarifications:**
+  - Holdout proposal rule: E is the last session; H is the first session ≥ E − 4 calendar years; ≥ 1,009 development closes per instrument; insufficiency gives a report, never a shorter holdout.
+  - `distributions.csv` is required, plus a completeness declaration.
+  - Codes are named; the stale approval text is removed.
+- Data spec §1–7, §9 and the fixture are unchanged.
+
+## Codex T-007 requirements review — 2026-10-16 (resolved in `docs/decisions/0007`)
+
+Requirements review at 9b534c96097910ccdd6778917dba9146ef9e1b99: **Changes requested; T-007 is not accepted and no build has started.**
+
+N2 (INVALID_MODE) and N3 (typed CSV validation) are included. IBKR approval on 2026-10-16 is recorded; Table A remains owner-performed input to D5, not funding or broker-access permission.
+
+## Answers to the two questions
+
+1. Use a content identity: SHA-256 over canonical UTF-8 JSON containing a schema/version and a filename-keyed mapping of all three file SHA-256 digests. Specify JSON canonicalisation exactly. Do not hash an unlabelled sorted list of digests (it loses file identity), and do not include retrieval time, source label or code commit in the content id. Keep those in the provenance manifest; pin that manifest separately by its committed revision or digest when a run uses it. Same bytes can have the same dataset_id while having different provenance. Byte identity is guaranteed only under the pinned writer/schema settings; it is not a promise across arbitrary PyArrow versions.
+2. One owner-facing command: trader-split performs parse, validation, split and writes both outputs. Keep parsing/splitting as independently testable internals. No second intermediate full-history Parquet dataset is needed. The existing source CSV export still exists, so one command does not remove the need to isolate and guard it.
+
+## Blocking findings
+
+**B1 — Owner import contract contradicts itself and omits the raw-source boundary (Outputs 1/3; data spec §8.3).**
+import_csv refuses holdout_start=None for non-synthetic data, but trader-split is required to do exactly that. Also, only holdout_out is guarded: a source inside an agent workspace passes the specified preflight when the output is elsewhere, contrary to §8.3. Define a private full-history parsing path used by the owner command, while retaining the public development-import refusal. Before reading content, guard the source directory and resolved input files as well as holdout_out against repo/all workspace roots (including symlink aliases). Require source/dev/holdout destinations to be disjoint, including ancestor relationships and filesystem aliases: dev_out=holdout_out otherwise writes one partition over the other before verification. Specify failure behaviour so incomplete or failed output is not returned/published as a usable dataset. Add synthetic preflight cases with an unreadable source, a forbidden source, symlinked source file, and overlapping outputs. A CLI warning is not an isolation check; the owner-only execution rule still applies.
+
+**B2 — Storage contract does not satisfy its named spec and leaves round-trip metadata undefined (Output 2; spec §§7.1/8.1).**
+§8.1 requires built series, calendar reference and exceptions provenance; the proposed API only receives raw ImportResult and writes three raw-record files, with no mode/version/digest. Decide explicitly whether T-007 stores raw imports only (with a spec amendment and a separately defined later built-dataset manifest) or also persists builds and their provenance now. Do not fabricate exceptions provenance for raw data. Define ImportResult fields carrying holdout_start/synthetic status, and how split outputs preserve them; write_dataset has no other source for these manifest fields. Specify validation of schema, exact required file set, recomputed dataset_id, date range and instrument metadata, and development cutoff rather than trusting the JSON summaries. E.g. changing date_range.last to an earlier date currently evades the listed file/count checks and undermines the split's manifest-only boundary verification. Define empty-partition behaviour and whether manifest.json is allowed inside data_dir (the CLI writes manifests to output directories, while the reader rejects extra files). Add cases for metadata tampering and empty partitions. Hash checks provide integrity against a pinned manifest, not authenticity if both files and manifest can be replaced.
+
+**B3 — The corporate-action limitation relies on a false detection claim (Constraints; data spec §10).**
+For a pure r:1 split, price drop is 1-1/r. Exact Fraction calculations give 1.33:1 -> 24.812030075%, and 4:3 -> exactly 25%; neither exceeds the existing strict >25% JUMP_LIMIT. A 1.2:1 split drops 16.6667%, and market moves can also mask larger splits. Remove the claim that these actions are reliably caught. Keeping split adjustment out of scope is fine, but explicitly gate real use on dated source/owner evidence for corporate-action coverage and supported price semantics, or mark that instrument unusable until supported. The jump flag is an anomaly check, not proof that no split occurred. Retain the prohibition on approving a split-induced jump as ordinary cleaning.
+
+## Clarifications / real-use prerequisites
+
+- The holdout proposal avoids event selection, which is correct, but “latest session such that ... usable data for both periods” does not uniquely define four years or a minimum development span. Before real import, pin an as-of end session, calendar-year subtraction/session-boundary convention, and minimum development/warm-up sufficiency. Insufficient history should return a feasibility decision, not silently shorten the holdout. Actual dates remain the owner's decision; no dates chosen here.
+- Absent distributions.csv currently means confirmed zero payments. A missing export for a distributing fund would silently turn total returns into price returns. Require an explicit completeness/no-payments declaration before real use; a missing file alone is not evidence.
+- Remove stale “account approval pending” from the card and PR description. Account approval does not establish D5 adequacy.
+- Name the no-holdout-date refusal code, and define missing files/malformed CSV handling. These are small boundary-contract additions, not strategy changes.
+
+Evidence: read the exact card, charter/handoff and data-spec storage/isolation/provenance requirements against the existing record classes, builder and guard. Independently evaluated the three split ratios with Python Fraction; all are below or equal to the strict jump threshold. This is a requirements review, not a test of a new implementation; no new code or real data was run. Claude should amend the card/spec and record material resolutions before re-review.
+
+
 Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
@@ -13,14 +150,14 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | Item | Value |
 |---|---|
 | T-005 | [PR #7](https://github.com/emanueltadesse61-del/Trading-bot/pull/7): v1 reviewed at `3dceea8` (B1 holdout, B2 jump-approval timing); v1.1 resolves both (decision 0006). Re-review commit named in the PR. Reviewer: Codex |
-| Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728` (each pinned to the accepted commit) |
-| Open | PR #6 (Codex's T-003 review record): stays open until the owner authorises closing it |
+| Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728`; PR #7 `450fc3f`; PR #8 `98d3bb4`; PR #9 `f346031` (each pinned to the accepted commit). PR #6 closed by the owner |
+| Open | PR #10 (T-007 card v2 + data spec v1.2): Codex re-checks the requirements |
 
 ## Decisions
 
-**Confirmed** (owner): UK residence; new IBKR account being created; Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
+**Confirmed** (owner): UK residence; IBKR account approved 2026-10-16 (no funding authorised); Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
 
-**Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; £600/year data-and-hosting ceiling; ~12 UCITS ETFs, GBP lines only; weekly rebalance; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20; holdout 3–5 most recent years.
+**Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; £600/year data-and-hosting ceiling; ~12 UCITS ETFs, GBP lines only; weekly rebalance; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20; holdout the most recent 4 years (exact start by the T-007 proposal rule, confirmed by the owner before any performance is computed).
 
 **Pending** (owner decides):
 1. Research stop rule: week 20 counted in **calendar** weeks from an agreed start date, or in **worked** weeks logged here with a hard calendar cap. Also: the start date.
@@ -37,9 +174,11 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
 | T-005 Data-layer spec + reference cases | **Merged** at `450fc3f` (spec accepted at `619de06`) | — |
-| T-006 Data build + holdout guard | **Review** | Claude reviews the exact T-006 PR commit |
+| T-006 Data build + holdout guard | **Merged** (`98d3bb4`; Accepted by Claude at `85087b6`) | — |
+| Data spec v1.1.1 (N1 duplicate wording) | **Merged** (`f346031`; Accepted by Codex at `f0982fb`) | — |
+| T-007 Storage, CSV import, owner-run split | **Card v3 in review** (B1–B3 accepted by Codex; B4–B5 resolved in decision 0007; data spec v1.2.1) | Codex re-checks the requirements before building |
 
-Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
+Planned after T-007: T-008 backtest simulator, cost model and baselines (synthetic data first; extends the data spec with next-session open prices); a broker adapter (IBKR) after account approval.
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -76,14 +215,16 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Blockers
 
-- IBKR account not yet approved → T-004 Table A blocked.
+- IBKR account **approved 2026-10-16**. T-004 Table A checks are now the owner's to perform on the owner's own machine (agents never touch the broker or credentials). Results go into `docs/feasibility-matrix.md` with dated evidence.
 - None for Claude: GitHub is linked and Claude can push.
 
 ## Next
 
-1. Claude: independently review T-006 at the exact SHA named in its PR, against data spec v1.1 and the unchanged fixture.
-2. Owner retains merge authority. T-007 real-data work remains gated by holdout dates and feasibility checks.
-3. PR #6 remains open; no closure authorised in this task.
+1. Codex: re-check the T-007 v3 requirements on PR #10 at the commit named in the PR comment; build only once accepted.
+2. Owner decisions gating real data (not the build):
+   - the holdout start, computed by the T-007 proposal rule and confirmed in the charter before any performance is computed;
+   - the data source (D5), which depends on the owner's Table A results, especially API historical-bar depth and market-data cost for LSE ETFs;
+   - `declarations.csv` evidence for each instrument.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 

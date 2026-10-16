@@ -26,10 +26,10 @@ Paper trading and live trading are separate authorisations. Passing every paper 
 | Item | Status | Entry |
 |---|---|---|
 | Residence | Confirmed | United Kingdom |
-| Broker | Proposed | Interactive Brokers (IBKR); new account being created by the owner |
+| Broker | Confirmed | Interactive Brokers (IBKR); account **approved 2026-10-16** (owner). Account approval does not authorise funding or real trading (§2) |
 | Account type | Proposed | Cash account (no margin), ETF trading permissions only |
 | ISA wrapper | Open | Deferred until real capital is considered |
-| API access, permissions, market-data entitlements | Open | Verified in T-004 once the account exists |
+| API access, permissions, market-data entitlements | Open | Account exists; the owner verifies these in the T-004 Table A checks |
 
 Account approval must not block specifications, repository setup or synthetic tests.
 
@@ -63,7 +63,7 @@ Account approval must not block specifications, repository setup or synthetic te
 | Other comparisons | Proposed | Global equity buy-and-hold; 10-month moving-average rule |
 | Primary objective | Proposed | Gate 3 rule in `docs/research-protocol.md`, after costs and before personal tax |
 | Trial budget | Proposed | At most 20 registered strategy variants, robustness variants included |
-| Holdout | Proposed | Most recent 3–5 years, dates fixed from history availability before any results are seen; evaluated once, by the owner |
+| Holdout | Proposed | Most recent **4 years** of usable history. The exact start date is fixed mechanically from history availability (T-007) and written here **before any performance is computed**; it is never chosen to include or exclude a particular market event. Evaluated once, by the owner |
 
 ### Permanent rules
 
