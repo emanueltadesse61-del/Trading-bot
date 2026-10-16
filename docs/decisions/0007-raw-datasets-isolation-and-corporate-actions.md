@@ -60,3 +60,50 @@ Ordinary market moves can also mask larger splits.
 ## Consequences
 
 T-007 returns to requirements review. Data spec §1–7, §9 and the fixture are unchanged, so T-006 is unaffected.
+
+---
+
+## Re-review of v2 (Codex at `eb113a7`, record `de9bc49`): B1–B3 accepted; B4 and B5 raised
+
+Data spec v1.2.1 and T-007 card v3.
+
+### B4 — Copied declarations break the partition rules — **Accepted**
+
+**Issue.** A full-source declaration has `corporate_actions_none_through` and often `checked_on` on or after H. Copied into the development partition, it failed the "every dated row before H" rule.
+
+**Decision.**
+- The partition rules apply to **market events** only: price `date`, distribution `ex_date`, calendar `date`.
+- Declaration dates are **attestation dates**: later source-quality statements, never market information at a historical t.
+  - They keep their real values, never backdated.
+  - They are exempt from the partition rules.
+  - They are never passed to `build_dataset`.
+  - New rule: `checked_on` ≥ `corporate_actions_none_through`.
+- Declarations are copied unchanged into both partitions and are excluded from the no-duplication assertion.
+- Tests: a round trip with after-H attestation dates and pre-H prices; a market event on H is still rejected.
+
+### B5 — Two renames are not one atomic publication — **Accepted (Codex's first option)**
+
+**Issue.** An interruption between the holdout rename and the development rename leaves the holdout output alone. My "a failed run leaves nothing usable" overstated the algorithm.
+
+**Decision.**
+- Atomic publication **per dataset**, holdout first, **development last**.
+- A caught failure rolls back everything.
+- An interruption may leave an isolated holdout output. That is not a leak, and it never leaves a development dataset without its holdout.
+- A re-run refuses while outputs or `*.staging-*` directories remain (`SPLIT_OUTPUT_EXISTS`, `SPLIT_STAGING_EXISTS`), naming them. The owner removes them and re-runs; the README documents this.
+- No transaction system.
+- Acceptance includes an `os._exit` interruption case and the retry.
+
+### Clarifications — adopted
+
+1. **Valid closes** are distinct calendar sessions with exactly one price record, a finite positive close and a supported unit. An instrument excluded under data spec §3 (evaluated at t = E) is insufficient, with its codes. The calendar is validated before E and H are derived.
+2. **Proposal acceptance cases**, computed independently with weekday calendars:
+
+   | Calendar | E | H | Development / holdout sessions | Result |
+   |---|---|---|---|---|
+   | 2018-01-01 to 2025-12-31 | 2025-12-31 | 2021-12-31 | 1,044 / 1,044 | Sufficient |
+   | From 2019-01-01 | 2025-12-31 | 2021-12-31 | 783 development | Insufficient |
+   | Ending 2028-02-29 | 2028-02-29 | 2024-02-28 | — | Leap-day mapping |
+
+3. **§7.1:** the obsolete "dataset manifest records exceptions provenance" sentence now points to the run registry.
+4. **Identity covers the boundary.** `dataset_id` now includes `partition` and `holdout_start`, so pinning it pins the boundary as well as the four files. Runs that need provenance pinned also record `manifest_digest`. This extends Codex's answer 1: provenance stays outside the identity, but these two fields define permitted use, so they are content.
+5. **Proposal mode** lists its flags: source, repo root and workspaces only; no H, outputs or provenance.

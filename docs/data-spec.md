@@ -1,8 +1,8 @@
-# Data Layer Specification (v1.2)
+# Data Layer Specification (v1.2.1)
 
-Status: **v1.2 in review (T-007 requirements); §1–7 and §9 accepted in v1.1.1.** Author: Claude. Last updated: 2026-10-16.
+Status: **v1.2.1 in review (T-007 requirements); §1–6 and §9 accepted in v1.1.1; §7.1 has a one-sentence provenance correction.** Author: Claude. Last updated: 2026-10-16.
 
-This document defines how raw daily price records become the inputs the portfolio engine expects (`docs/portfolio-spec.md` §2). It is source-agnostic: the data feed is still undecided (feasibility D5), so every source is read through an adapter into the canonical record format below. Reference cases: `tests/fixtures/data_cases.json`, explained in §9. v1.1 resolves Codex's T-005 findings (`docs/decisions/0006-data-spec-holdout-and-jump-approvals.md`). v1.1.1 clarifies duplicate counting (Claude's T-006 review, note N1). v1.2 (§8, §10) adds raw-dataset storage, owner-run isolation details, declarations and a corrected corporate-action rule, from Codex's T-007 review (`docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`); §1–7 and the fixture are unchanged.
+This document defines how raw daily price records become the inputs the portfolio engine expects (`docs/portfolio-spec.md` §2). It is source-agnostic: the data feed is still undecided (feasibility D5), so every source is read through an adapter into the canonical record format below. Reference cases: `tests/fixtures/data_cases.json`, explained in §9. v1.1 resolves Codex's T-005 findings (`docs/decisions/0006-data-spec-holdout-and-jump-approvals.md`). v1.1.1 clarifies duplicate counting (Claude's T-006 review, note N1). v1.2 (§8, §10) adds raw-dataset storage, owner-run isolation details, declarations and a corrected corporate-action rule, from Codex's T-007 review (`docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`); v1.2.1 resolves Codex's T-007 re-review (B4 attestation dates, B5 per-dataset publication, identity covers partition and holdout start, §7.1 provenance sentence; same decision record). The builder's behaviour and the fixture are unchanged.
 
 ## 1. Outputs (the contract with the engine)
 
@@ -106,7 +106,7 @@ The builder takes `mode` = `operational` or `research`.
 
 **Why two modes.** In operational mode, an approval made after t was not information available at t, so it cannot change a past decision. In research mode, cleaning uses later knowledge by design. That is allowed **only** as a pinned snapshot that is fixed before the evaluation: the snapshot used by a pre-registered hypothesis must be committed before that hypothesis's first registered run. The snapshot is cleaning, not information at t, and it is recorded as such.
 
-**Provenance.** `exceptions_digest` = SHA-256 (hex) of the UTF-8 bytes of `json.dumps(entries, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`. Here `entries` is the list of supplied exception entries, each reduced to the four keys of §2.3, sorted by (instrument, date). The digest covers every supplied entry, valid or not. The dataset manifest and every experiment-registry entry record `mode`, `exceptions_version` and `exceptions_digest`.
+**Provenance.** `exceptions_digest` = SHA-256 (hex) of the UTF-8 bytes of `json.dumps(entries, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`. Here `entries` is the list of supplied exception entries, each reduced to the four keys of §2.3, sorted by (instrument, date). The digest covers every supplied entry, valid or not. Every build used for a backtest or a trading decision records `mode`, `exceptions_version` and `exceptions_digest` in the run or experiment registry (§8.1). The raw-dataset manifest does not.
 
 ## 8. Storage, manifests and the holdout
 
@@ -130,8 +130,11 @@ The guard alone cannot keep holdout data away from agents, so these rules apply 
 1. **No real data is ingested into any agent-accessible location until the charter fixes the holdout dates.**
 2. **Any import that could include holdout-period dates is run by the owner, on the owner's machine, outside every agent workspace**, using the single owner command `trader-split` (T-007). Before reading any content, it guards **the source directory, every resolved input file, and the holdout output** against the repository and every agent workspace.
 3. **The split writes two partitions:** development (sessions strictly before the holdout start) and holdout. Only the development partition may be placed in an agent-accessible location. Source, development and holdout locations must be **disjoint**: none equal to, inside, or an alias of another.
-4. **Outputs are published atomically.** Each partition is written and fully validated in a staging directory, then renamed into place. A failed or incomplete run publishes nothing usable.
-5. **Agent-run imports** must supply the holdout start and refuse any row on or after it. Before holdout dates exist, only synthetic data may be imported by an agent.
+4. **Each output is published atomically, on its own** (v1.2.1). Each partition is written and fully validated in a staging directory, then renamed into place: holdout first, **development last**. The guarantee is per dataset, not for the pair:
+   - A caught failure rolls back: staging directories and any already-renamed output are removed.
+   - An **interruption** (crash, kill, power loss) after the holdout rename can leave the holdout output without the development output. This is not a leak: the holdout output is outside every agent location. The development output only ever appears after the holdout output, so agents never see a development dataset from a run whose holdout write failed.
+   - **Recovery is the owner's:** a re-run refuses to start while either output or any `<output>.staging-*` directory exists (`SPLIT_OUTPUT_EXISTS`, `SPLIT_STAGING_EXISTS`), naming the leftover paths. The owner deletes them and re-runs.
+5. **Agent-run imports** must supply the holdout start and refuse any market event (§8.4) on or after it. Before holdout dates exist, only synthetic data may be imported by an agent.
 6. The one-time holdout evaluation is run by the owner (research protocol §3).
 
 ### 8.4 Raw-dataset format and validation (v1.2)
@@ -143,7 +146,27 @@ A raw dataset is a directory containing **exactly** these files:
 - `calendar.parquet`
 - `declarations.parquet`
 
-**Content identity.** `dataset_id` is the SHA-256 (hex) of the UTF-8 bytes of `json.dumps({"schema": "trading-bot/raw-dataset/v1", "files": {<filename>: <file sha256 hex>, ...}}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`. The `files` map covers the four Parquet files, keyed by filename. Retrieval time, source label and code commit are provenance and are **not** part of the identity. Byte-identical files are only promised under the writer settings and library version pinned in the manifest.
+**Content identity** (v1.2.1). `dataset_id` is the SHA-256 (hex) of the UTF-8 bytes of:
+
+```
+json.dumps({"schema": "trading-bot/raw-dataset/v1",
+            "partition": <partition>,
+            "holdout_start": <ISO date or null>,
+            "files": {<filename>: <file sha256 hex>, ...}},
+           sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+```
+
+- The `files` map covers the four Parquet files, keyed by filename.
+- `partition` and `holdout_start` are in the identity because they define what the data may be used for. Pinning `dataset_id` therefore pins the partition boundary as well as the files.
+- Retrieval time, source label, code commit and writer settings are provenance and are **not** part of the identity. A run that needs them pinned records the SHA-256 of `manifest.json` (`manifest_digest`) alongside `dataset_id`.
+- Byte-identical files are only promised under the writer settings and library version pinned in the manifest.
+
+**Market events vs attestation dates.** The partition rules apply to **market events** only:
+- price `date`;
+- distribution `ex_date`;
+- calendar session `date`.
+
+Declaration dates (`corporate_actions_none_through`, `checked_on`) are **attestation dates**: later statements about source quality, not market information available at any historical t. They keep their real values (never backdated) and follow their own rules (§8.5), not the partition rules. `build_dataset` never receives them.
 
 **Manifest fields:** `schema`, `dataset_id`, `partition` (`development` | `holdout` | `synthetic`), `holdout_start` (ISO date, or null only for `synthetic`), `files` (sha256 and row count per file), `date_range` (first and last calendar session), `instruments` (units seen, price rows, distribution rows), and provenance (`source`, `adapter_version`, `code_commit`, `retrieved_at`, `writer` = library name and version and the writer settings).
 
@@ -151,13 +174,14 @@ A raw dataset is a directory containing **exactly** these files:
 1. `schema` matches exactly, and the directory holds exactly the five files.
 2. Every file's SHA-256 and row count match the manifest, and the recomputed `dataset_id` matches.
 3. `date_range` and the `instruments` summary are **re-derived from the data** and must equal the manifest.
-4. Partition rules, applied to every dated row in every file:
-   - `development`: all dates < `holdout_start`;
-   - `holdout`: all dates ≥ `holdout_start`;
+4. Partition rules, applied to every market event in the price, distribution and calendar files:
+   - `development`: all event dates < `holdout_start`;
+   - `holdout`: all event dates ≥ `holdout_start`;
    - `synthetic`: every instrument id starts with `SYN_` and `holdout_start` is null.
-5. Any failure raises `DataStoreError("DATASET_MANIFEST_MISMATCH", <field>)`, and nothing is returned.
+5. The declarations satisfy §8.5 for the instruments in this dataset.
+6. Any failure raises `DataStoreError("DATASET_MANIFEST_MISMATCH", <field>)`, and nothing is returned.
 
-These checks give **integrity** against a pinned manifest, not authenticity. Someone able to replace both the files and the manifest can forge a dataset, so runs pin `dataset_id`.
+These checks give **integrity** against a pinned manifest, not authenticity. Someone able to replace both the files and the manifest can forge a dataset, so runs pin `dataset_id` (and `manifest_digest` where provenance matters).
 
 ### 8.5 Declarations required for real data (v1.2)
 
@@ -168,9 +192,11 @@ Each instrument in an import needs one row in `declarations.csv`, stored as `dec
 | `instrument` | In the import |
 | `price_semantics` | Must be `unadjusted_close` |
 | `distributions_complete` | Must be `true`: every cash distribution in the covered range is in `distributions.csv` (a header-only file then means "no payments") |
-| `corporate_actions_none_through` | ISO date ≥ the instrument's last record date: the source shows **no** split, consolidation or other non-cash corporate action up to this date |
+| `corporate_actions_none_through` | ISO date ≥ the instrument's last market event date in the import being declared: the source shows **no** split, consolidation or other non-cash corporate action up to this date |
 | `evidence_source` | Non-empty (for example the issuer page or the data vendor's corporate-actions feed) |
-| `checked_on` | ISO date |
+| `checked_on` | ISO date ≥ `corporate_actions_none_through` (coverage can't be attested before the date it covers) |
+
+These are attestation dates (§8.4): exempt from the partition rules and never backdated. In a split, the declarations made for the full source are **copied unchanged into both partitions**. A development dataset may therefore carry `corporate_actions_none_through` and `checked_on` dates on or after `holdout_start`. On read, the coverage rule is checked against the dataset's own last event date, which a full-source declaration always satisfies.
 
 A missing or invalid declaration refuses the whole import (`IMPORT_DECLARATION_MISSING` / `IMPORT_DECLARATION_INVALID`). If a non-cash corporate action did occur, the instrument cannot be declared and is **unusable until split support is specified**.
 

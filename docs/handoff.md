@@ -1,6 +1,24 @@
 # Handoff — read this first
 
-## Latest: Codex T-007 v2 re-review — 2026-10-16
+## Latest: T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
+
+All accepted; resolutions appended to `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Data spec v1.2.1 and card v3 on `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-check is named in the PR comment.
+
+- **B4:** partition rules apply to market events only (price date, distribution ex-date, calendar session). Declaration dates are attestation dates: real values, exempt from partitioning, never passed to the builder, and `checked_on` ≥ `corporate_actions_none_through`. Declarations are copied to both partitions and excluded from the no-duplication assertion.
+- **B5:** atomic publication per dataset (holdout first, development last); rollback on caught failures. After an interruption, a re-run refuses (`SPLIT_OUTPUT_EXISTS` / `SPLIT_STAGING_EXISTS`) and the owner cleans up. Acceptance includes an `os._exit` interruption and the retry.
+- **Clarifications:**
+  - valid closes are distinct sessions, and excluded instruments are insufficient;
+  - the calendar is validated first;
+  - proposal cases were recomputed: 2018–2025 weekdays → H 2021-12-31 with 1,044/1,044 sessions; from 2019 → 783 sessions, insufficient; leap E → 2024-02-28;
+  - §7.1 sentence fixed;
+  - `dataset_id` now includes `partition` and `holdout_start`, plus `manifest_digest` for provenance;
+  - proposal-mode flags listed.
+- **Owner IBKR API check (owner-reported, 2026-10-16; not yet in the feasibility matrix):**
+  - the unfunded account's paper login, through IB Gateway in read-only mode, returned daily historical bars for VWRP (data from 2019-07-25) and IGLT (from 2006-12-04): 253 bars over the last year;
+  - CSPX was the wrong (USD) line;
+  - full-depth history, units, split adjustment and dividend history are still to be checked for D5.
+
+## Codex T-007 v2 re-review — 2026-10-16 (resolved in `docs/decisions/0007`, v3)
 
 T-007 v2 requirements re-review at **eb113a7237489a65b92816f455a763f5de0a56ae: Changes requested. No build started.**
 
@@ -133,7 +151,7 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-005 Data-layer spec + reference cases | **Merged** at `450fc3f` (spec accepted at `619de06`) | — |
 | T-006 Data build + holdout guard | **Merged** (`98d3bb4`; Accepted by Claude at `85087b6`) | — |
 | Data spec v1.1.1 (N1 duplicate wording) | **Merged** (`f346031`; Accepted by Codex at `f0982fb`) | — |
-| T-007 Storage, CSV import, owner-run split | **Card v2 in review** (Codex's v1 findings B1–B3 resolved in decision 0007; data spec v1.2) | Codex re-checks the requirements before building |
+| T-007 Storage, CSV import, owner-run split | **Card v3 in review** (B1–B3 accepted by Codex; B4–B5 resolved in decision 0007; data spec v1.2.1) | Codex re-checks the requirements before building |
 
 Planned after T-007: T-008 backtest simulator, cost model and baselines (synthetic data first; extends the data spec with next-session open prices); a broker adapter (IBKR) after account approval.
 
@@ -177,7 +195,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Codex: re-check the T-007 v2 requirements on PR #10 at the commit named in the PR comment; build only once accepted.
+1. Codex: re-check the T-007 v3 requirements on PR #10 at the commit named in the PR comment; build only once accepted.
 2. Owner decisions gating real data (not the build):
    - the holdout start, computed by the T-007 proposal rule and confirmed in the charter before any performance is computed;
    - the data source (D5), which depends on the owner's Table A results, especially API historical-bar depth and market-data cost for LSE ETFs;
