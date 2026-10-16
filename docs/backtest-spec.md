@@ -1,6 +1,6 @@
-# Backtest Specification (v1.1)
+# Backtest Specification (v1.2)
 
-Status: **Review — v1.1 awaiting Codex's re-check (T-008).** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes (decision 0009, re-review section).
+Status: **Review — v1.2 awaiting Codex's re-check (T-008).** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections).
 
 This document defines how the daily simulator turns market records, a schedule and an order generator into fills, cash, daily equity and metrics. It reuses the accepted signal, target and planner code unchanged (`docs/portfolio-spec.md`) and the data layer (`docs/data-spec.md`). Reference cases: `tests/fixtures/backtest_cases.json`, computed by Claude's own calculator outside the repository (§11).
 
@@ -106,7 +106,7 @@ Let `m = COST_MULTIPLIER`, `o` = the open at the fill session in GBP, and `c_i =
 | Status | `OK`, or `SHORTFALL` if settled cash is negative after the fill | `OK`, `CASH_LIMITED` (`0 < q < ordered`), or `SKIPPED_CASH` (`q = 0`, nothing debited) |
 | Cost recorded | `spread_slippage_cost = q × (o − f)` | `q × (f − o)` |
 
-**Buy affordability.** Start from `q = min(ordered, floor(settled / f))`. While `q > 0` and `q × f + C(q) > settled + 1e-9`, reduce `q` by 1. This is the largest affordable quantity. It handles a gap-up open the planner could not see (the planner sized the order on the previous close with `BUY_BUFFER`). Buys are processed in ascending `id`, so earlier buys can use up the cash for later ones.
+**Buy affordability.** Start from `q = min(ordered, max(0, floor(settled / f)))`. While `q > 0` and `q × f + C(q) > settled + 1e-9`, reduce `q` by 1. This is the largest affordable quantity, never negative. If `q = 0`, including whenever settled cash is ≤ 0 after an earlier `SHORTFALL` (in this session's sells or before), the buy is `SKIPPED_CASH` with quantity 0, commission 0 and no change to cash or holdings (BT12). It handles a gap-up open the planner could not see (the planner sized the order on the previous close with `BUY_BUFFER`). Buys are processed in ascending `id`, so earlier buys can use up the cash for later ones.
 
 **Exits are never blocked.** A sell always executes when there is an open and a holding, even if the commission minimum makes its net proceeds negative. Settled cash may then go below zero; the session is flagged `settled_negative`. The planner treats negative settled cash as invalid input (`INVALID_CASH`), so the strategy records `BLOCKED_INVALID_INPUT` and places no orders until settled cash is ≥ 0 again. Baselines likewise make no buys while it is negative.
 
@@ -237,6 +237,8 @@ Produced by Claude's independent calculator; tolerance 1e-12 relative, 1e-9 abso
 | BT7_cost_multiplier_2x | Every cost component doubled | Fill 100.30; commission 6.00 |
 | BT9_settlement_lag_1 | `SETTLEMENT_LAG = 1` | Wed-open sale settles at Thu open and funds the Thu buy of 100 in full |
 | BT10_lots_pending_at_end | Lots still pending at `end` | Sale proceeds 996.50 and distribution 10.00 unsettled at `end`; NAV 10,003.00 |
+| BT11_sell_cost_stress_2x | Sell-side stress | Sell fill 99.70 at m = 2 (99.85 at m = 1): stress lowers a sell price; commission 9.8703 |
+| BT12_buy_after_shortfall | Buy after a permitted negative balance | Same-session buy after a `SHORTFALL` sell, and next-session buy: both `SKIPPED_CASH`, quantity 0 |
 | BT8_schedules | ISO-week and month ends with holidays and a year boundary | Weekly: 2025-12-19, 12-24, 2026-01-02, 01-09, 01-16, 01-23, 01-29; monthly: 2025-12-31, 2026-01-29; the final session is never included |
 | RB1–RB4 | Baseline rebalancer | Band trades with `k` scaling (15 VWRL, 238 VGOV); unsettled cash unusable (1 VGOV); inside the band no trade; exit and no trade on a missing price |
 | MT1_metrics | Metric definitions | Values in the fixture, cross-checked by a second independent computation |

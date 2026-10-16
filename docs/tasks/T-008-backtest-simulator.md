@@ -1,8 +1,8 @@
 ## T-008: Backtest simulator, cost model, baselines and run metrics (synthetic)
 
-**State:** Review, v2 (Codex findings B1–B5 resolved; decision 0009 re-review section). **Codex re-checks before building.**
+**State:** Review, v3 (Codex findings B1–B7 resolved; decision 0009 re-review sections). **Codex re-checks before building.**
 **Phase:** 1 → 2   **Author:** Claude   **Implementer:** Codex   **Reviewer:** Claude
-**Depends on:** PR #12 (T-007 implementation), merged as `0805908`; `docs/backtest-spec.md` v1.1 and decision 0009 (this PR).
+**Depends on:** PR #12 (T-007 implementation), merged as `0805908`; `docs/backtest-spec.md` v1.2 and decision 0009 (this PR).
 
 ### Goal
 A deterministic daily simulator that executes the accepted strategy code, and the protocol's baselines, with realistic fills, costs, settlement and distributions, and reports per-run metrics. It is verified entirely on synthetic data.
@@ -10,7 +10,7 @@ A deterministic daily simulator that executes the accepted strategy code, and th
 This card tests the **machinery, not the strategy**. Testing for an edge needs the pre-registration, the experiment registry, Gate 3 statistics and approved development data, each in its own later card (spec §12).
 
 ### Inputs
-- `docs/backtest-spec.md` v1.1 (the authority) and `tests/fixtures/backtest_cases.json` (Claude's reference values)
+- `docs/backtest-spec.md` v1.2 (the authority) and `tests/fixtures/backtest_cases.json` (Claude's reference values)
 - `docs/portfolio-spec.md` v1.3 and `trader.signals`, `trader.portfolio`, `trader.planner`, all unchanged
 - `docs/data-spec.md` v1.2.1 and `trader.data`
 - Decision 0009; protocol §4–5; backtesting standards §2–3
@@ -63,6 +63,7 @@ Not applicable for the design (engineering; choices recorded in decision 0009). 
 - [ ] **Properties (spec §9):**
   - no look-ahead, between two **admitted** inputs: perturb a price, an open, a distribution and an exception entry after `d`, and the decisions at `d` are identical;
   - cash identity and NAV identity at every session;
+  - no buy ever has a negative quantity: a valid BUY after a `SHORTFALL`, in the same fill session and the next, is `SKIPPED_CASH` (BT12);
   - determinism;
   - non-negative holdings.
 - [ ] **Strategy end-to-end (synthetic):** a 2-instrument history of ≥ 300 sessions, built so the planner returns orders, runs weekly and monthly. Decisions record `OK` with orders. A session with an unapproved jump records `BLOCKED_DATA` and no orders. A shortfall makes the next decision `BLOCKED_INVALID_INPUT` (`INVALID_CASH`).
@@ -71,7 +72,10 @@ Not applicable for the design (engineering; choices recorded in decision 0009). 
   - the moving-average rule holds an instrument above its 10-month average and exits it when it falls below;
   - an instrument with fewer than 10 usable month-ends is not traded, and is neither sold nor bought even if held;
   - cash NAV is constant.
-- [ ] **Cost stress:** BT7's values hold. For any single fill, the doubled fill price and commission are at least the base ones. Total costs are **not** asserted to rise, because doubling can prevent fills; the changed fills and turnover are reported.
+- [ ] **Cost stress:**
+  - BT7 (buy) and BT11 (sell) hold;
+  - for a fixed open, side and quantity at m = 1 and m = 2, the fill equals the spec §4 formula (buys worsen upward, sells worsen downward), spread/slippage cost = `q × |f − o|` scales with m, and commission = `max(m × MIN, m × RATE × q × f)`;
+  - no monotonic assertion on fill price, commission or aggregate cost across the parameter domain (commission is charged on the changed notional, and doubling can prevent fills); the changed fills and turnover are reported.
 - [ ] **Open field:** existing data, T-006 and T-007 tests pass unchanged. `write_raw_dataset` refuses a record with an open.
 - [ ] **Follow-ups:** N1–N6 implemented with tests (N1 via a temporary git repo in the test).
 - [ ] CI green; `docs/handoff.md` updated.

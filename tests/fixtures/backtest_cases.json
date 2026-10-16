@@ -1,5 +1,5 @@
 {
- "version": "1.1",
+ "version": "1.2",
  "generator": "Claude reference calculator (outside the repo)",
  "tolerance": {
   "rel": 1e-12,
@@ -1552,6 +1552,381 @@
       }
      ],
      "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    }
+   ]
+  },
+  {
+   "name": "BT11_sell_cost_stress_2x",
+   "description": "COST_MULTIPLIER = 2 throughout. The buy is cash-limited to 99 shares at 100.30. The sell fill moves DOWN: 100 x (1 - 2 x 0.0015) = 99.70 (99.85 at m = 1). Commission = max(6, 0.001 x 99 x 99.70) = 9.8703; spread/slippage cost = 99 x 0.30.",
+   "inputs": {
+    "calendar": [
+     "2024-01-08",
+     "2024-01-09",
+     "2024-01-10",
+     "2024-01-11"
+    ],
+    "start": "2024-01-08",
+    "prices": [
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-08",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-09",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-10",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-11",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "half_spread": {
+     "SYN_A": 0.001
+    },
+    "scripted_orders": {
+     "2024-01-08": [
+      [
+       "SYN_A",
+       "BUY",
+       100
+      ]
+     ],
+     "2024-01-09": [
+      [
+       "SYN_A",
+       "SELL",
+       100
+      ]
+     ]
+    },
+    "params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "COST_MULTIPLIER": 2,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20
+    }
+   },
+   "expected": [
+    {
+     "date": "2024-01-08",
+     "settled": 10000.0,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": 10000.0,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-09",
+     "settled": 60.3703000000005,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_A": 99
+     },
+     "nav": 9960.3703,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_A",
+       "qty": 99,
+       "fill_price": 100.29999999999998,
+       "commission": 9.929699999999999,
+       "spread_slippage_cost": 29.69999999999831,
+       "status": "CASH_LIMITED"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-10",
+     "settled": 60.3703000000005,
+     "unsettled": 9860.4297,
+     "holdings": {},
+     "nav": 9920.800000000001,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "SELL",
+       "instrument": "SYN_A",
+       "qty": 99,
+       "fill_price": 99.7,
+       "commission": 9.870300000000002,
+       "spread_slippage_cost": 29.69999999999972,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-11",
+     "settled": 60.3703000000005,
+     "unsettled": 9860.4297,
+     "holdings": {},
+     "nav": 9920.800000000001,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    }
+   ]
+  },
+  {
+   "name": "BT12_buy_after_shortfall",
+   "description": "After a SHORTFALL sale leaves settled cash negative, a valid BUY in the same fill session (sells first) and one in the next session are both SKIPPED_CASH: quantity clamped to 0, no commission, no cash or holdings change.",
+   "inputs": {
+    "calendar": [
+     "2024-01-08",
+     "2024-01-09",
+     "2024-01-10",
+     "2024-01-11",
+     "2024-01-12"
+    ],
+    "start": "2024-01-08",
+    "prices": [
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-08",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-09",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-10",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-11",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-12",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-08",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-09",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-10",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-11",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-12",
+      "open": 1.0,
+      "close": 1.0,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "half_spread": {
+     "SYN_A": 0.0,
+     "SYN_B": 0.0
+    },
+    "scripted_orders": {
+     "2024-01-08": [
+      [
+       "SYN_A",
+       "BUY",
+       1
+      ]
+     ],
+     "2024-01-09": [
+      [
+       "SYN_A",
+       "SELL",
+       1
+      ],
+      [
+       "SYN_B",
+       "BUY",
+       1
+      ]
+     ],
+     "2024-01-10": [
+      [
+       "SYN_B",
+       "BUY",
+       1
+      ]
+     ]
+    },
+    "params": {
+     "INITIAL_CASH": 4.01,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "COST_MULTIPLIER": 1,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20
+    }
+   },
+   "expected": [
+    {
+     "date": "2024-01-08",
+     "settled": 4.01,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": 4.01,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-09",
+     "settled": 0.009500000000000064,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_A": 1
+     },
+     "nav": 1.0095,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_A",
+       "qty": 1,
+       "fill_price": 1.0005,
+       "commission": 3.0,
+       "spread_slippage_cost": 0.0004999999999999449,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-10",
+     "settled": -1.9909999999999997,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": -1.9909999999999997,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "SELL",
+       "instrument": "SYN_A",
+       "qty": 1,
+       "fill_price": 0.9995,
+       "commission": 3.0,
+       "spread_slippage_cost": 0.0004999999999999449,
+       "status": "SHORTFALL"
+      },
+      {
+       "kind": "BUY",
+       "instrument": "SYN_B",
+       "qty": 0,
+       "fill_price": 1.0005,
+       "commission": 0.0,
+       "spread_slippage_cost": 0.0,
+       "status": "SKIPPED_CASH"
+      }
+     ],
+     "settled_negative": true,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-11",
+     "settled": -1.9909999999999997,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": -1.9909999999999997,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_B",
+       "qty": 0,
+       "fill_price": 1.0005,
+       "commission": 0.0,
+       "spread_slippage_cost": 0.0,
+       "status": "SKIPPED_CASH"
+      }
+     ],
+     "settled_negative": true,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-12",
+     "settled": -1.9909999999999997,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": -1.9909999999999997,
+     "stale": [],
+     "fills": [],
+     "settled_negative": true,
      "distributions": [],
      "cancelled": []
     }

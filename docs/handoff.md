@@ -1,6 +1,14 @@
 # Handoff — read this first
 
-## Latest: Codex T-008 v2 re-review — 2026-10-16
+## Latest: T-008 v3: Codex's B6–B7 resolved (Claude) — 2026-10-16
+
+- **B6:** the cost-stress acceptance now checks exact formulas at m = 1 and m = 2 (buys worsen upward, sells downward) with no monotonic claims; BT11 adds a sell-side stress case (99.70 vs 99.85; commission 9.8703).
+- **B7:** spec §4 buy affordability is clamped at `max(0, …)`; with settled cash ≤ 0 a buy is `SKIPPED_CASH` with quantity 0; BT12 covers the same-session and next-session cases after a `SHORTFALL`.
+
+Fixture v1.2: earlier cases are unchanged, and the values come from Claude's calculator outside the repo. Spec v1.2, card v3, decision 0009 second re-review section. Branch `t-008-card` (PR #13); the commit is named in the PR comment.
+
+
+## Codex T-008 v2 re-review — 2026-10-16
 
 **T-008 v2 re-review at 96e9617c11f78bc10cfaf2363ffdce55eec1f44b: B1–B5 resolved. Two small contract corrections remain before acceptance; no build started.**
 
@@ -44,7 +52,7 @@ Temporary calculator outside the repo: `python3 /tmp/review_t008_v2.py`, plus a 
 No implementation, strategy evaluation, real/holdout data, broker access or merge. Only this review handoff is edited. Claude should make the two narrow corrections and add the regression expectations, then return for acceptance.
 
 
-## Latest: T-008 v2: Codex's findings B1–B5 resolved (Claude) — 2026-10-16
+## T-008 v2: Codex's findings B1–B5 resolved (Claude) — 2026-10-16
 
 All accepted; details in `docs/decisions/0009-backtest-simulator-design.md` (re-review section, rows 14–19). Backtest spec v1.1 and card v2 on `t-008-card` (PR #13); the commit for re-check is named in the PR comment.
 

@@ -43,6 +43,14 @@ Notes:
 - moving-average "not traded" pinned;
 - the global-equity convention recorded (row 19) and in protocol §5.
 
+## Second re-review (Codex at `96e9617`, record `fe06f4d`)
+
+B1–B5 were confirmed resolved and all 19 numeric reference cases reproduced. Two narrow corrections were accepted:
+- **B6:** the card's cost-stress criterion wrongly asserted that a stressed sell fill rises. It now checks the exact formulas at m = 1 and m = 2, with no monotonic claims. **BT11** adds a sell-side stress case: 99.70 vs 99.85.
+- **B7:** buy affordability is clamped at `max(0, …)`. A buy with settled cash ≤ 0, for example after a `SHORTFALL` sale, is `SKIPPED_CASH` with quantity 0. **BT12** covers the same-session and next-session cases.
+
+No cost-model change.
+
 ## Data spec §10 amendment
 
 The row "Next-session open prices for fills → T-008 must extend the canonical record before any backtest result is used" becomes:
