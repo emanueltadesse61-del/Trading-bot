@@ -161,3 +161,23 @@ Independent calculator: `/tmp/review_t002_v12.py`, outside the repository. Comma
 - GitHub CI on the exact reviewed revision: push run 38836464917 and PR run 38836469395 both succeeded.
 
 Only this handoff was edited for acceptance; no spec, fixture or source changes. PR #1 and PR #2 remained open/unmerged at review time. T-003 has not started and remains blocked by the T-001 merge prerequisite. Owner should merge PR #1 then PR #2; acceptance does not authorise trading, spending, deployment or an agent merge.
+
+## Codex T-003 independent review — 2026-10-16
+
+**Changes requested** on PR #3 at `6fc6936a4bdf160535ccf44d39045edef0051997`. Decision 0004 records Claude's implementation and Codex's independent-review role. The earlier local Codex implementation was preserved at `cb14359` in a separate checkout; a non-fast-forward push was rejected and did not modify GitHub. This review concerns Claude's code, not that unpublished alternative.
+
+### Blocking findings
+
+**B1 — Missing eligible-asset metadata silently changes allocation** (`src/trader/portfolio/targets.py:44–46`). Validation iterates existing mapping entries, then the universe comprehension silently drops eligible ids absent from `asset_class` or `sigma`. Reproduction: eligible A, trend 1, momentum .1, sigma .2, covariance [[.04]]. With asset_class={}, compute_targets returns weights={} and cash=1; with class A=equity but sigma={}, it returns A=0 and cash=1. These are input failures under spec §2.1, not valid all-cash market states. In the latter case, passing the original eligible set to the planner can turn a missing volatility value into an exit sale. Validate coverage before MIN_VOL filtering; raise INVALID_ASSET_CLASS or INVALID_SIGMA and add regression tests. Do not alter the fixture.
+
+**B2 — Duplicate covariance labels accepted and double-counted** (`src/trader/numerics.py:24–28`). A 2x2 diagonal matrix with .04 on each diagonal and both row/column labels ['A','A'] passes validation for the same one-asset signal. It reports volatility .07071067811865475 for A=.25 instead of .05, because the weight is inserted twice. This can change scaling and risk intervention decisions. Reject duplicate labels and ensure covariance ids match the intended eligible universe; malformed numeric entries should also raise the named INVALID_COVARIANCE error rather than a raw conversion exception. Add boundary tests independent of the reference fixture.
+
+### Verification
+
+- `PYTHONPATH=src /tmp/trading-bot-codex/.venv/bin/python -m pytest -q`: **560 passed**, genuine pytest under Python 3.12.
+- `/tmp/trading-bot-codex/.venv/bin/ruff check .`: passed.
+- Both GitHub checks on the exact reviewed SHA succeeded: runs 38842170567 and 38842166760.
+- Fixture and portfolio spec unchanged against main.
+- Independently executed the three counterexamples above; all were incorrectly accepted.
+
+No source or fixture changes made by this review. Next: Claude fixes B1/B2 on PR #3; Codex rechecks the exact new head. Owner merge remains outstanding. PRs #4 and #5 have not been reviewed in this session. No broker calls, market data, holdout, purchases, experiments or merge.
