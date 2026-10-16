@@ -1,6 +1,12 @@
 # Handoff — read this first
 
-## Latest: Codex decision 0008 acceptance — 2026-10-16
+## Latest: PR #11 merged; PR #12 brought up to date (Claude) — 2026-10-16
+
+PR #11 (decision 0008) was merged by the owner's instruction as `b9828c1`, pinned to Codex's acceptance handoff `7b17650`. Main was then merged into `t-007-storage` for PR #12. This changes docs only: the T-007 code accepted at `eceba59` is unchanged. Both handoff records are kept below, decision 0008 first, then T-007.
+
+**Next:** the owner merges PR #12 (T-007), then Codex checks the T-008 card (PR #13).
+
+## Codex decision 0008 acceptance — 2026-10-16
 
 **Decision 0008 / PR #11 accepted for consistency at 0567670d302c2af97252c8a4fb79eb308e855963.** No blocking findings remain. Owner decisions are unchanged.
 
@@ -21,7 +27,7 @@ Evidence: exact-commit documentation diff checked against the prior review, char
 Owner may merge PR #11, preserving both this acceptance and PR #12's implementation/review handoff when resolving their shared-file conflict. No second T-007 build is needed.
 
 
-## Latest: decision 0008 amended for Codex's consistency review (Claude) — 2026-10-16
+## decision 0008 amended for Codex's consistency review (Claude) — 2026-10-16
 
 All points accepted; the owner's decisions are unchanged. Branch `owner-decisions-2026-10-16` (PR #11); the commit for re-check is named in the PR comment.
 
@@ -66,7 +72,7 @@ Please list the intended strategy and benchmark-only sets explicitly. If the int
 Evidence: reviewed the exact five-file documentation diff against charter, portfolio spec, T-007 and research protocol; counted Table B's role-labelled rows; independently calculated the 140-day interval. No tests rerun for this docs-only review. External product inception/availability and IBKR statements were not independently verified; this is an internal-consistency review, not approval of a feed or instrument. No broker access, real data, spending, code changes or merge.
 
 
-## Latest: owner decisions recorded (Claude) — 2026-10-16
+## owner decisions recorded (Claude) — 2026-10-16
 
 PR #10 (T-007 v3 card + data spec v1.2.1) was merged by the owner's instruction as `7aad2a9`, pinned to `a132d34`. **Codex: implement T-007 from main.**
 
@@ -81,6 +87,81 @@ The owner then made seven pending decisions, recorded in `docs/decisions/0008-ow
 7. **Holdout rule confirmed:** 4 years by the T-007 proposal rule. Sequence: owner-only proposal → charter confirmation → split → development data to agents.
 
 No performance has been computed on any data. Codex: check 0008 for consistency with the charter, protocol and specs. No code or spec changes.
+
+## Claude accepts T-007 implementation — 2026-10-16
+
+**Accepted at `eceba59abdffd92500f73fafa2f07ad79d94b170`; no blocking findings.** The full review is on PR #12.
+- Every card output and acceptance case is met. CI is green on that commit.
+- Independent probes (outside the repo): CSV edge cases and preflight path cases behave as specified.
+- Non-blocking notes for a follow-up:
+  - N1: record or refuse a dirty checkout in `code_commit`;
+  - N2: catch `pa.ArrowException` in `read_raw_dataset`;
+  - N3: a real unreadable-file test;
+  - N4: report all leftovers in one error;
+  - N5: README "UTF-8 without BOM";
+  - N6: document `SPLIT_PARTITION_MISMATCH`.
+
+The owner merges PR #12 pinned to the commit that adds this note. Next card: T-008 (backtest simulator, cost model, baselines; synthetic first).
+
+## T-007 implementation ready for Claude review — 2026-10-16
+
+Branch `t-007-storage`, isolated checkout from merged main `7aad2a9` (PR #10,
+accepted T-007 v3/data spec v1.2.1). The implementation PR names the exact final
+review commit and records CI results for that SHA. **State: Review; not accepted
+or merged.** Claude performs the independent implementation review next.
+
+Implemented CSV parsing and named boundary errors, public development-only import,
+immutable raw records/declarations, deterministic Parquet write/read with full
+manifest verification, the owner-only split CLI and proposal mode, holdout-date
+proposal, `INVALID_MODE`, and owner instructions/recovery in the README. PyArrow
+23.0.1 is pinned in uv.lock; existing dependency versions are unchanged. All data
+used in development and tests are synthetic. The program has no network or broker
+calls. Engineering dependency installation and GitHub publication used network;
+no market data was downloaded.
+
+Completed locally under Python 3.12:
+- `UV_CACHE_DIR=/tmp/trading-t007-cache /tmp/trading-build-tools/bin/uv sync --locked`
+  installed the locked environment. Initial offline attempt lacked cached tools;
+  installation then succeeded.
+- `.venv/bin/ruff check .`: passed.
+- `.venv/bin/python -m pytest -q`: **714 passed**, including all 625 existing tests
+  and 89 new T-007 acceptance/regression cases.
+- `.venv/bin/trader-split --help`: entry point works.
+- `git diff --check`: passed.
+- Existing fixtures, strategy parameters and specifications unchanged.
+
+Coverage includes exact CSV errors/file/line, all three market-date boundaries,
+after-boundary attestations, deterministic identities and Parquet bytes, independent
+hash calculation, provenance digest, corrupt files/metadata/schema, rehashed but
+semantically invalid input, exact partitions, empty partitions, source/symlink/
+output preflight before reads, case-insensitive prospective aliases, caught rollback,
+subprocess `os._exit` interruption and retry/owner cleanup, valid-close counts and
+leap convention, and CLI proposal/split execution. No historical performance run.
+
+Routine implementation choices for review:
+- Internal full-history parser is `_parse_csv_dir`; the public import is guarded.
+  Errors without a physical source row use line 0. Missing declaration reports
+  `declarations.csv:0`; empty numeric close remains None for builder validation.
+- Source imports reject undeclared/extra/duplicate declarations. A partition
+  intentionally retains source declarations even for an instrument with no records
+  on that side; this implements the requirement to copy all declarations unchanged.
+- Manifest result is a dictionary; `manifest_digest` is returned alongside fields,
+  never embedded in the bytes it hashes. Reads decode the same bytes they hashed,
+  reject symlinked dataset files and enforce exact Arrow column schemas.
+- Rows use stable full-row tie-breakers without deleting duplicates. Storage does
+  not turn bad market values into valid prices; the builder still reports them.
+- Publication is per dataset, with file/directory sync before proceeding to the next
+  rename. Existing outputs are never overwritten. Concurrent splits/path mutation
+  are unsupported and documented; containment is not a security sandbox.
+- CLI records the implementation checkout's Git HEAD, so the owner must use a clean
+  checkout of the reviewed commit. Proposal mode needs no output/provenance flags.
+
+CI is separate from local verification; exact-head results and links are maintained
+in the implementation PR. Owner-reported IBKR observations remain unverified by
+agents. Real use still requires D5 evidence, declarations and a charter-confirmed
+holdout boundary. No funding, broker calls, real data, holdout access, experiments,
+purchases, merges or deployment performed.
+
 
 ## Codex T-007 v3 acceptance — 2026-10-16
 
@@ -107,7 +188,7 @@ The IBKR API observation is recorded as owner-reported only; it does not establi
 Next: owner merges PR #10 with the acceptance record incorporated, then implement T-007 against this accepted contract on its own branch and submit the exact implementation head for Claude's independent review. No merge, build, real data, holdout access or broker call performed in this re-review.
 
 
-## Latest: T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
+## T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
 
 All accepted; resolutions appended to `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Data spec v1.2.1 and card v3 on `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-check is named in the PR comment.
 
