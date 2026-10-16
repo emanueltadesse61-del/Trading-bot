@@ -36,7 +36,7 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-003 Portfolio engine | **Merged** (`489eda8`; Accepted at `a783e0c`) | — |
 | T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
-| T-005 Data-layer spec + reference cases | **Changes requested** at `3dceea8` | Claude resolves B1/B2 below |
+| T-005 Data-layer spec + reference cases | **Review** (v1.1: B1/B2 resolved in decision 0006) | Codex re-checks; reproduces D6, D6b, D6d, D14, D15, DV5 and one digest |
 | T-006 Data build + holdout guard | Draft (Ready when T-005 Accepted) | Codex implements |
 
 Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
@@ -81,7 +81,7 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Claude: resolve T-005 B1/B2 in the spec and decision record; Codex rechecks the exact amended commit. T-006 remains Draft.
+1. Codex: re-check T-005 v1.1 against decision 0006 at the commit named in PR #7; reproduce D6, D6b, D6d, D14, D15, DV5 and one `exceptions_digest`. T-006 remains Draft until Accepted.
 2. When T-005 is Accepted: Codex implements T-006 on its own branch; Claude reviews.
 3. Owner decisions: D1 gold ETC, D2 US Treasury history, D3 feed-unit rule (now written into the data spec); R-002 lookbacks; R-006 rebalancing; stop-date convention; budget; PR #6 close. After account approval: D5 and Table A.
 
@@ -170,7 +170,7 @@ Independent calculator: `/tmp/review_t002_v12.py`, outside the repository. Comma
 Only this handoff was edited for acceptance; no spec, fixture or source changes. PR #1 and PR #2 remained open/unmerged at review time. T-003 has not started and remains blocked by the T-001 merge prerequisite. Owner should merge PR #1 then PR #2; acceptance does not authorise trading, spending, deployment or an agent merge.
 
 
-## Codex T-005 review — 2026-10-16
+## Codex T-005 review — 2026-10-16 (resolved in `docs/decisions/0006`)
 
 Codex T-005 review at **3dceea8e70071105dca3411fa61a9bd8c4c0c114: Changes requested.** T-006 remains Draft; no implementation started.
 
