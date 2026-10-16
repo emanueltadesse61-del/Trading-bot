@@ -1,5 +1,32 @@
 # Handoff — read this first
 
+## Latest: Codex T-009 requirements review — changes requested
+
+T-009 requirements review at 60623a43c5ea9f365a0a8a369ac0ab137f977aad: changes requested. No build started.
+
+Independent checks: all three chain hashes, all three tamper first_bad_seq answers and config_hash reproduce exactly. H-001's Params and BacktestParams field sets match the code. The backtest §6.2 amendments match the accepted implementation. Keeping V1 primary and V2/V3 non-promotable is clear.
+
+B1 — Trial history can shrink (registry spec §§5–6; charter §6 permanent rule 1).
+trial_count is calculated only from currently present frozen files. Freeze/use H-001 with V1–V3, then delete that file (or change its status to draft) in a clean committed checkout: the prescribed count falls from 3 to 0 even though its runs remain. File pinning only checks a subsequent run of that hypothesis; it does not preserve the budget when a different H file runs. Reserved-but-never-run variants are also lost. Define durable registration/accounting of frozen hypotheses and all declared variants, with immutable identities and inherited history. Missing/changed historical files must not reduce the count. Add deletion, draft-demotion and new-charter tests; specify whether these operations fail or retain the historical reservation.
+
+B2 — The hash chain cannot detect suffix deletion (spec purpose, §3; decision 0010 row 6).
+Using the fixture, remove final seq 3: the remaining chain verifies without changing any hash, hiding its unfinished run. An empty replacement log also passes the stated sequence/hash check. This does not require recomputing later hashes, contrary to §3. Either introduce an independently retained expected head/length with a defined checkpoint/recovery procedure and tests, or explicitly limit verification to internal chain consistency and require a pinned external checkpoint to detect truncation/rollback. Remove the “impossible to lose/edit/hide any run” promise. Backups alone are not a verification algorithm. Include a final-row/suffix-deletion reference case with the chosen expected behavior.
+
+B3 — The frozen contract does not fully constrain the actual run (spec §§1–2, §5).
+The API accepts period and cost_multiplier, but the gate only requires the period to be inside the dataset. A frozen 2015–2021 period can therefore become 2020–2021 under the same variant. Arbitrary positive cost multipliers likewise have no explicit refusal rule. The exception snapshot is recorded but not pinned in the hypothesis: changing approvals can change decisions while hypothesis hash, dataset hashes and config_hash remain identical.
+Require the actual period to equal the frozen period (or a separately declared window), costs to be only the predeclared base/stress choices, and the cleaning snapshot version/digest to be frozen and verified. Specify a baseline identifier and its effective configuration in the event/hash: kind=baseline alone does not identify sixty_forty versus moving_average_10m etc. Add refusal cases for each undeclared change and exact event/config examples. Recording a changed value is not enforcing pre-registration.
+
+B4 — The real-data prerequisite is not enforced (spec §5 versus backtest §12 and task exclusions).
+A complete temporary frozen file plus an existing v1 development raw dataset meets every listed real-mode check today. But v1 storage has no opens; converting it to Market yields open=None throughout, allowing a meaningless no-fill run to be recorded as completed. The required open-price/payment-timing card is explicitly not implemented here. Keep real execution explicitly refused until those prerequisites have a defined supported schema/capability; synthetic tests can exercise the gate checks without authorizing the real path. Define the RawDataset-to-Market boundary (including approvals) and the synthetic configuration input: the displayed run_registered signature supplies neither a synthetic full configuration nor a generator, so “run with the resolved configuration” is currently underspecified. Add a regression proving v1 raw data cannot reach a real simulator execution.
+
+Additional contract clarifications:
+N1: state strict validation rules for duplicate JSON keys/variant IDs, non-finite values, unknown override fields, roles/schedules and frozen_by; absence of null is not sufficient validity.
+N2: define event lifecycle validation (one finish per started run, valid supersedes references, body seq equals table seq), concurrency/locking for pin/budget checks plus start append, ordinary exceptions versus process death, and recording an error when failure logging itself is unavailable. The blanket “anything after start is recorded failed” is incompatible with the intentionally tested crash case.
+N3: chain fixture run_started bodies omit required config; label these as hash-only vectors or make them full valid events. The config vector is partial, so add a full resolved-config vector if it is also intended to exercise schema validation. Update the stale backtest header saying T-008 awaits review.
+
+Reproduction: PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python /tmp/review_t009.py (independent temporary script outside the repo). All supplied vectors passed; suffix deletion and whole-log replacement returned no chain error, and directory-based count fell 3 -> 0. These are synthetic contract probes, not strategy evaluations.
+
+
 ## Latest: T-009 card drafted (Claude) — 2026-10-16
 
 PR #14 (T-008) was merged by the owner's instruction as `7d0e020`. Branch `t-009-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
