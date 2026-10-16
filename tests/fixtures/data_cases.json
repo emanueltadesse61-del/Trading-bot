@@ -1,0 +1,1253 @@
+{
+ "meta": {
+  "spec": "docs/data-spec.md v1",
+  "author": "Claude (independent calculation)",
+  "tolerance_abs": 1e-10,
+  "JUMP_LIMIT": 0.25,
+  "conventions": [
+   "Calendar dates are ISO strings; all are weekday sessions.",
+   "Report entries sorted by (instrument, date, code).",
+   "tr_close and trade_close are in GBP; None means missing."
+  ]
+ },
+ "cases": [
+  {
+   "name": "D1_gbx_conversion",
+   "description": "GBX closes are divided by 100.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 1000,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 1010,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 995,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 1000,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 1002,
+      "unit": "GBX"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      10.0,
+      10.1,
+      9.95,
+      10.0,
+      10.02
+     ]
+    },
+    "trade_close": {
+     "A": 10.02
+    },
+    "data_ok": true,
+    "report": []
+   }
+  },
+  {
+   "name": "D2_distribution",
+   "description": "Distribution of 1.00 with ex-date on day 2: total return reinvests it at that close.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 99,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 101,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 102,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [
+     {
+      "instrument": "A",
+      "ex_date": "2026-01-06",
+      "amount": 1.0,
+      "unit": "GBP"
+     }
+    ],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      100.0,
+      102.020202020202,
+      101.010101010101,
+      103.030303030303
+     ]
+    },
+    "trade_close": {
+     "A": 102
+    },
+    "data_ok": true,
+    "report": []
+   }
+  },
+  {
+   "name": "D3_missing_session",
+   "description": "No close on day 3; distribution of 2.00 on day 4; the chain resumes from day 2.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 102,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 104,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 103,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [
+     {
+      "instrument": "A",
+      "ex_date": "2026-01-08",
+      "amount": 2.0,
+      "unit": "GBP"
+     }
+    ],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      102.0,
+      null,
+      106.0,
+      104.980769230769
+     ]
+    },
+    "trade_close": {
+     "A": 103
+    },
+    "data_ok": true,
+    "report": []
+   }
+  },
+  {
+   "name": "D4_stale_at_t",
+   "description": "No close at t: trade_close is None and DATA_STALE is flagged, but data_ok stays true.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 101,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 102,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 103,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      101.0,
+      102.0,
+      103.0,
+      null
+     ]
+    },
+    "trade_close": {
+     "A": null
+    },
+    "data_ok": true,
+    "report": [
+     {
+      "code": "DATA_STALE",
+      "instrument": "A",
+      "date": "2026-01-09"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D5_jump_flag",
+   "description": "A 40% one-session move is flagged and makes data_ok false.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 141,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 142,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      140.0,
+      141.0,
+      140.0,
+      142.0
+     ]
+    },
+    "trade_close": {
+     "A": 142
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_JUMP",
+      "instrument": "A",
+      "date": "2026-01-06"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D6_jump_approved",
+   "description": "The same 40% move listed in the approved-exceptions file: no flag, data_ok true.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 141,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 140,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 142,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": [
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "reason": "synthetic test",
+      "approved": "2026-10-16"
+     }
+    ]
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      100,
+      140.0,
+      141.0,
+      140.0,
+      142.0
+     ]
+    },
+    "trade_close": {
+     "A": 142
+    },
+    "data_ok": true,
+    "report": []
+   }
+  },
+  {
+   "name": "D7_off_calendar",
+   "description": "A has a record on Saturday 3 Jan 2026 (not a session, before t): A is excluded; B is unaffected.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A",
+     "B"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-03",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-05",
+      "close": 50,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-06",
+      "close": 51,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-07",
+      "close": 52,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-08",
+      "close": 53,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-09",
+      "close": 54,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "B": [
+      50,
+      51.0,
+      52.0,
+      53.0,
+      54.0
+     ]
+    },
+    "trade_close": {
+     "A": null,
+     "B": 54
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_OFF_CALENDAR",
+      "instrument": "A",
+      "date": "2026-01-03"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D8_duplicate",
+   "description": "A has two closes for day 3: A is excluded.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A",
+     "B"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 101,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-05",
+      "close": 50,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-06",
+      "close": 51,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-07",
+      "close": 52,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-08",
+      "close": 53,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-09",
+      "close": 54,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "B": [
+      50,
+      51.0,
+      52.0,
+      53.0,
+      54.0
+     ]
+    },
+    "trade_close": {
+     "A": null,
+     "B": 54
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_DUPLICATE",
+      "instrument": "A",
+      "date": "2026-01-07"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D9_unknown_unit",
+   "description": "A has a record in USD: A is excluded.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A",
+     "B"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 100,
+      "unit": "USD"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-05",
+      "close": 50,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-06",
+      "close": 51,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-07",
+      "close": 52,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-08",
+      "close": 53,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-09",
+      "close": 54,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "B": [
+      50,
+      51.0,
+      52.0,
+      53.0,
+      54.0
+     ]
+    },
+    "trade_close": {
+     "A": null,
+     "B": 54
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_UNKNOWN_UNIT",
+      "instrument": "A",
+      "date": "2026-01-09"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D10_distribution_without_price",
+   "description": "A has a distribution on day 3, which has no close: A is excluded.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A",
+     "B"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-05",
+      "close": 50,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-06",
+      "close": 51,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-07",
+      "close": 52,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-08",
+      "close": 53,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-09",
+      "close": 54,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [
+     {
+      "instrument": "A",
+      "ex_date": "2026-01-07",
+      "amount": 1.0,
+      "unit": "GBP"
+     }
+    ],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "B": [
+      50,
+      51.0,
+      52.0,
+      53.0,
+      54.0
+     ]
+    },
+    "trade_close": {
+     "A": null,
+     "B": 54
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_DISTRIBUTION_WITHOUT_PRICE",
+      "instrument": "A",
+      "date": "2026-01-07"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D11_future_record",
+   "description": "t is day 4; A has a record on day 5 (after t): A is excluded and data_ok is false.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-08",
+    "universe": [
+     "A",
+     "B"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 100,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-05",
+      "close": 50,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-06",
+      "close": 51,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-07",
+      "close": 52,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "B",
+      "date": "2026-01-08",
+      "close": 53,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08"
+    ],
+    "tr_close": {
+     "A": [
+      null,
+      null,
+      null,
+      null
+     ],
+     "B": [
+      50,
+      51.0,
+      52.0,
+      53.0
+     ]
+    },
+    "trade_close": {
+     "A": null,
+     "B": 53
+    },
+    "data_ok": false,
+    "report": [
+     {
+      "code": "DATA_FUTURE_RECORD",
+      "instrument": "A",
+      "date": "2026-01-09"
+     }
+    ]
+   }
+  },
+  {
+   "name": "D12_gbx_distribution",
+   "description": "GBX close and GBX distribution are both divided by 100 before the total-return step.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 2000,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 1990,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 2010,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 2020,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 2005,
+      "unit": "GBX"
+     }
+    ],
+    "distributions": [
+     {
+      "instrument": "A",
+      "ex_date": "2026-01-06",
+      "amount": 15,
+      "unit": "GBX"
+     }
+    ],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      20.0,
+      20.05,
+      20.251507537688,
+      20.352261306533,
+      20.201130653266
+     ]
+    },
+    "trade_close": {
+     "A": 20.05
+    },
+    "data_ok": true,
+    "report": []
+   }
+  },
+  {
+   "name": "D13_mixed_units",
+   "description": "One instrument with records in GBP and GBX: each is converted by its own unit.",
+   "inputs": {
+    "calendar": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "t": "2026-01-09",
+    "universe": [
+     "A"
+    ],
+    "prices": [
+     {
+      "instrument": "A",
+      "date": "2026-01-05",
+      "close": 10.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-06",
+      "close": 1010,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-07",
+      "close": 10.2,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-08",
+      "close": 1015,
+      "unit": "GBX"
+     },
+     {
+      "instrument": "A",
+      "date": "2026-01-09",
+      "close": 10.3,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "exceptions": []
+   },
+   "expected": {
+    "dates": [
+     "2026-01-05",
+     "2026-01-06",
+     "2026-01-07",
+     "2026-01-08",
+     "2026-01-09"
+    ],
+    "tr_close": {
+     "A": [
+      10.0,
+      10.1,
+      10.2,
+      10.15,
+      10.3
+     ]
+    },
+    "trade_close": {
+     "A": 10.3
+    },
+    "data_ok": true,
+    "report": []
+   }
+  },
+  {
+   "name": "D14_holdout_path",
+   "description": "Holdout path inside the repository (even under gitignored data/) is refused; outside is accepted.",
+   "inputs": {
+    "repo_root": "/work/Trading-bot",
+    "paths": [
+     "/work/Trading-bot/data/holdout",
+     "/work/Trading-bot",
+     "/srv/trading-holdout",
+     "/work/Trading-bot-holdout"
+    ]
+   },
+   "expected": {
+    "/work/Trading-bot/data/holdout": "HOLDOUT_PATH_FORBIDDEN",
+    "/work/Trading-bot": "HOLDOUT_PATH_FORBIDDEN",
+    "/srv/trading-holdout": "OK",
+    "/work/Trading-bot-holdout": "OK"
+   }
+  }
+ ]
+}

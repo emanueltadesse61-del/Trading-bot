@@ -8,14 +8,13 @@ Last updated: 2026-10-16 by Claude. Update this file at the end of every session
 
 ## Review target
 
-Decision 0004: Claude implemented T-003, T-004 and the research library while Codex was offline; **Codex reviews**. Nothing merges without Codex's acceptance and the owner's approval. T-003 is **Accepted**. Codex requested changes on PRs #4 and #5; Claude has addressed every finding, and **those PRs' latest commits await Codex's re-review.**
+Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks specs and builds.**
 
-| PR | Work | Codex review (commit) | Claude's fix | Re-review commit |
-|---|---|---|---|---|
-| [#3](https://github.com/emanueltadesse61-del/Trading-bot/pull/3) | T-003 portfolio engine | `6fc6936`: B1, B2 → fixed; **Accepted at `a783e0c`** | Decision 0005, spec v1.3, 15 regression tests | Done |
-| [#4](https://github.com/emanueltadesse61-del/Trading-bot/pull/4) | T-004 feasibility matrix | `8aa48b9`: F1 missing row fields, F2 unsourced data claims, D4 source, GBX unit | Table B2 checklist, Table C marked UNVERIFIED with evidence needed, D4 from IBKR's public UK table, D3 feed-metadata rule | this branch's head (named in the PR) |
-| [#5](https://github.com/emanueltadesse61-del/Trading-bot/pull/5) | Research library | `047b298`: R1 cost-stress wording, R2 DSR status, two non-blocking | See PR #5 | named in PR #5 |
-| Merged | PR #1 → `c1ae73d`; PR #2 → `5ec568f` | | | |
+| Item | Value |
+|---|---|
+| T-005 | Data-layer spec and reference cases on branch `t-005-data-spec`; exact commit named in its PR. Reviewer: Codex |
+| Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728` (each pinned to the accepted commit) |
+| Open | PR #6 (Codex's T-003 review record): stays open until the owner authorises closing it |
 
 ## Decisions
 
@@ -33,10 +32,14 @@ Decision 0004: Claude implemented T-003, T-004 and the research library while Co
 | Task | State | Owner of next step |
 |---|---|---|
 | T-001 Repository bootstrap | **Merged** (`c1ae73d`) | — |
-| T-002 Portfolio spec + reference cases | **Merged** (`5ec568f`; Accepted by Codex at `4d4bc93`) | — |
-| T-003 Synthetic portfolio implementation | **Accepted** by Codex at `a783e0c` ([review](https://github.com/emanueltadesse61-del/Trading-bot/pull/3#pullrequestreview-5546213795)) | Owner merges PR #3 |
-| T-004 Feasibility matrix | **Review** (F1/F2 fixed); account rows **Blocked** | Codex re-reviews PR #4; owner decides D1–D3 |
-| Research library | **Review** (R1/R2 fixed) | Codex re-reviews PR #5; owner decides R-002, R-006 |
+| T-002 Portfolio spec + reference cases | **Merged** (`5ec568f`) | — |
+| T-003 Portfolio engine | **Merged** (`489eda8`; Accepted at `a783e0c`) | — |
+| T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
+| Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
+| T-005 Data-layer spec + reference cases | **Review** | Codex checks; reproduces D2, D3, D7, D11, D12, D14 |
+| T-006 Data build + holdout guard | Draft (Ready when T-005 Accepted) | Codex implements |
+
+Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -78,10 +81,9 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Owner: merge PR #3 (T-003 Accepted at `a783e0c`). Codex: re-review PRs #4 and #5 at the heads named in each PR.
-2. Owner: merge PRs #4 and #5 once Codex accepts them. PR #6 (Codex's T-003 review record) can be merged into the T-003 branch or closed after re-review.
-3. Owner decisions: D1 gold ETC, D2 US Treasury history, D3 feed-unit rule; R-002 lookbacks, R-006 rebalancing; stop-date convention; budget. After account approval: D5 and the Table A checks.
-4. Claude, after T-003 merges: T-005 data layer (session calendar, feed-unit normalisation, total-return series, manifests, holdout stored outside the repo); then T-006 backtest simulator and baselines.
+1. Codex: review T-005 (spec check only, no implementation); reproduce D2, D3, D7, D11, D12 and D14 independently. Mark Accepted or return findings.
+2. When T-005 is Accepted: Codex implements T-006 on its own branch; Claude reviews.
+3. Owner decisions: D1 gold ETC, D2 US Treasury history, D3 feed-unit rule (now written into the data spec); R-002 lookbacks; R-006 rebalancing; stop-date convention; budget; PR #6 close. After account approval: D5 and Table A.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
