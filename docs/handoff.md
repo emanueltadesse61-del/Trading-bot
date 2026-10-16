@@ -8,11 +8,11 @@ Last updated: 2026-10-16 by Claude. Update this file at the end of every session
 
 ## Review target
 
-Decision 0004: Claude implemented T-003, T-004 and the research library while Codex was offline; **Codex reviews**. Nothing merges without Codex's acceptance and the owner's approval. Codex has reviewed all three and requested changes; Claude has addressed every finding. **Each PR's latest commit awaits Codex's re-review.**
+Decision 0004: Claude implemented T-003, T-004 and the research library while Codex was offline; **Codex reviews**. Nothing merges without Codex's acceptance and the owner's approval. T-003 is **Accepted**. Codex requested changes on PRs #4 and #5; Claude has addressed every finding, and **those PRs' latest commits await Codex's re-review.**
 
 | PR | Work | Codex review (commit) | Claude's fix | Re-review commit |
 |---|---|---|---|---|
-| [#3](https://github.com/emanueltadesse61-del/Trading-bot/pull/3) | T-003 portfolio engine | `6fc6936`: B1 input coverage, B2 duplicate covariance labels (record: [PR #6](https://github.com/emanueltadesse61-del/Trading-bot/pull/6)) | Decision 0005, spec v1.3, 15 regression tests | `a783e0c` |
+| [#3](https://github.com/emanueltadesse61-del/Trading-bot/pull/3) | T-003 portfolio engine | `6fc6936`: B1, B2 → fixed; **Accepted at `a783e0c`** | Decision 0005, spec v1.3, 15 regression tests | Done |
 | [#4](https://github.com/emanueltadesse61-del/Trading-bot/pull/4) | T-004 feasibility matrix | `8aa48b9`: F1 missing row fields, F2 unsourced data claims, D4 source, GBX unit | Table B2 checklist, Table C marked UNVERIFIED with evidence needed, D4 from IBKR's public UK table, D3 feed-metadata rule | this branch's head (named in the PR) |
 | [#5](https://github.com/emanueltadesse61-del/Trading-bot/pull/5) | Research library | `047b298`: R1 cost-stress wording, R2 DSR status, two non-blocking | See PR #5 | named in PR #5 |
 | Merged | PR #1 → `c1ae73d`; PR #2 → `5ec568f` | | | |
@@ -34,7 +34,7 @@ Decision 0004: Claude implemented T-003, T-004 and the research library while Co
 |---|---|---|
 | T-001 Repository bootstrap | **Merged** (`c1ae73d`) | — |
 | T-002 Portfolio spec + reference cases | **Merged** (`5ec568f`; Accepted by Codex at `4d4bc93`) | — |
-| T-003 Synthetic portfolio implementation | **Review** (B1/B2 fixed at `a783e0c`) | Codex re-reviews PR #3 |
+| T-003 Synthetic portfolio implementation | **Accepted** by Codex at `a783e0c` ([review](https://github.com/emanueltadesse61-del/Trading-bot/pull/3#pullrequestreview-5546213795)) | Owner merges PR #3 |
 | T-004 Feasibility matrix | **Review** (F1/F2 fixed); account rows **Blocked** | Codex re-reviews PR #4; owner decides D1–D3 |
 | Research library | **Review** (R1/R2 fixed) | Codex re-reviews PR #5; owner decides R-002, R-006 |
 
@@ -78,8 +78,8 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Codex: re-review PR #3 at `a783e0c`, then PRs #4 and #5 at the heads named in each PR.
-2. Owner: merge each PR once Codex accepts it. PR #6 (Codex's T-003 review record) can be merged into the T-003 branch or closed after re-review.
+1. Owner: merge PR #3 (T-003 Accepted at `a783e0c`). Codex: re-review PRs #4 and #5 at the heads named in each PR.
+2. Owner: merge PRs #4 and #5 once Codex accepts them. PR #6 (Codex's T-003 review record) can be merged into the T-003 branch or closed after re-review.
 3. Owner decisions: D1 gold ETC, D2 US Treasury history, D3 feed-unit rule; R-002 lookbacks, R-006 rebalancing; stop-date convention; budget. After account approval: D5 and the Table A checks.
 4. Claude, after T-003 merges: T-005 data layer (session calendar, feed-unit normalisation, total-return series, manifests, holdout stored outside the repo); then T-006 backtest simulator and baselines.
 
