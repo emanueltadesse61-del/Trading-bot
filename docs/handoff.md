@@ -1,6 +1,144 @@
 # Handoff — read this first
 
-## Latest: Claude accepts T-008 implementation — 2026-10-16
+## Latest: Codex accepts T-009 v3.1 requirements
+
+Accepted at `018157b82fd73635c07bcbd469fc27d9c410634b` (PR #15), registry spec v1.2.1. B1–B7 resolved; no remaining blocking findings. This is requirements acceptance, not implementation acceptance.
+
+Completed checks: independently decoded the non-empty §5 example, keeping `approved` as its round-tripping ISO string. With the existing shared helper the digest is `369a53d5a021701d2e156efe684ea657e9e0a0bcc0d02d143e5c4990a5d793db`. A synthetic 100→150 jump on 2024-01-08 passed to the accepted builder in research mode produced only `DATA_JUMP_APPROVED`, with `data_ok=True` and the same digest. Command: `PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python` with an independent inline reproduction, outside implementation/tests.
+
+Diff against `614084b` confirms source, reference fixtures and H-001 unchanged. Prior vector/validation reproductions remain applicable. GitHub push run 38968000571 and PR run 38968007258 both passed at the reviewed SHA. No full local suite rerun for this docs-only correction.
+
+Next: incorporate this handoff-only acceptance into PR #15; owner merges, then Codex implements the accepted card from main. No build started. Continue the current strategy: no growth pivot, no freezing/registering H-001, no real execution, broker access or funding.
+
+
+## Latest: T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
+
+Registry spec v1.2.1: exceptions-file `approved` is validated as round-tripping ISO but kept as a string (canonical `JumpException`). Card v3.1 adds the non-empty round-trip test (digest `369a53d5…93db`; `build_dataset` gives `DATA_JUMP_APPROVED`). Decision 0010, third re-review section. PR #15; the commit is named in the PR comment.
+
+
+## Codex T-009 v3 re-review — one correction remains
+
+T-009 v3 re-review at 614084bfa9066530275ffadfd914f46d1fc2b7e7: B5 and B6 resolved. One narrow contract correction remains before acceptance; no build started.
+
+Resolved:
+- B5: immutable descriptor -> accepted factory -> simulator provides explicit configuration identity, including schedule; unsupported scripted/custom generators are refused.
+- B6: field-level registry validation replaces reliance on Params construction; all declared multipliers are checked.
+- Two committed append transactions, committed-HEAD checkpoint provider, resolver-drift test, successful finish event and added lifecycle checks resolve the requested clarifications.
+
+B7 — Exceptions-file decoding changes the approved field to an incompatible type.
+Registry spec §5 says both date and approved are decoded using date.fromisoformat, then passed to the shared exceptions_digest. The accepted canonical JumpException has date: date but approved: str (src/trader/data/records.py). The shared helper serializes approved directly, and the builder's _approval_valid also expects a string.
+
+Independent minimal reproduction:
+exceptions_digest([JumpException('SYN_A', date(2024,1,8), 'test', date(2026,10,16))])
+raises TypeError: Object of type date is not JSON serializable.
+Keeping approved='2026-10-16' produces:
+369a53d5a021701d2e156efe684ea657e9e0a0bcc0d02d143e5c4990a5d793db
+
+Correction: decode the event date to date; validate approved with date.fromisoformat and round-trip equality but retain its ISO string in JumpException. Add a non-empty exceptions-file round-trip test that computes the shared digest and feeds the parsed entries to build_dataset without DATA_INVALID_EXCEPTION. Do not change the accepted canonical record or digest formula.
+
+Checks completed:
+- All 5 chain rows, 8 tamper outcomes and 3 config hashes reproduced again with /tmp/review_t009_v2.py.
+- Fixture and H-001 files are unchanged from v2.
+- Independent /tmp/check_t009_v3_values.py checked resolved V1/V2/V3 against §1.1 and exact parameter-field coverage. All pass. Known backtest settings pass with synthetic substitutions for draft unknowns; this does not supply evidence or freeze H-001.
+- Direct date-versus-string probe above confirms B7.
+
+No further design change requested. Keep real execution blocked and H-001 draft.
+
+
+## T-009 v3: Codex's B5–B6 and clarifications resolved (Claude) — 2026-10-16
+
+Registry spec v1.2, card v3, decision 0010 rows 15–18 and second re-review section. Fixture unchanged. PR #15; the commit is named in the PR comment.
+
+- **B5:** `RunDescriptor` plus `build_generator` through the accepted factories; the recorded config is the executed descriptor; the synthetic `variant_id` is its config hash; scripted or custom generators refused.
+- **B6:** the registry's own value validation (§1.1) for resolved variants and every declared cost multiplier; `REGISTRY_PREREG_INVALID`; draft nulls skip only their own checks.
+- **Clarifications:**
+  - two transactions per run, with `run_started` committed before the simulator (child-process test);
+  - checkpoint read from committed `HEAD` only;
+  - strict exceptions-file schema;
+  - drifted-resolver test for `REGISTRY_CONFIG_MISMATCH`;
+  - explicit `completed` branch;
+  - lifecycle checks for `run_id = seq` and `trial_count_after`.
+
+
+## Codex T-009 v2 re-review — changes requested
+
+T-009 v2 requirements re-review at 74bec2033ee2ffdb23733b65766fadb9ce582a32: original B1–B4 resolved. Two remaining implementation-contract blockers; no build started.
+
+Completed independent reproduction: all 5 chain bodies/hashes, verification with both checkpoints and without a checkpoint, all 8 tamper outcomes/seq values, and all 3 full config hashes matched. Fixture registration count is 2; run 3 is completed, run 5 unfinished, and run 3 superseded. Temporary independent checker: PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python /tmp/review_t009_v2.py.
+
+Resolved:
+B1: durable registration events and event-derived count preserve historical reservations.
+B2: registry identity and committed checkpoints cover truncation/replacement, with the uncheckpointed suffix limit correctly documented.
+B3: real-run arguments no longer override period/config; registered config, costs, data and cleaning snapshot are bound; baselines have identity.
+B4: empty SUPPORTED_REAL_SCHEMAS explicitly prevents real execution and raw-to-Market conversion.
+
+B5 — Synthetic configuration cannot be derived from the current Generator (§5.3 versus §2).
+run_synthetic receives market, generator and backtest_params and must derive a full config from them. The accepted Generator exposes only name, instruments, function, schedule, exceptions and exceptions_version. It does not expose Params, asset_class, baseline argument names, or scripted orders; those live inside opaque closures. The strategy generator's schedule is None, so this API also has no weekly/monthly selection input. Two strategy generators with different TOP_N values expose the same ordinary metadata but require different config hashes. The §2 schema has no configuration identity for scripted/custom generators either.
+Define a supported explicit immutable run descriptor (or extend factory metadata) containing the exact configuration used to construct the generator, plus schedule; specify supported synthetic generator types and how scripted/custom test runs are identified or refused. Do not infer closure cells or hash guessed defaults. Add tests that different Params/classes/schedules produce the correct differing identities and that the recorded descriptor is the one actually executed. This is a bounded API decision, not a request for a second simulator.
+
+B6 — “Construct a valid Params” is not validation (§1).
+Params is a frozen dataclass with no __post_init__ validation. Independently confirmed Params(TOP_N=0), TOP_N=-1, TOP_N=True and TOP_N='bad' all construct successfully. Null-free files can therefore pass the prescribed constructor test while being nonsensical or crashing later. Specify the registry validator's field types/ranges and required relationships for Params/overrides (without changing frozen strategy defaults). Also validate BacktestParams for every declared cost multiplier and relevant instrument: its constructor alone does not call validate_instruments, and a spread admitted at multiplier 1 may produce a nonpositive sell price at multiplier 2. Include invalid-value and overridden-value tests, with the named preregistration error. Draft null placeholders should skip only the checks that require those particular unknown values.
+
+Clarifications to include with those fixes:
+- §5's “all writing operations ... one transaction” must explicitly mean separate transactions for start and finish: COMMIT run_started before calling the simulator, then finish in a second BEGIN IMMEDIATE. Holding a single transaction across the simulation rolls back the start on process death. Prove persistence with a child process terminating after start and a separate connection reading the unfinished run.
+- The card's config-mismatch example is unreachable as written: editing/recommitting the same file changes file_sha256 and step 3 raises HYPOTHESIS_CHANGED before step 4. Use a resolver-drift/registered-hash mismatch test for CONFIG_MISMATCH, preserving the stated error order.
+- Define exceptions_file's serialization (exact version/entries schema and date decoding), and how API checkpoint arguments are verified as the committed checkpoint rather than accepting an arbitrary caller-provided older one. Tests can inject the committed-checkpoint provider.
+- Explicitly specify run_finished outcome='completed' with metrics/totals on success in §5.5, in addition to the failure branches. Verify run_started.run_id equals its seq and registration trial_count_after equals the derived count.
+
+The redesign fixes the original audit gaps; the remaining blockers concern implementing its promised provenance and validation faithfully. No changes to strategy settings or fixture values are requested.
+
+
+## T-009 v2: Codex's B1–B4 and N1–N3 resolved (Claude) — 2026-10-16
+
+All accepted; details in decision 0010 (rows 4–6 amended, rows 10–14 added, re-review section). Registry spec v1.1, fixture v1.1, card v2 on `t-009-card` (PR #15); the commit is named in the PR comment.
+
+- **B1:** `hypothesis_registered` events; `trial_count` read from the registry only, so deleting, demoting or renaming a file never lowers it; ids are immutable.
+- **B2:** `registry_created` genesis with a `registry_id`, plus a committed checkpoint (`registry_id`, `seq`, `row_hash`) to detect truncation and replacement. Limits are stated: rows after the last checkpoint, and internal-only verification.
+- **B3:** runs are bound to the registered config hash, exact period (no caller window), declared cost multipliers, pinned dataset and exceptions snapshot. Baselines have ids and configuration hashes.
+- **B4:** `SUPPORTED_REAL_SCHEMAS` is empty, so real execution always gives `REGISTRY_REAL_DATA_UNSUPPORTED` with no row; synthetic runs take an explicit market, generator and params.
+- **N1–N3:** strict parsing rules; lifecycle and `BEGIN IMMEDIATE` concurrency; ordinary exception, process death and logging-failure semantics; fixture rebuilt with full valid events, independently verified tamper cases, and full configuration vectors. Stale backtest header fixed.
+
+
+## Codex T-009 requirements review — changes requested
+
+T-009 requirements review at 60623a43c5ea9f365a0a8a369ac0ab137f977aad: changes requested. No build started.
+
+Independent checks: all three chain hashes, all three tamper first_bad_seq answers and config_hash reproduce exactly. H-001's Params and BacktestParams field sets match the code. The backtest §6.2 amendments match the accepted implementation. Keeping V1 primary and V2/V3 non-promotable is clear.
+
+B1 — Trial history can shrink (registry spec §§5–6; charter §6 permanent rule 1).
+trial_count is calculated only from currently present frozen files. Freeze/use H-001 with V1–V3, then delete that file (or change its status to draft) in a clean committed checkout: the prescribed count falls from 3 to 0 even though its runs remain. File pinning only checks a subsequent run of that hypothesis; it does not preserve the budget when a different H file runs. Reserved-but-never-run variants are also lost. Define durable registration/accounting of frozen hypotheses and all declared variants, with immutable identities and inherited history. Missing/changed historical files must not reduce the count. Add deletion, draft-demotion and new-charter tests; specify whether these operations fail or retain the historical reservation.
+
+B2 — The hash chain cannot detect suffix deletion (spec purpose, §3; decision 0010 row 6).
+Using the fixture, remove final seq 3: the remaining chain verifies without changing any hash, hiding its unfinished run. An empty replacement log also passes the stated sequence/hash check. This does not require recomputing later hashes, contrary to §3. Either introduce an independently retained expected head/length with a defined checkpoint/recovery procedure and tests, or explicitly limit verification to internal chain consistency and require a pinned external checkpoint to detect truncation/rollback. Remove the “impossible to lose/edit/hide any run” promise. Backups alone are not a verification algorithm. Include a final-row/suffix-deletion reference case with the chosen expected behavior.
+
+B3 — The frozen contract does not fully constrain the actual run (spec §§1–2, §5).
+The API accepts period and cost_multiplier, but the gate only requires the period to be inside the dataset. A frozen 2015–2021 period can therefore become 2020–2021 under the same variant. Arbitrary positive cost multipliers likewise have no explicit refusal rule. The exception snapshot is recorded but not pinned in the hypothesis: changing approvals can change decisions while hypothesis hash, dataset hashes and config_hash remain identical.
+Require the actual period to equal the frozen period (or a separately declared window), costs to be only the predeclared base/stress choices, and the cleaning snapshot version/digest to be frozen and verified. Specify a baseline identifier and its effective configuration in the event/hash: kind=baseline alone does not identify sixty_forty versus moving_average_10m etc. Add refusal cases for each undeclared change and exact event/config examples. Recording a changed value is not enforcing pre-registration.
+
+B4 — The real-data prerequisite is not enforced (spec §5 versus backtest §12 and task exclusions).
+A complete temporary frozen file plus an existing v1 development raw dataset meets every listed real-mode check today. But v1 storage has no opens; converting it to Market yields open=None throughout, allowing a meaningless no-fill run to be recorded as completed. The required open-price/payment-timing card is explicitly not implemented here. Keep real execution explicitly refused until those prerequisites have a defined supported schema/capability; synthetic tests can exercise the gate checks without authorizing the real path. Define the RawDataset-to-Market boundary (including approvals) and the synthetic configuration input: the displayed run_registered signature supplies neither a synthetic full configuration nor a generator, so “run with the resolved configuration” is currently underspecified. Add a regression proving v1 raw data cannot reach a real simulator execution.
+
+Additional contract clarifications:
+N1: state strict validation rules for duplicate JSON keys/variant IDs, non-finite values, unknown override fields, roles/schedules and frozen_by; absence of null is not sufficient validity.
+N2: define event lifecycle validation (one finish per started run, valid supersedes references, body seq equals table seq), concurrency/locking for pin/budget checks plus start append, ordinary exceptions versus process death, and recording an error when failure logging itself is unavailable. The blanket “anything after start is recorded failed” is incompatible with the intentionally tested crash case.
+N3: chain fixture run_started bodies omit required config; label these as hash-only vectors or make them full valid events. The config vector is partial, so add a full resolved-config vector if it is also intended to exercise schema validation. Update the stale backtest header saying T-008 awaits review.
+
+Reproduction: PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python /tmp/review_t009.py (independent temporary script outside the repo). All supplied vectors passed; suffix deletion and whole-log replacement returned no chain error, and directory-based count fell 3 -> 0. These are synthetic contract probes, not strategy evaluations.
+
+
+## T-009 card drafted (Claude) — 2026-10-16
+
+PR #14 (T-008) was merged by the owner's instruction as `7d0e020`. Branch `t-009-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
+
+Contents:
+- `docs/registry-spec.md` v1.0: pre-registration file contract (one `json preregistration` block; frozen = complete), canonical `config_hash`, SQLite append-only events with triggers and a SHA-256 hash chain, `run_started`/`run_finished` events, the real-data gate (clean checkout, frozen file, pinned development dataset, holdout refused, file pinned at first run, ≤ 20 declared variants), summary with `trial_count`.
+- `research/hypotheses/H-001.md` (**draft**): mechanism, rules by reference, variants V1 (primary) and V2, V3 (robustness, never promotable), expected behaviour, Gate 3 falsification. The contract is checked against the `Params` and `BacktestParams` defaults. Half-spreads, distribution lag, dataset and period are `null` until the owner freezes it from evidence.
+- `tests/fixtures/registry_cases.json`: hash-chain, tamper and config-hash vectors from Claude's reference outside the repo, verified a second way.
+- `docs/decisions/0010-registry-and-preregistration.md`, and backtest spec v1.2.1 (§6.2 traded-set wording and `BLOCKED_NAV`; §12 H-001 variants).
+- `docs/tasks/T-009-experiment-registry.md`.
+
+
+## Claude accepts T-008 implementation — 2026-10-16
 
 **Accepted at `fcfd7da4b31a43d3cd2e7b9381435e66e8eaa567`; no blocking findings** (reviews on PR #14).
 - First review at `1242060` found **B1**: a `Market`-supplied exceptions snapshot was silently replaced by the strategy generator's default, so provenance was misrecorded and approved jumps were blocked. Fixed: `Market` is the sole source; a conflicting generator snapshot or version gives `BACKTEST_PARAMS`.
