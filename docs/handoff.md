@@ -188,7 +188,7 @@ The IBKR API observation is recorded as owner-reported only; it does not establi
 Next: owner merges PR #10 with the acceptance record incorporated, then implement T-007 against this accepted contract on its own branch and submit the exact implementation head for Claude's independent review. No merge, build, real data, holdout access or broker call performed in this re-review.
 
 
-## Latest: T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
+## T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
 
 All accepted; resolutions appended to `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Data spec v1.2.1 and card v3 on `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-check is named in the PR comment.
 
