@@ -1,5 +1,34 @@
 # Handoff — read this first
 
+## Latest: Codex T-009 v3 re-review — one correction remains
+
+T-009 v3 re-review at 614084bfa9066530275ffadfd914f46d1fc2b7e7: B5 and B6 resolved. One narrow contract correction remains before acceptance; no build started.
+
+Resolved:
+- B5: immutable descriptor -> accepted factory -> simulator provides explicit configuration identity, including schedule; unsupported scripted/custom generators are refused.
+- B6: field-level registry validation replaces reliance on Params construction; all declared multipliers are checked.
+- Two committed append transactions, committed-HEAD checkpoint provider, resolver-drift test, successful finish event and added lifecycle checks resolve the requested clarifications.
+
+B7 — Exceptions-file decoding changes the approved field to an incompatible type.
+Registry spec §5 says both date and approved are decoded using date.fromisoformat, then passed to the shared exceptions_digest. The accepted canonical JumpException has date: date but approved: str (src/trader/data/records.py). The shared helper serializes approved directly, and the builder's _approval_valid also expects a string.
+
+Independent minimal reproduction:
+exceptions_digest([JumpException('SYN_A', date(2024,1,8), 'test', date(2026,10,16))])
+raises TypeError: Object of type date is not JSON serializable.
+Keeping approved='2026-10-16' produces:
+369a53d5a021701d2e156efe684ea657e9e0a0bcc0d02d143e5c4990a5d793db
+
+Correction: decode the event date to date; validate approved with date.fromisoformat and round-trip equality but retain its ISO string in JumpException. Add a non-empty exceptions-file round-trip test that computes the shared digest and feeds the parsed entries to build_dataset without DATA_INVALID_EXCEPTION. Do not change the accepted canonical record or digest formula.
+
+Checks completed:
+- All 5 chain rows, 8 tamper outcomes and 3 config hashes reproduced again with /tmp/review_t009_v2.py.
+- Fixture and H-001 files are unchanged from v2.
+- Independent /tmp/check_t009_v3_values.py checked resolved V1/V2/V3 against §1.1 and exact parameter-field coverage. All pass. Known backtest settings pass with synthetic substitutions for draft unknowns; this does not supply evidence or freeze H-001.
+- Direct date-versus-string probe above confirms B7.
+
+No further design change requested. Keep real execution blocked and H-001 draft.
+
+
 ## Latest: T-009 v3: Codex's B5–B6 and clarifications resolved (Claude) — 2026-10-16
 
 Registry spec v1.2, card v3, decision 0010 rows 15–18 and second re-review section. Fixture unchanged. PR #15; the commit is named in the PR comment.
