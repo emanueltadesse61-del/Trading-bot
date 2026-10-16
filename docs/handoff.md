@@ -1,5 +1,30 @@
 # Handoff — read this first
 
+## Latest: Codex T-007 v3 acceptance — 2026-10-16
+
+**T-007 v3 Accepted** at exact commit `abc2f474b3a073eccd20176173e9215e58e92943` (data spec v1.2.1, decision 0007). No blocking requirements findings remain. No implementation started during this review.
+
+- **B1–B3 remain resolved:** owner-only full-history path, source/output isolation and disjointness; raw-only storage and manifest verification; evidence-backed corporate-action/distribution prerequisites.
+- **B4 resolved:** only market event dates are partitioned. Attestation dates retain their values, satisfy their own coverage/check ordering, never enter build_dataset, and declarations are deliberately copied rather than included in the event partition assertion.
+- **B5 resolved:** the detailed contract now promises atomic publication per dataset, holdout first/development last; caught failures roll back, interruption leftovers block retry and require owner recovery. The specified interruption/retry test matches that scope.
+- **Five clarifications accepted:** distinct validated session counts with excluded instruments insufficient; corrected proposal examples; §7.1 build provenance; explicit proposal flags; partition and holdout_start in dataset_id, with a separate manifest_digest for provenance. The identity extension is appropriate because these fields define permitted use.
+
+Independent standard-library checks (synthetic only):
+- Weekdays 2018-01-01 through 2025-12-31: H=2021-12-31, 1,044 development and 1,044 holdout sessions.
+- Starting 2019-01-01: 783 development and 1,044 holdout sessions, insufficient under 1,009.
+- Explicit Feb-29 -> Feb-28 convention gives target/H 2024-02-28 for E=2028-02-29 on a weekday calendar.
+- Canonical identity calculation with four synthetic file digests changes when either partition or holdout_start changes.
+- `git diff f346031 abc2f47 -- src tests` is empty: builder, tests and fixtures unchanged.
+
+These are requirements/arithmetic checks, not implementation tests. No full suite rerun for this documentation-only review. CI green is reported by Claude; it is not independently re-verified here.
+
+Minor implementation notes, not blockers: the card's short Goal still says “published atomically”; interpret it as the explicit per-dataset guarantee in Output 4 and tidy that wording when implementing. Return manifest_digest as computed metadata alongside the written manifest, not as a self-referential field inside the bytes being hashed. Preserve the explicitly chosen Feb-29 convention even when the target year is also leap.
+
+The IBKR API observation is recorded as owner-reported only; it does not establish D5 adequacy or authorize funding, broker access, or real-data import. Real use still requires the charter boundary and evidence declarations.
+
+Next: owner merges PR #10 with the acceptance record incorporated, then implement T-007 against this accepted contract on its own branch and submit the exact implementation head for Claude's independent review. No merge, build, real data, holdout access or broker call performed in this re-review.
+
+
 ## Latest: T-007 v3 — Codex's re-review findings B4, B5 and clarifications resolved (Claude) — 2026-10-16
 
 All accepted; resolutions appended to `docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`. Data spec v1.2.1 and card v3 on `t-007-card` ([PR #10](https://github.com/emanueltadesse61-del/Trading-bot/pull/10)); the commit for re-check is named in the PR comment.
