@@ -1,6 +1,22 @@
 # Handoff — read this first
 
-## Latest: Codex T-007 v3 acceptance — 2026-10-16
+## Latest: owner decisions recorded (Claude) — 2026-10-16
+
+PR #10 (T-007 v3 card + data spec v1.2.1) was merged by the owner's instruction as `7aad2a9`, pinned to `a132d34`. **Codex: implement T-007 from main.**
+
+The owner then made seven pending decisions, recorded in `docs/decisions/0008-owner-decisions-2026-10-16.md` on branch `owner-decisions-2026-10-16` (PR named in the PR comment):
+
+1. **D1 gold kept:** SGLN is the one named non-UCITS exception, if the account can trade it.
+2. **D2 GBP-hedged Treasuries dropped for v1:** no line has ≈ 8 years of history. The universe is **11 instruments**.
+3. **R-002:** 3/6/12 is primary; 1/3/12 is a pre-registered robustness variant.
+4. **R-006:** weekly is primary; monthly is a pre-registered robustness variant (2 of 20 trials committed).
+5. **Stop rule:** calendar weeks from Mon 2026-10-19; checkpoint Mon 2027-03-08.
+6. **Budget and paper-first confirmed:** £600/yr is a cap, not an approval.
+7. **Holdout rule confirmed:** 4 years by the T-007 proposal rule; the date is set when real data is first split.
+
+No performance has been computed on any data. Codex: check 0008 for consistency with the charter, protocol and specs. No code or spec changes.
+
+## Codex T-007 v3 acceptance — 2026-10-16
 
 **T-007 v3 Accepted** at exact commit `abc2f474b3a073eccd20176173e9215e58e92943` (data spec v1.2.1, decision 0007). No blocking requirements findings remain. No implementation started during this review.
 
@@ -151,18 +167,20 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 |---|---|
 | T-005 | [PR #7](https://github.com/emanueltadesse61-del/Trading-bot/pull/7): v1 reviewed at `3dceea8` (B1 holdout, B2 jump-approval timing); v1.1 resolves both (decision 0006). Re-review commit named in the PR. Reviewer: Codex |
 | Merged | PR #1 `c1ae73d`; PR #2 `5ec568f`; PR #3 `489eda8`; PR #4 `96df2b0`; PR #5 `3ba0728`; PR #7 `450fc3f`; PR #8 `98d3bb4`; PR #9 `f346031` (each pinned to the accepted commit). PR #6 closed by the owner |
-| Open | PR #10 (T-007 card v2 + data spec v1.2): Codex re-checks the requirements |
+| Merged (cont.) | PR #10 `7aad2a9` (T-007 v3 + data spec v1.2.1; Accepted by Codex at `abc2f47`) |
+| Open | Owner-decisions PR (decision 0008): Codex consistency check |
 
 ## Decisions
 
-**Confirmed** (owner): UK residence; IBKR account approved 2026-10-16 (no funding authorised); Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
+**Confirmed** (owner, decision 0008 unless noted): 11-instrument universe with SGLN as the one non-UCITS exception and GBP-hedged Treasuries dropped; 3/6/12 lookbacks primary with 1/3/12 robustness variant; weekly rebalancing primary with monthly robustness variant; stop rule checkpoint Mon 2027-03-08 (calendar weeks from 2026-10-19); £600/year ceiling (cap, not approval); paper-first; 4-year holdout by the T-007 rule. Earlier: UK residence; IBKR account approved 2026-10-16 (no funding authorised); Phase 0 then gated development and paper trading; £0 real capital; no purchases without approval; no LLM signals; trial history never reset; an inspected holdout is consumed; time commitment flexible in bounded weekly milestones.
 
-**Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; £600/year data-and-hosting ceiling; ~12 UCITS ETFs, GBP lines only; weekly rebalance; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20; holdout the most recent 4 years (exact start by the T-007 proposal rule, confirmed by the owner before any performance is computed).
+**Proposed defaults** (in force until the owner changes them): £10,000 simulated paper balance; paper pause at 15% and stop at 25% below peak equity; GBP lines only; 60/40 deciding benchmark; Gate 3 rule in `docs/research-protocol.md` §6; trial budget 20.
 
 **Pending** (owner decides):
-1. Research stop rule: week 20 counted in **calendar** weeks from an agreed start date, or in **worked** weeks logged here with a hard calendar cap. Also: the start date.
-2. Confirm the £600/year ceiling and that paper-first suits you.
-3. After T-004: which paid data, if any.
+1. D5 data source, after the owner's full-history IBKR check across all 11 instruments: depth, units, split adjustment of `TRADES` bars, distribution history.
+2. Confirm each instrument has ≈ 8 years of history; several inception dates are UNVERIFIED.
+3. `declarations.csv` evidence (data spec §8.5), once D5 is settled.
+4. The exact holdout date, set by the rule when real data is first split.
 
 ## Tasks
 
@@ -171,12 +189,12 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-001 Repository bootstrap | **Merged** (`c1ae73d`) | — |
 | T-002 Portfolio spec + reference cases | **Merged** (`5ec568f`) | — |
 | T-003 Portfolio engine | **Merged** (`489eda8`; Accepted at `a783e0c`) | — |
-| T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
-| Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
+| T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); D1, D2 decided (0008) | Owner: Table A checks, D5 |
+| Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`); R-002, R-006 decided (0008) | — |
 | T-005 Data-layer spec + reference cases | **Merged** at `450fc3f` (spec accepted at `619de06`) | — |
 | T-006 Data build + holdout guard | **Merged** (`98d3bb4`; Accepted by Claude at `85087b6`) | — |
 | Data spec v1.1.1 (N1 duplicate wording) | **Merged** (`f346031`; Accepted by Codex at `f0982fb`) | — |
-| T-007 Storage, CSV import, owner-run split | **Card v3 in review** (B1–B3 accepted by Codex; B4–B5 resolved in decision 0007; data spec v1.2.1) | Codex re-checks the requirements before building |
+| T-007 Storage, CSV import, owner-run split | **Card merged** (`7aad2a9`; Accepted by Codex at `abc2f47`) | Codex implements; Claude reviews |
 
 Planned after T-007: T-008 backtest simulator, cost model and baselines (synthetic data first; extends the data spec with next-session open prices); a broker adapter (IBKR) after account approval.
 
@@ -220,11 +238,9 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Codex: re-check the T-007 v3 requirements on PR #10 at the commit named in the PR comment; build only once accepted.
-2. Owner decisions gating real data (not the build):
-   - the holdout start, computed by the T-007 proposal rule and confirmed in the charter before any performance is computed;
-   - the data source (D5), which depends on the owner's Table A results, especially API historical-bar depth and market-data cost for LSE ETFs;
-   - `declarations.csv` evidence for each instrument.
+1. Codex: implement T-007 from main; open a PR naming the exact commit for Claude's review.
+2. Codex: consistency check of decision 0008 on the owner-decisions PR.
+3. Owner: full-history IBKR check across the 11 instruments, which feeds D5. Then the declarations and holdout date when real data is first split.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 

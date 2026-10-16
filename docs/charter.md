@@ -48,22 +48,22 @@ Account approval must not block specifications, repository setup or synthetic te
 
 | Item | Status | Entry |
 |---|---|---|
-| Data and hosting ceiling | Proposed | £600 a year (£50/month), excluding existing AI subscriptions. Not a spending approval |
+| Data and hosting ceiling | Confirmed | £600 a year (£50/month), excluding existing AI subscriptions. A cap, not a spending approval: each spend needs the owner's explicit approval (decision 0008) |
 | Default | Proposed | Work locally; spend only where a feasibility check shows a need, with owner approval |
 | Time commitment | Confirmed | Flexible, in bounded weekly milestones |
-| Research stop rule | Open | Week-20 decision point is proposed; whether it counts calendar weeks or worked weeks is undecided (see `docs/handoff.md`) |
+| Research stop rule | Confirmed | Calendar weeks from **Monday 2026-10-19**; checkpoint **Monday 2027-03-08** (week 20). If no registered strategy has passed Gate 3, the owner stops or grants **one** written extension with a reason and a new date (decision 0008) |
 
 ## 6. Research constraints
 
 | Item | Status | Entry |
 |---|---|---|
-| Market | Proposed | About 12 liquid UCITS ETFs, finalised by the T-004 instrument matrix |
-| Rebalancing | Proposed | Weekly; decision time, execution session and holiday rules fixed in Phase 0 |
+| Market | Confirmed | **11 instruments**: liquid UCITS ETFs plus **one named non-UCITS exception, the iShares Physical Gold ETC (SGLN)**, if the account can trade it. GBP-hedged US Treasuries dropped for v1. Each instrument needs ≈ 8 years of history (holdout rule) (decision 0008) |
+| Rebalancing | Confirmed | Weekly (primary); monthly pre-registered as a robustness variant; decision time, execution session and holiday rules fixed in Phase 0 (decision 0008) |
 | Deciding benchmark | Proposed | 60/40 equity/gilt portfolio, monthly rebalanced, same cost conventions |
 | Other comparisons | Proposed | Global equity buy-and-hold; 10-month moving-average rule |
 | Primary objective | Proposed | Gate 3 rule in `docs/research-protocol.md`, after costs and before personal tax |
-| Trial budget | Proposed | At most 20 registered strategy variants, robustness variants included |
-| Holdout | Proposed | Most recent **4 years** of usable history. The exact start date is fixed mechanically from history availability (T-007) and written here **before any performance is computed**; it is never chosen to include or exclude a particular market event. Evaluated once, by the owner |
+| Trial budget | Proposed | At most 20 registered strategy variants, robustness variants included. Committed so far: trend lookbacks 1/3/12 and monthly rebalancing as robustness variants (decision 0008) |
+| Holdout | Confirmed (rule) | Most recent **4 years** of usable history. The exact start date is fixed mechanically from history availability (T-007) and written here **before any performance is computed**; it is never chosen to include or exclude a particular market event. Exact date: **not yet set** (needs real data). Evaluated once, by the owner (decision 0008) |
 
 ### Permanent rules
 

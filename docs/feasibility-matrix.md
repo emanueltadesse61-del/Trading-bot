@@ -92,8 +92,8 @@ No purchase without owner approval (charter §5).
 
 ## Decisions requested from the owner
 
-1. **D1 gold:** allow the physical gold ETC as the one non-UCITS exception, or drop gold.
-2. **D2 US Treasuries:** proxy history, another line, or drop the role.
+1. **D1 gold:** **Decided 2026-10-16 — (a)**: SGLN is the one named non-UCITS exception, if the account can trade it (decision 0008).
+2. **D2 US Treasuries:** **Decided 2026-10-16 — (c)**: dropped for v1; no GBP-hedged line has ≈ 8 years of history (VDTS 2022, GOVP 2019, IGTM 2019) (decision 0008).
 3. **D3:** approve the GBX → GBP normalisation rule for the data layer. This becomes a T-005 requirement.
-4. **D4 and D5:** the public UK schedule supports the £3 reserve (D4). Once the account is approved, confirm the plan and routing actually applied, and test API historical bars.
+4. **D4 and D5:** the public UK schedule supports the £3 reserve (D4). Once the account is approved, confirm the plan and routing actually applied, and test API historical bars. **Owner-reported 2026-10-16:** on the unfunded account's paper login, IB Gateway read-only API returned daily bars for VWRP (data from 2019-07-25) and IGLT (from 2006-12-04), 253 bars over the last year, with no subscription. Still to check: full depth for all 11 instruments, units, split adjustment of `TRADES` bars, distribution history.
 5. **Data spend:** none proposed yet. Decide after D5, within the £600-a-year ceiling.
