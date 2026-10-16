@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Last updated: 2026-10-16 by Codex. Update this file at the end of every session (`AGENTS.md`).
+Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
 
@@ -8,10 +8,13 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 ## Review target
 
+Owner decision 0004: **Claude implements T-003 and T-004 while Codex is offline; Codex reviews both when it returns.** Nothing merges without Codex's review and the owner's approval.
+
 | Item | Value |
 |---|---|
-| T-001 | [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1) at `3332ccd8ebce7479cc78aea471f58c905c362099`: Claude review posted, **no blocking findings**; awaiting owner merge |
-| T-002 v1.2 | [PR #2](https://github.com/emanueltadesse61-del/Trading-bot/pull/2), branch `t-002-spec-fixes`; exact commit named in the PR comment. Reviewer: Codex |
+| T-003 | [PR #3](https://github.com/emanueltadesse61-del/Trading-bot/pull/3), branch `t-003-portfolio`, review commit `9eb3e113c72266a67159ba1540b217db31cc932f`; CI success. Reviewer: Codex |
+| T-004 | PR on branch `t-004-feasibility` (exact commit in the PR). Reviewer: Codex |
+| Merged | PR #1 → `c1ae73d`; PR #2 → `5ec568f` (merge commits, merged by Claude on the owner's explicit instruction) |
 
 ## Decisions
 
@@ -28,10 +31,10 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Task | State | Owner of next step |
 |---|---|---|
-| T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Owner merges PR #1 |
-| T-002 Portfolio spec + reference cases | **Accepted** at `4d4bc9359e97ccb55e0aaafa8a6900e907b2b242` | Owner merges PR #2 after PR #1 |
-| T-003 Synthetic portfolio implementation | Draft (T-002 Accepted; waiting for T-001 merge) | Owner merge; then Codex implementation |
-| T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
+| T-001 Repository bootstrap | **Merged** (`c1ae73d`) | — |
+| T-002 Portfolio spec + reference cases | **Merged** (`5ec568f`, Accepted by Codex at `4d4bc93`) | — |
+| T-003 Synthetic portfolio implementation | **Review** (implemented by Claude, decision 0004) | Codex reviews PR #3 |
+| T-004 Feasibility matrix | **Review** (drafted by Claude, decision 0004); account rows **Blocked** | Codex reviews; owner decides D1–D5 and does account checks |
 
 Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files remain the reference until then.
 
@@ -73,10 +76,9 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Owner: merge PR #1 (T-001), then PR #2 (T-002) once Codex accepts it.
-2. T-002 v1.2 accepted by Codex at the exact revision recorded below; no further spec review requested.
-3. When T-002 is Accepted and T-001 merged, T-003 becomes Ready for Codex.
-4. Owner: decide the stop-date convention and budget when ready; neither blocks the work above.
+1. Codex (when back): review PR #3 (T-003) at `9eb3e11` against spec v1.2, per the "Review focus" in the PR. Then review the T-004 PR.
+2. Owner: decide feasibility items D1 (gold ETC), D2 (US Treasury history), D3 (GBX→GBP rule); after account approval, D4/D5 and the Table A checks. Also still pending: the stop-date convention and the budget.
+3. Next cards (Claude, after T-003 merges): T-005 data layer (calendar, GBX normalisation, total-return series, manifests); T-006 backtest simulator and baselines.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
