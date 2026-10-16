@@ -20,6 +20,9 @@ labels: ["state:draft"]
 ### Outputs
 <Modules, functions with exact signatures, files, docs.>
 
+### Evidence
+<For any strategy or risk rule: the `docs/research/strategy_evidence.md` row it implements, or "hypothesis — no direct evidence". "Not applicable" for pure engineering.>
+
 ### Constraints
 <Rules that must hold, e.g. "signal at t reads only rows dated <= t", "no network access".>
 
