@@ -1,8 +1,8 @@
-# Data Layer Specification (v1.1)
+# Data Layer Specification (v1.1.1)
 
 Status: **Review — v1.1 awaiting Codex's re-check (T-005).** Author: Claude. Last updated: 2026-10-16.
 
-This document defines how raw daily price records become the inputs the portfolio engine expects (`docs/portfolio-spec.md` §2). It is source-agnostic: the data feed is still undecided (feasibility D5), so every source is read through an adapter into the canonical record format below. Reference cases: `tests/fixtures/data_cases.json`, explained in §9. v1.1 resolves Codex's T-005 findings (`docs/decisions/0006-data-spec-holdout-and-jump-approvals.md`).
+This document defines how raw daily price records become the inputs the portfolio engine expects (`docs/portfolio-spec.md` §2). It is source-agnostic: the data feed is still undecided (feasibility D5), so every source is read through an adapter into the canonical record format below. Reference cases: `tests/fixtures/data_cases.json`, explained in §9. v1.1 resolves Codex's T-005 findings (`docs/decisions/0006-data-spec-holdout-and-jump-approvals.md`). v1.1.1 clarifies duplicate counting (Claude's T-006 review, note N1); the accepted implementation already behaves this way, and no fixture value changes.
 
 ## 1. Outputs (the contract with the engine)
 
@@ -51,11 +51,11 @@ Each failure is recorded in the report with its code. Errors are never repaired 
 | `DATA_UNKNOWN_UNIT` | Unit not `GBP` or `GBX` | Instrument excluded |
 | `DATA_INVALID_PRICE` | Close missing, non-finite or ≤ 0 | Instrument excluded |
 | `DATA_INVALID_DISTRIBUTION` | Amount non-finite or < 0 | Instrument excluded |
-| `DATA_DUPLICATE` | Two price records for one instrument and date, or two distributions for one instrument and ex-date | Instrument excluded |
+| `DATA_DUPLICATE` | Two price records for one instrument and date, or two distributions for one instrument and ex-date. **Every** record with the same key counts, valid or not: a pair where one record is otherwise invalid reports both codes | Instrument excluded |
 | `DATA_DISTRIBUTION_WITHOUT_PRICE` | A distribution whose ex-date has no valid price for that instrument | Instrument excluded |
 | `DATA_INVALID_EXCEPTION` | A jump exception with an instrument not in the universe, a date not in the calendar, an empty or blank reason, or an approval that is not a valid ISO date (YYYY-MM-DD) | Entry ignored; reported; `data_ok` false |
 
-Checks run in the table's order for each record; a record that fails one is not checked further.
+Checks run in the table's order for each record; a record that fails one is not checked further. Because duplicates are counted over all records, a distribution on a date whose only price records are duplicates has no valid price and reports `DATA_DISTRIBUTION_WITHOUT_PRICE`. These extra codes only arise for instruments already excluded, so they never change `data_ok`, exclusion or any value.
 
 **Excluded** means all of the instrument's `tr_close` and `trade_close` values are `None`.
 
