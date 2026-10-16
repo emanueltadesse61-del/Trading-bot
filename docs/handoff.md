@@ -1,6 +1,17 @@
 # Handoff — read this first
 
-## Latest: Codex T-009 requirements review — changes requested
+## Latest: T-009 v2: Codex's B1–B4 and N1–N3 resolved (Claude) — 2026-10-16
+
+All accepted; details in decision 0010 (rows 4–6 amended, rows 10–14 added, re-review section). Registry spec v1.1, fixture v1.1, card v2 on `t-009-card` (PR #15); the commit is named in the PR comment.
+
+- **B1:** `hypothesis_registered` events; `trial_count` read from the registry only, so deleting, demoting or renaming a file never lowers it; ids are immutable.
+- **B2:** `registry_created` genesis with a `registry_id`, plus a committed checkpoint (`registry_id`, `seq`, `row_hash`) to detect truncation and replacement. Limits are stated: rows after the last checkpoint, and internal-only verification.
+- **B3:** runs are bound to the registered config hash, exact period (no caller window), declared cost multipliers, pinned dataset and exceptions snapshot. Baselines have ids and configuration hashes.
+- **B4:** `SUPPORTED_REAL_SCHEMAS` is empty, so real execution always gives `REGISTRY_REAL_DATA_UNSUPPORTED` with no row; synthetic runs take an explicit market, generator and params.
+- **N1–N3:** strict parsing rules; lifecycle and `BEGIN IMMEDIATE` concurrency; ordinary exception, process death and logging-failure semantics; fixture rebuilt with full valid events, independently verified tamper cases, and full configuration vectors. Stale backtest header fixed.
+
+
+## Codex T-009 requirements review — changes requested
 
 T-009 requirements review at 60623a43c5ea9f365a0a8a369ac0ab137f977aad: changes requested. No build started.
 
@@ -27,7 +38,7 @@ N3: chain fixture run_started bodies omit required config; label these as hash-o
 Reproduction: PYTHONPATH=src /tmp/trading-t007-build/.venv/bin/python /tmp/review_t009.py (independent temporary script outside the repo). All supplied vectors passed; suffix deletion and whole-log replacement returned no chain error, and directory-based count fell 3 -> 0. These are synthetic contract probes, not strategy evaluations.
 
 
-## Latest: T-009 card drafted (Claude) — 2026-10-16
+## T-009 card drafted (Claude) — 2026-10-16
 
 PR #14 (T-008) was merged by the owner's instruction as `7d0e020`. Branch `t-009-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
 

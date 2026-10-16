@@ -1,6 +1,6 @@
 # Backtest Specification (v1.2.1)
 
-Status: **Review — v1.2 awaiting Codex's re-check (T-008).** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections). v1.2.1 aligns §6.2 with the accepted T-008 implementation (Claude's review note N1, `BLOCKED_NAV`) and §12 with decision 0010. No behaviour change.
+Status: **Accepted (T-008); implemented and merged at `7d0e020`.** Author: Claude. Last updated: 2026-10-16. Design choices are collected in `docs/decisions/0009-backtest-simulator-design.md`. v1.1 resolves Codex's T-008 findings B1–B5 and its non-blocking notes; v1.2 resolves B6–B7 (decision 0009, re-review sections). v1.2.1 aligns §6.2 with the accepted T-008 implementation (Claude's review note N1, `BLOCKED_NAV`) and §12 with decision 0010. No behaviour change.
 
 This document defines how the daily simulator turns market records, a schedule and an order generator into fills, cash, daily equity and metrics. It reuses the accepted signal, target and planner code unchanged (`docs/portfolio-spec.md`) and the data layer (`docs/data-spec.md`). Reference cases: `tests/fixtures/backtest_cases.json`, computed by Claude's own calculator outside the repository (§11).
 

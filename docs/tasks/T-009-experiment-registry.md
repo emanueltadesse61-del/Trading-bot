@@ -1,60 +1,74 @@
 ## T-009: Experiment registry and pre-registration enforcement
 
-**State:** Review, v1. **Codex checks the requirements before building.**
+**State:** Review, v2 (Codex findings B1–B4 and N1–N3 resolved; decision 0010 re-review section). **Codex re-checks before building.**
 **Phase:** 2   **Author:** Claude   **Implementer:** Codex   **Reviewer:** Claude
-**Depends on:** T-008 merged (`7d0e020`); `docs/registry-spec.md` v1.0, decision 0010 and `research/hypotheses/H-001.md` (draft), all in this PR.
+**Depends on:** T-008 merged (`7d0e020`); `docs/registry-spec.md` v1.1, decision 0010 and `research/hypotheses/H-001.md` (draft), all in this PR.
 
 ### Goal
-Every backtest that could count as evidence goes through one gate that:
-- refuses to run without a frozen pre-registration, a clean checkout and the pinned development dataset;
-- records the run before and after in an append-only, hash-chained log;
-- reports the trial count with every result.
+One gate that:
+- registers frozen pre-registrations durably, so the trial count can never shrink;
+- refuses any real-data run that does not match a registered pre-registration exactly (configuration, period, costs, dataset, cleaning snapshot);
+- records every run before and after in an append-only, hash-chained log whose truncation is detectable up to the last committed checkpoint.
 
-This card builds the machinery and tests it on synthetic data. H-001 stays a **draft** until the owner freezes it from evidence; no real-data run is possible yet.
+**Real-data execution stays refused in this card** (`REGISTRY_REAL_DATA_UNSUPPORTED`) until the open-prices and payment-timing card adds a supported schema. Synthetic runs execute and are recorded.
 
 ### Inputs
-- `docs/registry-spec.md` v1.0 (the authority) and `tests/fixtures/registry_cases.json` (Claude's reference vectors)
+- `docs/registry-spec.md` v1.1 (the authority) and `tests/fixtures/registry_cases.json` v1.1 (Claude's reference vectors)
 - `research/hypotheses/H-001.md`; decision 0010; research protocol §1–2; charter §6
 - `trader.backtest` (T-008), `trader.data.store.read_raw_dataset` (T-007)
 
 ### Outputs
 1. **`trader/registry/` package:**
-   - `prereg.py`: parse a hypothesis file (exactly one `json preregistration` block; `REGISTRY_PREREG_FORMAT`); validate keys; resolve each variant to a full configuration; check completeness for `frozen` (`REGISTRY_HYPOTHESIS_INCOMPLETE`); count declared strategy variants across a directory.
-   - `store.py`: SQLite file with the `events` table, `BEFORE UPDATE` and `BEFORE DELETE` abort triggers, the hash chain, `verify_registry`, and an append inside one transaction after verification. `REGISTRY_LOCATION` for a path inside the repository.
-   - `config.py`: canonical JSON and `config_hash` (spec §2).
-   - `run.py`: `run_registered` (spec §5), with an injectable clock and git access through a small interface, so tests can fake both.
-   - `summary.py`: `registry_summary` (spec §6).
-   - CLI `trader-registry verify PATH` and `trader-registry summary PATH --hypotheses DIR` (`project.scripts`).
-2. **Docs:** README section "Running backtests through the registry". Decision 0010's backtest-spec amendments are already applied in this PR (v1.2.1).
+   - `prereg.py`: strict parsing and validation of hypothesis files (spec §1: duplicate keys, non-finite values, exact field sets, roles, schedules, overrides, `frozen_by`, `cost_multipliers`); configuration resolution and hashing (spec §2) for variants and baselines.
+   - `store.py`: SQLite file, triggers, hash chain, `registry_created` genesis, lifecycle checks, `verify_registry(path, checkpoint)` (spec §3), and appends inside `BEGIN IMMEDIATE`.
+   - `ops.py`: `register_hypothesis` (§5.1), trial count from events (§5.2), `run_synthetic` (§5.3), `run_registered` with every check and the empty `SUPPORTED_REAL_SCHEMAS` (§5.4), and the run lifecycle (§5.5). The clock and git access are injectable.
+   - `summary.py`: `registry_summary` (§6).
+   - CLI `trader-registry` with `init`, `verify`, `checkpoint` and `summary` (§6).
+2. **README:** section "Running backtests through the registry", including the checkpoint policy (§3.3) and its limits.
 
 ### Constraints
-- Synthetic data only in tests. No network, broker, real or holdout data.
-- The registry file is never written inside the repository. Tests use `tmp_path` outside the repository's root.
-- `run_registered` must call the existing `run_backtest` and generators. No second simulator.
-- Nothing in this card freezes H-001 or edits its contract.
+- Synthetic data only. No network, broker, real or holdout data. Registry files live in `tmp_path`, outside the repository root.
+- The registry must call the existing `run_backtest` and generators; no second simulator.
+- No `Market` is ever built from a raw dataset in this card.
+- Nothing here freezes or registers H-001, or edits its contract. `research/registry-checkpoint.json` is **not** created in this card; the owner creates it with `init` when real use begins.
 
 ### Acceptance criteria
-- [ ] **Fixture:** `chain` reproduces exactly: bodies, `prev_hash` and `row_hash`, including the non-ASCII note. `verify_registry` accepts it. Each `tamper_cases` entry (edit a body, delete a row, swap bodies) raises `REGISTRY_CHAIN_BROKEN` at `first_bad_seq`. `config_hash_case` reproduces.
-- [ ] **Append-only:** direct SQL `UPDATE` and `DELETE` on `events` fail (trigger). After the triggers are dropped and a row edited, `verify_registry` still detects it.
-- [ ] **Synthetic run:** `run_started` then `run_finished` (`completed`) with metrics; `checkout_clean` recorded. A raising run gives `failed` with the error code, and the exception propagates. An injected crash between the two events leaves an unfinished run that `registry_summary` reports.
-- [ ] **Real-data gate**, each refused **before** any row is written:
-  - a dirty checkout;
-  - a draft file (H-001 as committed);
-  - a frozen file with a `null`;
-  - an unknown variant;
-  - a dataset id or manifest digest mismatch;
-  - a holdout-partition dataset;
-  - a non-`SYN_` instrument in synthetic mode;
-  - a 21st declared variant;
-  - a file changed after its first run.
+- [ ] **Fixture:**
+  - `chain` reproduces exactly: bodies, `prev_hash`, `row_hash`, non-ASCII note;
+  - `verify_registry` accepts it, with and without each checkpoint;
+  - every `tamper_cases` entry gives its `code` at its `seq`, or passes where `code` is `null` (the documented limits);
+  - the `lifecycle` expectations hold in `registry_summary`;
+  - each `config_cases` hash reproduces from its configuration.
+- [ ] **Append-only:** SQL `UPDATE` and `DELETE` fail. With the triggers dropped and a row edited, verification still fails.
+- [ ] **Durable trial count (B1):**
+  - registering a frozen 3-variant file gives `trial_count = 3` with zero runs;
+  - then deleting the file, demoting it to `draft`, or renaming it leaves the count at 3, and a run of it is refused (`REGISTRY_HYPOTHESIS_MISSING` or `REGISTRY_HYPOTHESIS_CHANGED`);
+  - re-registering the same id gives `REGISTRY_ALREADY_REGISTERED`;
+  - a registration that would make 21 gives `TRIAL_BUDGET_EXCEEDED` with no row.
+- [ ] **Truncation (B2):** removing the final row is detected against a checkpoint at that row (`REGISTRY_CHECKPOINT_MISMATCH`) and passes internal-only verification (documented). A replacement registry fails the checkpoint.
+- [ ] **Binding (B3):** with a registered temporary hypothesis, each refusal happens before any row is written:
+  - a changed file (`REGISTRY_HYPOTHESIS_CHANGED`);
+  - an unknown variant or baseline;
+  - a configuration mismatch (`REGISTRY_CONFIG_MISMATCH`, e.g. the file edited and re-committed under the same id);
+  - an undeclared cost multiplier (e.g. 1.5);
+  - a dataset id or digest mismatch;
+  - a holdout partition;
+  - an exceptions snapshot mismatch;
+  - a dirty checkout.
 
-  Use temporary frozen hypothesis files and a synthetic raw dataset in tests.
-- [ ] **Accounting:**
-  - a cost-stress rerun and a baseline run do not change `trial_count`;
-  - three frozen variants give `trial_count = 3` with zero runs;
-  - `supersedes` links a correction and both runs remain.
-- [ ] **H-001:** the committed file parses; its `params` and `backtest_params` keys equal the `Params` and `BacktestParams` fields; its status is `draft` and it is refused for real data.
+  `run_registered` has no period or configuration parameter.
+- [ ] **Real path blocked (B4):** a request passing every check gives `REGISTRY_REAL_DATA_UNSUPPORTED`. No `run_started` row is written and `run_backtest` is never called; prove both with a spy. This includes a v1 development raw dataset.
+- [ ] **Synthetic lifecycle:**
+  - `completed` with metrics;
+  - an ordinary exception gives `failed` with the code, then re-raises;
+  - an injected process death between the two events leaves an unfinished run;
+  - an unwritable registry after `run_started` raises `REGISTRY_WRITE_FAILED` chained to the original;
+  - `supersedes` validated;
+  - non-`SYN_` ids refused.
+- [ ] **Strict parsing (N1):** a test for each §1 rule: duplicate key, duplicate variant id, `NaN`, unknown key, unknown override field, two primaries, bad schedule, missing `frozen_by` target, `cost_multipliers` without 1.
+- [ ] **Concurrency (N2):** two processes registering at once cannot exceed the budget; they are serialised by `BEGIN IMMEDIATE`.
+- [ ] **H-001:** the committed draft parses; its field sets match the code; it is refused by `register_hypothesis` (`REGISTRY_HYPOTHESIS_NOT_FROZEN`).
 - [ ] Existing tests are unchanged and pass. CI green; `docs/handoff.md` updated.
 
 ### Exclusions
-Freezing H-001, any real-data run, holdout evaluation, Gate 3 statistics (paired monthly ΔSR, bootstrap, walk-forward), raw-dataset opens.
+Freezing or registering H-001, creating the committed checkpoint, any real-data execution, `market_from_raw`, holdout evaluation, Gate 3 statistics, raw-dataset opens.
