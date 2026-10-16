@@ -36,8 +36,8 @@ Roles are back to `AGENTS.md`: **Claude specifies and reviews; Codex checks spec
 | T-003 Portfolio engine | **Merged** (`489eda8`; Accepted at `a783e0c`) | — |
 | T-004 Feasibility matrix | **Merged** (`96df2b0`; Accepted at `2f31a6b`); account rows **Blocked** | Owner: D1–D3 now; D5 and Table A after account approval |
 | Research library | **Merged** (`3ba0728`; Accepted at `55d3dad`) | Owner: R-002, R-006 |
-| T-005 Data-layer spec + reference cases | **Review** (v1.1: B1/B2 resolved in decision 0006) | Codex re-checks; reproduces D6, D6b, D6d, D14, D15, DV5 and one digest |
-| T-006 Data build + holdout guard | Draft (Ready when T-005 Accepted) | Codex implements |
+| T-005 Data-layer spec + reference cases | **Accepted** at `619de06e32a046fc15e8f2c4f9f37f84a884d6d9` | Owner merge PR #7 |
+| T-006 Data build + holdout guard | **Ready** (T-005 v1.1 Accepted) | Codex implements; Claude reviews |
 
 Planned after T-006: T-007 storage, manifests and the first real-feed adapter (after feasibility D5); T-008 backtest simulator, cost model and baselines.
 
@@ -81,9 +81,9 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Codex: re-check T-005 v1.1 against decision 0006 at the commit named in PR #7; reproduce D6, D6b, D6d, D14, D15, DV5 and one `exceptions_digest`. T-006 remains Draft until Accepted.
-2. When T-005 is Accepted: Codex implements T-006 on its own branch; Claude reviews.
-3. Owner decisions: D1 gold ETC, D2 US Treasury history, D3 feed-unit rule (now written into the data spec); R-002 lookbacks; R-006 rebalancing; stop-date convention; budget; PR #6 close. After account approval: D5 and Table A.
+1. T-005 v1.1 Accepted at `619de06`; owner retains merge authority for PR #7.
+2. T-006 is Ready for implementation against the accepted spec and unchanged fixture; no implementation started in this review.
+3. Owner decisions and account checks remain pending. Real-data access remains gated by data spec §8.3.
 
 ## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
@@ -199,3 +199,14 @@ Temporary standard-library calculator outside the repo: /tmp/review_t005.py; com
 - D14: both repository paths refused; both outside paths accepted, matching the fixture's limited containment rule. This did not test an implemented guard or access actual holdout data.
 
 All requested expected fields match within 1e-10, with exact statuses/reports. Existing suite: 575 passed under Python 3.12; ruff passed. These tests cover the existing portfolio engine, not a built data layer. Both CI checks on the reviewed SHA succeeded (38887131737, 38887101247). No code, spec or fixture edits, market-data downloads, broker access, holdout access, experiments, spending or merges. Claude should resolve B1/B2 in the spec/decision record before T-006 becomes Ready.
+
+
+## Codex T-005 v1.1 acceptance — 2026-10-16
+
+Codex re-review: **T-005 v1.1 Accepted at 619de06e32a046fc15e8f2c4f9f37f84a884d6d9.** B1/B2 are resolved by decision 0006 and spec §§7.1, 8.2–8.3. Containment now includes every supplied agent workspace root; the guard is explicitly limited, and owner-run import/splitting keeps holdout records out of agent datasets. Operational approvals are as-of t; research uses an explicitly frozen pre-evaluation snapshot with recorded provenance. The smaller status, gap-jump, calendar and deferred-adapter clarifications are incorporated.
+
+Independent standard-library reproduction outside the repo: `python3 /tmp/review_t005_v11.py` passed. D6 reports DATA_JUMP_APPROVED in research; D6b keeps DATA_JUMP for a future operational approval; D6d reports DATA_INVALID_EXCEPTION plus DATA_JUMP; D15 flags the 30% gap-spanning move. D14 matches all six literal paths, including rejection of the repo sibling within /work and acceptance of /work2. DV5 gives INVALID_EXCEPTIONS_VERSION by the specified contract. D14/DV5 are independent contract checks, not tests of an implemented data layer or runtime symlink handling.
+
+Recomputed canonical JSON digests: D6/D6b `c0d216361c0192af1a10e06caf3db3d16f853da9f8da2634f7739b62b60617e1`; D6d `44e4cdc8b445dd3bb89dc41592425e5bbbcba1435587a1641bfe01d1558c28d4`; empty list `4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945`. All match. Compared the 12 unaffected original cases' expected fields against v1: unchanged; fixture now has 26 cases.
+
+Existing suite: genuine Python 3.12 pytest, 575 passed; ruff passed. Both CI runs on the exact SHA succeeded (38887823632, 38887817188). These are existing-engine checks, not proof that T-006 exists. No blocking findings remain. T-006 becomes Ready; no implementation started in this review. No spec/fixture/source changes, real-data download, holdout access, broker call, experiment, purchase or merge into the project branch. Owner retains merge authority.
