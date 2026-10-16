@@ -41,7 +41,7 @@ The file is committed, and its commit hash recorded, before the first run.
 - **Base costs:** the broker's actual commission schedule, half the measured bid-ask spread per side, and slippage of 5 basis points per side until measured paper fills replace it.
 - **Cost sensitivity:** 2× base costs. This tests fragility; it is not a realistic cost model.
 - **Deciding benchmark:** 60% global equity ETF / 40% gilt ETF, rebalanced monthly, same cost model.
-- **Also reported:** global equity buy-and-hold; the 10-month moving-average rule on the same universe; cash.
+- **Also reported:** global equity (100% VWRL, bought at the first decision, then monthly band rebalancing, so distributions are reinvested only on a band breach; decision 0009 row 19); the 10-month moving-average rule on the same universe; cash.
 - Metrics are computed from marked-to-market daily equity, after costs and before personal tax. Cash earns 0% unless the instrument matrix confirms an accessible rate.
 
 ## 6. Gate 3 decision rule

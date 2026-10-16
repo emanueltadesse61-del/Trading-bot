@@ -1,5 +1,5 @@
 {
- "version": "1.0",
+ "version": "1.1",
  "generator": "Claude reference calculator (outside the repo)",
  "tolerance": {
   "rel": 1e-12,
@@ -758,8 +758,8 @@
    ]
   },
   {
-   "name": "BT5_missing_open_and_close",
-   "description": "No open on the fill session cancels the order (never carried). A missing close values the holding at its last close and marks it stale.",
+   "name": "BT5_missing_open_and_absent_observation",
+   "description": "SYN_B has a valid record on Tue with open = None: its order is cancelled (NO_PRICE), never carried. SYN_A has NO record on Wed (an absent observation, not an invalid close): it is valued at its last close and listed stale. A record with close = None would instead be refused at admission (BV1).",
    "inputs": {
     "calendar": [
      "2024-01-08",
@@ -785,13 +785,6 @@
      },
      {
       "instrument": "SYN_A",
-      "date": "2024-01-10",
-      "open": 101.0,
-      "close": null,
-      "unit": "GBP"
-     },
-     {
-      "instrument": "SYN_A",
       "date": "2024-01-11",
       "open": 102.0,
       "close": 103.0,
@@ -801,6 +794,13 @@
       "instrument": "SYN_B",
       "date": "2024-01-08",
       "open": 20.0,
+      "close": 20.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-09",
+      "open": null,
       "close": 20.0,
       "unit": "GBP"
      },
@@ -1176,6 +1176,386 @@
      "cancelled": []
     }
    ]
+  },
+  {
+   "name": "BT9_settlement_lag_1",
+   "description": "SETTLEMENT_LAG = 1: proceeds of a sale filled at Wed open are settled at Thu open and fund the Thu buy in full.",
+   "inputs": {
+    "calendar": [
+     "2024-01-08",
+     "2024-01-09",
+     "2024-01-10",
+     "2024-01-11",
+     "2024-01-12"
+    ],
+    "start": "2024-01-08",
+    "prices": [
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-08",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-09",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-10",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-11",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-12",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-08",
+      "open": 50.0,
+      "close": 50.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-09",
+      "open": 50.0,
+      "close": 50.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-10",
+      "open": 50.0,
+      "close": 50.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-11",
+      "open": 50.0,
+      "close": 50.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_B",
+      "date": "2024-01-12",
+      "open": 50.0,
+      "close": 50.0,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [],
+    "half_spread": {
+     "SYN_A": 0.0,
+     "SYN_B": 0.0
+    },
+    "scripted_orders": {
+     "2024-01-08": [
+      [
+       "SYN_A",
+       "BUY",
+       95
+      ]
+     ],
+     "2024-01-09": [
+      [
+       "SYN_A",
+       "SELL",
+       95
+      ]
+     ],
+     "2024-01-10": [
+      [
+       "SYN_B",
+       "BUY",
+       100
+      ]
+     ]
+    },
+    "params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "COST_MULTIPLIER": 1,
+     "SETTLEMENT_LAG": 1,
+     "DISTRIBUTION_LAG": 20
+    }
+   },
+   "expected": [
+    {
+     "date": "2024-01-08",
+     "settled": 10000.0,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": 10000.0,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-09",
+     "settled": 490.49762499999997,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_A": 95
+     },
+     "nav": 9990.497625,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_A",
+       "qty": 95,
+       "fill_price": 100.05,
+       "commission": 4.752375,
+       "spread_slippage_cost": 4.74999999999973,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-10",
+     "settled": 490.49762499999997,
+     "unsettled": 9490.502375,
+     "holdings": {},
+     "nav": 9981.0,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "SELL",
+       "instrument": "SYN_A",
+       "qty": 95,
+       "fill_price": 99.95,
+       "commission": 4.747625,
+       "spread_slippage_cost": 4.74999999999973,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-11",
+     "settled": 4975.5,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_B": 100
+     },
+     "nav": 9975.5,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_B",
+       "qty": 100,
+       "fill_price": 50.025,
+       "commission": 3.0,
+       "spread_slippage_cost": 2.499999999999858,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-12",
+     "settled": 4975.5,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_B": 100
+     },
+     "nav": 9975.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    }
+   ]
+  },
+  {
+   "name": "BT10_lots_pending_at_end",
+   "description": "A sale filled at the final session's open (lag 2) and a distribution (lag 20) are still unsettled at `end`; NAV includes them, nothing is settled early, and the lag may run past the supplied calendar.",
+   "inputs": {
+    "calendar": [
+     "2024-01-08",
+     "2024-01-09",
+     "2024-01-10",
+     "2024-01-11"
+    ],
+    "start": "2024-01-08",
+    "prices": [
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-08",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-09",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-10",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     },
+     {
+      "instrument": "SYN_A",
+      "date": "2024-01-11",
+      "open": 100.0,
+      "close": 100.0,
+      "unit": "GBP"
+     }
+    ],
+    "distributions": [
+     {
+      "instrument": "SYN_A",
+      "ex_date": "2024-01-10",
+      "amount": 1.0,
+      "unit": "GBP"
+     }
+    ],
+    "half_spread": {
+     "SYN_A": 0.0
+    },
+    "scripted_orders": {
+     "2024-01-08": [
+      [
+       "SYN_A",
+       "BUY",
+       10
+      ]
+     ],
+     "2024-01-10": [
+      [
+       "SYN_A",
+       "SELL",
+       10
+      ]
+     ]
+    },
+    "params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "COST_MULTIPLIER": 1,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20
+    }
+   },
+   "expected": [
+    {
+     "date": "2024-01-08",
+     "settled": 10000.0,
+     "unsettled": 0,
+     "holdings": {},
+     "nav": 10000.0,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-09",
+     "settled": 8996.5,
+     "unsettled": 0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 9996.5,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "BUY",
+       "instrument": "SYN_A",
+       "qty": 10,
+       "fill_price": 100.05,
+       "commission": 3.0,
+       "spread_slippage_cost": 0.4999999999999716,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-10",
+     "settled": 8996.5,
+     "unsettled": 10.0,
+     "holdings": {
+      "SYN_A": 10
+     },
+     "nav": 10006.5,
+     "stale": [],
+     "fills": [],
+     "settled_negative": false,
+     "distributions": [
+      {
+       "instrument": "SYN_A",
+       "shares": 10,
+       "cash": 10.0
+      }
+     ],
+     "cancelled": []
+    },
+    {
+     "date": "2024-01-11",
+     "settled": 8996.5,
+     "unsettled": 1006.5,
+     "holdings": {},
+     "nav": 10003.0,
+     "stale": [],
+     "fills": [
+      {
+       "kind": "SELL",
+       "instrument": "SYN_A",
+       "qty": 10,
+       "fill_price": 99.95,
+       "commission": 3.0,
+       "spread_slippage_cost": 0.4999999999999716,
+       "status": "OK"
+      }
+     ],
+     "settled_negative": false,
+     "distributions": [],
+     "cancelled": []
+    }
+   ]
   }
  ],
  "schedule_case": {
@@ -1433,8 +1813,181 @@
       "2024-03",
       -0.0024156684099999604
      ]
-    ]
+    ],
+    "insolvent_on": null,
+    "undefined": {}
    }
+  },
+  {
+   "name": "MT2_short_series",
+   "description": "T = 1: one return. ann_return defined; ann_vol and sharpe undefined (SHORT_SERIES).",
+   "dates": [
+    "2024-01-08",
+    "2024-01-09"
+   ],
+   "nav": [
+    10000.0,
+    10100.0
+   ],
+   "expected": {
+    "ann_return": 11.274002099240244,
+    "ann_vol": null,
+    "sharpe": null,
+    "max_drawdown": 0.0,
+    "max_drawdown_sessions": 0,
+    "monthly_returns": [
+     [
+      "2024-01",
+      0.010000000000000009
+     ]
+    ],
+    "insolvent_on": null,
+    "undefined": {
+     "ann_vol": "SHORT_SERIES",
+     "sharpe": "SHORT_SERIES"
+    }
+   }
+  },
+  {
+   "name": "MT3_negative_nav",
+   "description": "BT6's NAV series goes negative: every return-based metric is undefined (NON_POSITIVE_NAV), insolvent_on = first session with NAV <= 0. The ledger itself is unchanged.",
+   "dates": [
+    "2024-01-08",
+    "2024-01-09",
+    "2024-01-10",
+    "2024-01-11"
+   ],
+   "nav": [
+    4.01,
+    1.0095,
+    -1.9909999999999997,
+    -1.9909999999999997
+   ],
+   "expected": {
+    "ann_return": null,
+    "ann_vol": null,
+    "sharpe": null,
+    "max_drawdown": null,
+    "max_drawdown_sessions": null,
+    "monthly_returns": null,
+    "insolvent_on": "2024-01-10",
+    "undefined": {
+     "ann_return": "NON_POSITIVE_NAV",
+     "ann_vol": "NON_POSITIVE_NAV",
+     "sharpe": "NON_POSITIVE_NAV",
+     "max_drawdown": "NON_POSITIVE_NAV",
+     "max_drawdown_sessions": "NON_POSITIVE_NAV",
+     "monthly_returns": "NON_POSITIVE_NAV"
+    }
+   }
+  },
+  {
+   "name": "MT4_zero_crossing",
+   "description": "NAV reaches exactly 0 and recovers: still NON_POSITIVE_NAV from the first zero; no ratio is computed through it.",
+   "dates": [
+    "2024-01-08",
+    "2024-01-09",
+    "2024-01-10",
+    "2024-01-11",
+    "2024-01-12"
+   ],
+   "nav": [
+    100.0,
+    50.0,
+    0.0,
+    10.0,
+    20.0
+   ],
+   "expected": {
+    "ann_return": null,
+    "ann_vol": null,
+    "sharpe": null,
+    "max_drawdown": null,
+    "max_drawdown_sessions": null,
+    "monthly_returns": null,
+    "insolvent_on": "2024-01-10",
+    "undefined": {
+     "ann_return": "NON_POSITIVE_NAV",
+     "ann_vol": "NON_POSITIVE_NAV",
+     "sharpe": "NON_POSITIVE_NAV",
+     "max_drawdown": "NON_POSITIVE_NAV",
+     "max_drawdown_sessions": "NON_POSITIVE_NAV",
+     "monthly_returns": "NON_POSITIVE_NAV"
+    }
+   }
+  },
+  {
+   "name": "MT5_zero_stdev",
+   "description": "Constant NAV: sharpe undefined (ZERO_STDEV), vol 0, drawdown 0.",
+   "dates": [
+    "2024-01-08",
+    "2024-01-09",
+    "2024-01-10"
+   ],
+   "nav": [
+    100.0,
+    100.0,
+    100.0
+   ],
+   "expected": {
+    "ann_return": 0.0,
+    "ann_vol": 0.0,
+    "sharpe": null,
+    "max_drawdown": 0.0,
+    "max_drawdown_sessions": 0,
+    "monthly_returns": [
+     [
+      "2024-01",
+      0.0
+     ]
+    ],
+    "insolvent_on": null,
+    "undefined": {
+     "sharpe": "ZERO_STDEV"
+    }
+   }
+  }
+ ],
+ "invalid_input_cases": [
+  {
+   "name": "BV1_invalid_supplied_close",
+   "code": "BACKTEST_DATA_EXCLUDED",
+   "description": "A record with close = None (DATA_INVALID_PRICE) for a run instrument, dated <= end."
+  },
+  {
+   "name": "BV2_execution_price_non_positive",
+   "code": "BACKTEST_COSTS",
+   "description": "HALF_SPREAD = 1, SLIPPAGE = 0.0005, multiplier 1: m*(half_spread+slippage) >= 1."
+  },
+  {
+   "name": "BV3_order_quantity",
+   "code": "BACKTEST_ORDER",
+   "description": "Scripted order with qty -1, 0, 1.5 or True."
+  },
+  {
+   "name": "BV4_duplicate_order",
+   "code": "BACKTEST_ORDER",
+   "description": "Two orders for one instrument at one decision (same or opposite side)."
+  },
+  {
+   "name": "BV5_unknown_order_instrument",
+   "code": "BACKTEST_ORDER",
+   "description": "Order for an instrument outside the generator's instrument set, or side not BUY/SELL."
+  },
+  {
+   "name": "BV6_decision_dates",
+   "code": "BACKTEST_SCHEDULE",
+   "description": "Decision dates unsorted, duplicated, not sessions, before start, or equal to end."
+  },
+  {
+   "name": "BV7_zero_lag",
+   "code": "BACKTEST_PARAMS",
+   "description": "SETTLEMENT_LAG = 0 or DISTRIBUTION_LAG = 0 (lags must be integers >= 1)."
+  },
+  {
+   "name": "BV8_open_invalid",
+   "code": "BACKTEST_OPEN",
+   "description": "An open that is not None but non-finite or <= 0 after unit conversion, dated <= end."
   }
  ]
 }

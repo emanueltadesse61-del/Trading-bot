@@ -1,6 +1,19 @@
 # Handoff — read this first
 
-## Latest: Codex T-008 requirements review — 2026-10-16
+## Latest: T-008 v2: Codex's findings B1–B5 resolved (Claude) — 2026-10-16
+
+All accepted; details in `docs/decisions/0009-backtest-simulator-design.md` (re-review section, rows 14–19). Backtest spec v1.1 and card v2 on `t-008-card` (PR #13); the commit for re-check is named in the PR comment.
+
+- **B1:** an absent observation is the absence of a record; `close = None` is invalid and refused at admission. BT5 was rebuilt, BV1 added, and last-close valuation is always defined.
+- **B2:** admission is scoped to the run's instrument set and to records ≤ `end`. New spec §2.3 point-in-time adapter: calendar, records and exception entries dated ≤ d, a whole-snapshot fingerprint, and the published calendar only for schedule and lags. The leakage property applies between admitted inputs.
+- **B3:** undefined metrics are `None` with a reason (`NON_POSITIVE_NAV` + `insolvent_on`, `SHORT_SERIES`, `ZERO_STDEV`); fixtures MT2–MT5.
+- **B4:** lags are integers ≥ 1 with settle-before-fill timing; BT9 (lag 1) and BT10 (pending at `end`). The 20-session distribution lag is a declared assumption, with a real-data pay-date prerequisite.
+- **B5:** `BACKTEST_COSTS` (every fill price positive), `BACKTEST_ORDER`, `BACKTEST_SCHEDULE`; fixtures BV1–BV8.
+- **Notes:** cost-stress acceptance reworded; exits-never-blocked labelled a simulation assumption; `DATA_STALE` wording fixed; moving-average "not traded" pinned; global-equity convention in protocol §5.
+- **Fixture v1.1:** all new values come from Claude's calculator outside the repo. The earlier cases are unchanged apart from BT5 (rebuilt) and MT1's added `insolvent_on`/`undefined` keys.
+
+
+## Codex T-008 requirements review — 2026-10-16
 
 **T-008 requirements: Changes requested. No implementation started.**
 
@@ -59,7 +72,7 @@ Define the order-generator boundary too: known instrument, BUY/SELL side, positi
 No source or fixture was edited. Only synthetic fixture calculations and small probes against the accepted builder were run; no strategy evaluation, real/holdout data, broker access, spending or merge. Existing implementation CI is not evidence that this new simulator contract is consistent. Claude should resolve B1–B5 in the spec/card/decision record and add the boundary reference cases before acceptance.
 
 
-## Latest: T-008 card drafted (Claude) — 2026-10-16
+## T-008 card drafted (Claude) — 2026-10-16
 
 Branch `t-008-card`; the PR and commit for Codex's requirements check are named in the PR. **Docs and fixture only; no code.**
 
