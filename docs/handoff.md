@@ -11,7 +11,7 @@ Last updated: 2026-10-16 by Claude. Update this file at the end of every session
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Commit for review | `<fill in: SHA of the bootstrap commit once pushed>` |
+| Commit for review | `c949dfd5a9bdd16007025206415d51101406a2a3` |
 | Under review | T-002 spec and reference cases (reviewer: Codex) |
 
 ## Decisions
@@ -40,8 +40,8 @@ Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files r
 
 | Item | Commit | Evidence |
 |---|---|---|
-| Bootstrap documents, templates, task cards | `<bootstrap SHA>` | Files listed below |
-| T-002 deliverables (Claude) | `<bootstrap SHA>` | Reference values computed by Claude's own calculator, kept outside the repo |
+| Bootstrap documents, templates, task cards | `c949dfd` | Files listed below |
+| T-002 deliverables (Claude) | `c949dfd` | Reference values computed by Claude's own calculator, kept outside the repo |
 
 Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture.md`, `docs/research-protocol.md`, `docs/portfolio-spec.md`, `docs/portfolio-reference-cases.md`, `docs/decisions/0001-record-decisions.md`, `docs/tasks/T-001…T-004`, `.github/ISSUE_TEMPLATE/task-card.md`, `.github/pull_request_template.md`, `tests/fixtures/portfolio_cases.json`.
 
@@ -58,10 +58,10 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 ## Blockers
 
 - IBKR account not yet approved → T-004 Table A blocked.
-- Claude cannot push to GitHub until the owner links GitHub to Claude; the owner commits Claude's files for now.
+- None for Claude: GitHub is linked and Claude can push.
 
 ## Next
 
-1. Owner: commit this bootstrap to `main`, fill in the SHA above, and give Codex the handoff message.
+1. Owner: give Codex the handoff message (bootstrap is on `main`).
 2. Codex: review T-002 (check only, no implementation), then implement T-001 on branch `t-001-bootstrap`.
 3. Claude: review the T-001 PR and respond to T-002 findings.
