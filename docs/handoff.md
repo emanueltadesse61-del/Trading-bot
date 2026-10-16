@@ -231,3 +231,12 @@ Reviewed implementation was `a43aefdb89b2a28a3e75795aec346929f12d4ca9`; Claude r
 Regression coverage simulates case-insensitive identity for both repository and agent-workspace roots, includes nonexistent destination children and a permitted prefix sibling, and checks that access errors are not swallowed. Existing real symlink tests remain. Local Python 3.12 pytest: **625 passed**; ruff and git diff --check passed. Specs, fixtures and builder logic unchanged. CI for the exact fix commit is recorded in PR #8.
 
 N1 remains Claude's spec clarification. N2 (mode error taxonomy) and N3 (typed-record adapter validation) are deferred to the adapter boundary rather than changing the accepted interface here. No new input-error code is introduced. T-006 remains Review pending Claude's re-check of B1. No merge, downloads, holdout access, broker calls or spending.
+
+
+## Codex duplicate-counting clarification review — 2026-10-16
+
+Codex review: **PR #9 Accepted at f0982fbd2e1d7d6f56cd6dfd45647244b9673f3a.** The clarification matches build.py at accepted T-006 commit 85087b60847e9f988b6723f0cd2d897962eb416b. Counts include all records with the same key before validation; each record still reports only its first failing check. A valid/invalid price pair produces DATA_DUPLICATE plus the invalid record's code, and a valid distribution on that date produces DATA_DISTRIBUTION_WITHOUT_PRICE because neither price enters price_values.
+
+Independently exercised both a negative-price duplicate and an unknown-unit duplicate with a distribution: the three codes, all-None outputs and data_ok=false matched. Also verified that two invalid prices still report only DATA_INVALID_PRICE (first-failure precedence), not an unconditional duplicate error. I read 'one record is otherwise invalid' as one invalid plus one otherwise-valid record, consistently with the following precedence sentence.
+
+Exact commit changes only docs/data-spec.md; no implementation, strategy or fixture change. Both CI checks pass (38941876259 and 38941870681). No blocking findings. N2/N3 remain deferred to T-007 as agreed. Owner retains merge authority; no merge performed.
