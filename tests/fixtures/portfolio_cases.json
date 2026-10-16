@@ -1,20 +1,29 @@
 {
  "meta": {
-  "spec": "docs/portfolio-spec.md",
+  "spec": "docs/portfolio-spec.md v1.1",
   "author": "Claude (independent calculation)",
   "tolerance_abs": 1e-08,
   "params": {
+   "ANNUALISATION": 252,
+   "TOP_N": 4,
    "ASSET_CAP": 0.25,
    "CLASS_CAP": 0.6,
    "VOL_CEILING": 0.1,
    "BAND": 0.02,
    "MIN_VOL": 0.005,
    "BUY_BUFFER": 0.005,
+   "COMMISSION_RESERVE": 3.0,
    "TOL": 1e-09,
    "FLOOR_EPS": 1e-09,
-   "TOP_N": 4
+   "SYM_TOL": 1e-12,
+   "PSD_TOL": 1e-12
   },
-  "note": "Stage fixtures. 'inputs' are given directly; 'expected' are Claude's independent results. Covariance = outer(vol252) * correlation, unlisted pairs 0, diagonal 1."
+  "conventions": [
+   "Weight/order cases: covariance = outer(vol_252d) x correlation; unlisted pairs 0; diagonal 1, unless an explicit 'covariance' matrix (rows/cols in 'ids' order) is given.",
+   "null in a price series means a missing close for that session; null in sigma means NaN.",
+   "Order cases take ids, asset_class, eligible set, targets and covariance from the weight case named in 'targets_from'.",
+   "Signal cases: 'dates' is the session calendar ending at t; every series has one value per date."
+  ]
  },
  "weights": [
   {
@@ -361,7 +370,7 @@
   },
   {
    "name": "W3_all_cash",
-   "description": "No positive trend scores and every momentum return negative: 100% cash.",
+   "description": "All instruments eligible, but no positive trend and every momentum return negative: 100% cash.",
    "inputs": {
     "ids": [
      "BD1",
@@ -527,7 +536,7 @@
   },
   {
    "name": "W4_vol_ceiling",
-   "description": "High-volatility, highly correlated holdings: estimated portfolio volatility exceeds 10%, all risk weights scaled down.",
+   "description": "Correlated high-volatility holdings: class cap first, then estimated volatility above 10% scales every risk weight down.",
    "inputs": {
     "ids": [
      "BND",
@@ -794,12 +803,138 @@
     },
     "cash": 0.7413793103
    }
+  },
+  {
+   "name": "W6_hedged_pair",
+   "description": "Two negatively correlated instruments (corr -0.8, vol 50%), both capped at 25%; together 7.9% volatility, alone 12.5%.",
+   "inputs": {
+    "ids": [
+     "X",
+     "Y"
+    ],
+    "asset_class": {
+     "X": "equity",
+     "Y": "bond"
+    },
+    "sigma_60d": {
+     "X": 0.5,
+     "Y": 0.5
+    },
+    "vol_252d": {
+     "X": 0.5,
+     "Y": 0.5
+    },
+    "trend_score": {
+     "X": 1,
+     "Y": 1
+    },
+    "momentum_return": {
+     "X": 0.1,
+     "Y": 0.1
+    },
+    "correlation": [
+     [
+      "X",
+      "Y",
+      -0.8
+     ]
+    ]
+   },
+   "expected": {
+    "eligible": [
+     "X",
+     "Y"
+    ],
+    "ranking": [
+     "X",
+     "Y"
+    ],
+    "top_n": [
+     "X",
+     "Y"
+    ],
+    "w_trend": {
+     "X": 0.5,
+     "Y": 0.5
+    },
+    "w_mom": {
+     "X": 0.5,
+     "Y": 0.5
+    },
+    "combined": {
+     "X": 0.5,
+     "Y": 0.5
+    },
+    "after_asset_cap": {
+     "X": 0.25,
+     "Y": 0.25
+    },
+    "after_class_cap": {
+     "X": 0.25,
+     "Y": 0.25
+    },
+    "sigma_p_before_scale": 0.0790569415,
+    "scale": 1.0,
+    "weights": {
+     "X": 0.25,
+     "Y": 0.25
+    },
+    "cash": 0.5
+   }
+  },
+  {
+   "name": "W7_empty_universe",
+   "description": "Every instrument fails MIN_VOL: the eligible set is empty and the target is 100% cash.",
+   "inputs": {
+    "ids": [
+     "P",
+     "Q"
+    ],
+    "asset_class": {
+     "P": "equity",
+     "Q": "bond"
+    },
+    "sigma_60d": {
+     "P": 0.004,
+     "Q": 0.0
+    },
+    "vol_252d": {
+     "P": 0.004,
+     "Q": 0.0
+    },
+    "trend_score": {
+     "P": 1,
+     "Q": 1
+    },
+    "momentum_return": {
+     "P": 0.1,
+     "Q": 0.1
+    },
+    "correlation": []
+   },
+   "expected": {
+    "eligible": [],
+    "ranking": [],
+    "top_n": [],
+    "w_trend": {},
+    "w_mom": {},
+    "combined": {},
+    "after_asset_cap": {},
+    "after_class_cap": {},
+    "sigma_p_before_scale": 0.0,
+    "scale": 1.0,
+    "weights": {
+     "P": 0.0,
+     "Q": 0.0
+    },
+    "cash": 1.0
+   }
   }
  ],
  "orders": [
   {
    "name": "O1_band_exit_cap_cashlimit",
-   "description": "Targets from W1. EQ_UK and BD_UST inside the band (no trade); EQ_US and EQ_JP band buys; BD_GILT exit; GOLD over the 25% cap. Buys exceed settled cash and are scaled by k then floored. Unsettled cash counts in NAV but not for buys.",
+   "description": "W1 targets. EQ_UK and BD_UST inside the band; EQ_US and EQ_JP band buys; BD_GILT exits; GOLD over the 25% cap. Buys plus a \u00a33 commission reserve per buy exceed settled cash, so buys are scaled by k and floored. Unsettled cash counts in NAV but not for buys.",
    "inputs": {
     "targets_from": "W1_asset_cap",
     "holdings": {
@@ -825,64 +960,6 @@
    },
    "expected": {
     "status": "OK",
-    "nav": 10000.0,
-    "actual": {
-     "BD_GILT": 0.1,
-     "BD_UST": 0.08,
-     "EQ_JP": 0.0,
-     "EQ_UK": 0.16,
-     "EQ_US": 0.15,
-     "GOLD": 0.28
-    },
-    "pre_vol": 0.0698183357,
-    "trade_set": [
-     "BD_GILT",
-     "EQ_JP",
-     "EQ_US",
-     "GOLD"
-    ],
-    "reasons": {
-     "BD_GILT": [
-      "band",
-      "exit"
-     ],
-     "EQ_JP": [
-      "band"
-     ],
-     "EQ_US": [
-      "band"
-     ],
-     "GOLD": [
-      "asset_cap",
-      "band"
-     ]
-    },
-    "history": [
-     {
-      "iteration": 0,
-      "delta": {
-       "BD_GILT": -10,
-       "BD_UST": 0,
-       "EQ_JP": 34,
-       "EQ_UK": 0,
-       "EQ_US": 8,
-       "GOLD": -8
-      },
-      "buy_need": 1507.5,
-      "k": 0.8623548922,
-      "post_weights": {
-       "BD_GILT": 0.0,
-       "BD_UST": 0.08,
-       "EQ_JP": 0.085,
-       "EQ_UK": 0.16,
-       "EQ_US": 0.19,
-       "GOLD": 0.248
-      },
-      "post_cash": 2370.0,
-      "post_vol": 0.0878671298,
-      "violations": []
-     }
-    ],
     "orders": [
      {
       "id": "BD_GILT",
@@ -922,12 +999,54 @@
        "band"
       ]
      }
+    ],
+    "nav": 10000.0,
+    "actual": {
+     "BD_GILT": 0.1,
+     "BD_UST": 0.08,
+     "EQ_JP": 0.0,
+     "EQ_UK": 0.16,
+     "EQ_US": 0.15,
+     "GOLD": 0.28
+    },
+    "pre_vol": 0.0698183357,
+    "trade_set": [
+     "BD_GILT",
+     "EQ_JP",
+     "EQ_US",
+     "GOLD"
+    ],
+    "passes": [
+     {
+      "delta": {
+       "BD_GILT": -10,
+       "BD_UST": 0,
+       "EQ_JP": 34,
+       "EQ_UK": 0,
+       "EQ_US": 8,
+       "GOLD": -8
+      },
+      "buy_need": 1513.5,
+      "k": 0.8583747927,
+      "post_weights": {
+       "BD_GILT": 0.0,
+       "BD_UST": 0.08,
+       "EQ_JP": 0.085,
+       "EQ_UK": 0.16,
+       "EQ_US": 0.19,
+       "GOLD": 0.248
+      },
+      "post_cash": 2370.0,
+      "post_vol": 0.0878671298,
+      "violations": [],
+      "added": []
+     }
     ]
    }
   },
   {
    "name": "O2_post_trade_class_repair",
-   "description": "Targets from W2 (15% per equity). EQ1-EQ3 sit 1.9 points over target, inside the band; EQ4 is 6 points under and is bought. Before trading the equity class is 59.7% (allowed); after the buy it would be 65.7%, so the post-trade check adds EQ1-EQ3 and the second pass sells them to target.",
+   "description": "W2 targets. EQ1-EQ3 sit 1.9 points over target (inside the band); EQ4 is bought. The equity class would reach 65.7% after the buy, so the post-trade check adds EQ1-EQ3 and the second pass sells them to target.",
    "inputs": {
     "targets_from": "W2_class_cap",
     "holdings": {
@@ -952,90 +1071,6 @@
    },
    "expected": {
     "status": "OK",
-    "nav": 10000.0,
-    "actual": {
-     "BD1": 0.0,
-     "BD2": 0.0,
-     "EQ1": 0.169,
-     "EQ2": 0.169,
-     "EQ3": 0.169,
-     "EQ4": 0.09
-    },
-    "pre_vol": 0.0551256565,
-    "trade_set": [
-     "EQ1",
-     "EQ2",
-     "EQ3",
-     "EQ4"
-    ],
-    "reasons": {
-     "EQ1": [
-      "repair_class"
-     ],
-     "EQ2": [
-      "repair_class"
-     ],
-     "EQ3": [
-      "repair_class"
-     ],
-     "EQ4": [
-      "band"
-     ]
-    },
-    "history": [
-     {
-      "iteration": 0,
-      "delta": {
-       "BD1": 0,
-       "BD2": 0,
-       "EQ1": 0,
-       "EQ2": 0,
-       "EQ3": 0,
-       "EQ4": 60
-      },
-      "buy_need": 603.0,
-      "k": null,
-      "post_weights": {
-       "BD1": 0.0,
-       "BD2": 0.0,
-       "EQ1": 0.169,
-       "EQ2": 0.169,
-       "EQ3": 0.169,
-       "EQ4": 0.15
-      },
-      "post_cash": 3430.0,
-      "post_vol": 0.0605768768,
-      "violations": [
-       "EQ1",
-       "EQ2",
-       "EQ3"
-      ]
-     },
-     {
-      "iteration": 1,
-      "delta": {
-       "BD1": 0,
-       "BD2": 0,
-       "EQ1": -19,
-       "EQ2": -19,
-       "EQ3": -19,
-       "EQ4": 60
-      },
-      "buy_need": 603.0,
-      "k": null,
-      "post_weights": {
-       "BD1": 0.0,
-       "BD2": 0.0,
-       "EQ1": 0.15,
-       "EQ2": 0.15,
-       "EQ3": 0.15,
-       "EQ4": 0.15
-      },
-      "post_cash": 4000.0,
-      "post_vol": 0.0553172667,
-      "violations": []
-     }
-    ],
     "orders": [
      {
       "id": "EQ1",
@@ -1073,6 +1108,68 @@
        "band"
       ]
      }
+    ],
+    "nav": 10000.0,
+    "actual": {
+     "EQ1": 0.169,
+     "EQ2": 0.169,
+     "EQ3": 0.169,
+     "EQ4": 0.09
+    },
+    "pre_vol": 0.0551256565,
+    "trade_set": [
+     "EQ1",
+     "EQ2",
+     "EQ3",
+     "EQ4"
+    ],
+    "passes": [
+     {
+      "delta": {
+       "EQ1": 0,
+       "EQ2": 0,
+       "EQ3": 0,
+       "EQ4": 60
+      },
+      "buy_need": 606.0,
+      "k": null,
+      "post_weights": {
+       "EQ1": 0.169,
+       "EQ2": 0.169,
+       "EQ3": 0.169,
+       "EQ4": 0.15
+      },
+      "post_cash": 3430.0,
+      "post_vol": 0.0605768768,
+      "violations": [
+       "class_cap:equity"
+      ],
+      "added": [
+       "EQ1",
+       "EQ2",
+       "EQ3"
+      ]
+     },
+     {
+      "delta": {
+       "EQ1": -19,
+       "EQ2": -19,
+       "EQ3": -19,
+       "EQ4": 60
+      },
+      "buy_need": 606.0,
+      "k": null,
+      "post_weights": {
+       "EQ1": 0.15,
+       "EQ2": 0.15,
+       "EQ3": 0.15,
+       "EQ4": 0.15
+      },
+      "post_cash": 4000.0,
+      "post_vol": 0.0553172667,
+      "violations": [],
+      "added": []
+     }
     ]
    }
   },
@@ -1100,7 +1197,7 @@
   },
   {
    "name": "O4_blocked_held_ineligible",
-   "description": "Instrument F (ineligible in W5) is held: planning is blocked; it is never sold because of a data or eligibility problem.",
+   "description": "F (ineligible in W5) is held: planning is blocked; it is never sold because of a data or eligibility problem.",
    "inputs": {
     "targets_from": "W5_tie_negative_ineligible",
     "holdings": {
@@ -1119,13 +1216,497 @@
     "status": "BLOCKED_HELD_INELIGIBLE",
     "orders": []
    }
+  },
+  {
+   "name": "O5_zero_signal_exit",
+   "description": "W3: instruments are eligible but every target is 0, so holdings exit normally (this is not the empty-universe case).",
+   "inputs": {
+    "targets_from": "W3_all_cash",
+    "holdings": {
+     "EQ1": 100,
+     "BD1": 50
+    },
+    "prices": {
+     "BD1": 10.0,
+     "BD2": 10.0,
+     "EQ1": 10.0,
+     "EQ2": 10.0,
+     "EQ3": 10.0,
+     "EQ4": 10.0
+    },
+    "cash_settled": 8500.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "status": "OK",
+    "orders": [
+     {
+      "id": "BD1",
+      "side": "SELL",
+      "qty": 50,
+      "ref_price": 10.0,
+      "reasons": [
+       "band",
+       "exit"
+      ]
+     },
+     {
+      "id": "EQ1",
+      "side": "SELL",
+      "qty": 100,
+      "ref_price": 10.0,
+      "reasons": [
+       "band",
+       "exit"
+      ]
+     }
+    ],
+    "nav": 10000.0,
+    "actual": {
+     "BD1": 0.05,
+     "EQ1": 0.1
+    },
+    "pre_vol": 0.0111803399,
+    "trade_set": [
+     "BD1",
+     "EQ1"
+    ],
+    "passes": [
+     {
+      "delta": {
+       "BD1": -50,
+       "EQ1": -100
+      },
+      "buy_need": 0.0,
+      "k": null,
+      "post_weights": {
+       "BD1": 0.0,
+       "EQ1": 0.0
+      },
+      "post_cash": 10000.0,
+      "post_vol": 0.0,
+      "violations": [],
+      "added": []
+     }
+    ]
+   }
+  },
+  {
+   "name": "O6_empty_universe_nothing_held",
+   "description": "W7: eligible set empty and nothing held: status OK, no orders.",
+   "inputs": {
+    "targets_from": "W7_empty_universe",
+    "holdings": {},
+    "prices": {},
+    "cash_settled": 10000.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "status": "OK",
+    "orders": [],
+    "nav": 10000.0,
+    "actual": {},
+    "pre_vol": 0.0,
+    "trade_set": [],
+    "passes": [
+     {
+      "delta": {},
+      "buy_need": 0.0,
+      "k": null,
+      "post_weights": {},
+      "post_cash": 10000.0,
+      "post_vol": 0.0,
+      "violations": [],
+      "added": []
+     }
+    ]
+   }
+  },
+  {
+   "name": "O7_empty_universe_held",
+   "description": "W7: eligible set empty while P is held: blocked, not sold.",
+   "inputs": {
+    "targets_from": "W7_empty_universe",
+    "holdings": {
+     "P": 10
+    },
+    "prices": {
+     "P": 10.0
+    },
+    "cash_settled": 900.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "status": "BLOCKED_HELD_INELIGIBLE",
+    "orders": []
+   }
+  },
+  {
+   "name": "O8_blocked_nav",
+   "description": "Unfunded account: NAV is 0, so planning is blocked rather than dividing by zero.",
+   "inputs": {
+    "targets_from": "W1_asset_cap",
+    "holdings": {},
+    "prices": {
+     "EQ_UK": 10.0,
+     "EQ_US": 50.0,
+     "EQ_JP": 25.0,
+     "BD_UST": 20.0,
+     "GOLD": 40.0
+    },
+    "cash_settled": 0.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "status": "BLOCKED_NAV",
+    "orders": []
+   }
+  },
+  {
+   "name": "O9_unresolved_vol",
+   "description": "W6 targets. X is held at target; the hedge Y must be bought but there is no settled cash. Post-trade volatility would be 12.5% > 10%. Y is already in the trade set, so the repair has nothing new to add, and the plan is BLOCKED_CONSTRAINTS (no orders) rather than leaving the account over the ceiling.",
+   "inputs": {
+    "targets_from": "W6_hedged_pair",
+    "holdings": {
+     "X": 250
+    },
+    "prices": {
+     "X": 10.0,
+     "Y": 10.0
+    },
+    "cash_settled": 0.0,
+    "cash_unsettled": 7500.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "status": "BLOCKED_CONSTRAINTS",
+    "orders": [],
+    "nav": 10000.0,
+    "actual": {
+     "X": 0.25,
+     "Y": 0.0
+    },
+    "passes": [
+     {
+      "delta": {
+       "X": 0,
+       "Y": 0
+      },
+      "buy_need": 2515.5,
+      "k": 0.0,
+      "post_weights": {
+       "X": 0.25,
+       "Y": 0.0
+      },
+      "post_cash": 7500.0,
+      "post_vol": 0.125,
+      "violations": [
+       "vol"
+      ],
+      "added": []
+     }
+    ]
+   }
+  },
+  {
+   "name": "O10_unknown_holding",
+   "description": "A holding (ZZZ) is not in the configured universe: blocked for the owner to resolve.",
+   "inputs": {
+    "targets_from": "W1_asset_cap",
+    "holdings": {
+     "EQ_UK": 160,
+     "ZZZ": 5
+    },
+    "prices": {
+     "EQ_UK": 10.0,
+     "ZZZ": 10.0
+    },
+    "cash_settled": 1000.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "status": "BLOCKED_UNKNOWN_HOLDING",
+    "orders": []
+   }
   }
  ],
  "signals": [
   {
    "name": "S1_signals_from_prices",
-   "description": "253 daily total-return closes ending at t (last element). FLAT fails MIN_VOL; SHORT has only 200 closes. MIXED rises for most of the year then falls, giving a partial trend score.",
+   "description": "253 weekday sessions ending at t = last date. FLAT fails MIN_VOL; SHORT starts 53 sessions late (insufficient_history); STALE has no close at t (missing_data, never treated as current); GAP misses one session mid-window (missing_data).",
    "inputs": {
+    "dates": [
+     "2025-01-01",
+     "2025-01-02",
+     "2025-01-03",
+     "2025-01-06",
+     "2025-01-07",
+     "2025-01-08",
+     "2025-01-09",
+     "2025-01-10",
+     "2025-01-13",
+     "2025-01-14",
+     "2025-01-15",
+     "2025-01-16",
+     "2025-01-17",
+     "2025-01-20",
+     "2025-01-21",
+     "2025-01-22",
+     "2025-01-23",
+     "2025-01-24",
+     "2025-01-27",
+     "2025-01-28",
+     "2025-01-29",
+     "2025-01-30",
+     "2025-01-31",
+     "2025-02-03",
+     "2025-02-04",
+     "2025-02-05",
+     "2025-02-06",
+     "2025-02-07",
+     "2025-02-10",
+     "2025-02-11",
+     "2025-02-12",
+     "2025-02-13",
+     "2025-02-14",
+     "2025-02-17",
+     "2025-02-18",
+     "2025-02-19",
+     "2025-02-20",
+     "2025-02-21",
+     "2025-02-24",
+     "2025-02-25",
+     "2025-02-26",
+     "2025-02-27",
+     "2025-02-28",
+     "2025-03-03",
+     "2025-03-04",
+     "2025-03-05",
+     "2025-03-06",
+     "2025-03-07",
+     "2025-03-10",
+     "2025-03-11",
+     "2025-03-12",
+     "2025-03-13",
+     "2025-03-14",
+     "2025-03-17",
+     "2025-03-18",
+     "2025-03-19",
+     "2025-03-20",
+     "2025-03-21",
+     "2025-03-24",
+     "2025-03-25",
+     "2025-03-26",
+     "2025-03-27",
+     "2025-03-28",
+     "2025-03-31",
+     "2025-04-01",
+     "2025-04-02",
+     "2025-04-03",
+     "2025-04-04",
+     "2025-04-07",
+     "2025-04-08",
+     "2025-04-09",
+     "2025-04-10",
+     "2025-04-11",
+     "2025-04-14",
+     "2025-04-15",
+     "2025-04-16",
+     "2025-04-17",
+     "2025-04-18",
+     "2025-04-21",
+     "2025-04-22",
+     "2025-04-23",
+     "2025-04-24",
+     "2025-04-25",
+     "2025-04-28",
+     "2025-04-29",
+     "2025-04-30",
+     "2025-05-01",
+     "2025-05-02",
+     "2025-05-05",
+     "2025-05-06",
+     "2025-05-07",
+     "2025-05-08",
+     "2025-05-09",
+     "2025-05-12",
+     "2025-05-13",
+     "2025-05-14",
+     "2025-05-15",
+     "2025-05-16",
+     "2025-05-19",
+     "2025-05-20",
+     "2025-05-21",
+     "2025-05-22",
+     "2025-05-23",
+     "2025-05-26",
+     "2025-05-27",
+     "2025-05-28",
+     "2025-05-29",
+     "2025-05-30",
+     "2025-06-02",
+     "2025-06-03",
+     "2025-06-04",
+     "2025-06-05",
+     "2025-06-06",
+     "2025-06-09",
+     "2025-06-10",
+     "2025-06-11",
+     "2025-06-12",
+     "2025-06-13",
+     "2025-06-16",
+     "2025-06-17",
+     "2025-06-18",
+     "2025-06-19",
+     "2025-06-20",
+     "2025-06-23",
+     "2025-06-24",
+     "2025-06-25",
+     "2025-06-26",
+     "2025-06-27",
+     "2025-06-30",
+     "2025-07-01",
+     "2025-07-02",
+     "2025-07-03",
+     "2025-07-04",
+     "2025-07-07",
+     "2025-07-08",
+     "2025-07-09",
+     "2025-07-10",
+     "2025-07-11",
+     "2025-07-14",
+     "2025-07-15",
+     "2025-07-16",
+     "2025-07-17",
+     "2025-07-18",
+     "2025-07-21",
+     "2025-07-22",
+     "2025-07-23",
+     "2025-07-24",
+     "2025-07-25",
+     "2025-07-28",
+     "2025-07-29",
+     "2025-07-30",
+     "2025-07-31",
+     "2025-08-01",
+     "2025-08-04",
+     "2025-08-05",
+     "2025-08-06",
+     "2025-08-07",
+     "2025-08-08",
+     "2025-08-11",
+     "2025-08-12",
+     "2025-08-13",
+     "2025-08-14",
+     "2025-08-15",
+     "2025-08-18",
+     "2025-08-19",
+     "2025-08-20",
+     "2025-08-21",
+     "2025-08-22",
+     "2025-08-25",
+     "2025-08-26",
+     "2025-08-27",
+     "2025-08-28",
+     "2025-08-29",
+     "2025-09-01",
+     "2025-09-02",
+     "2025-09-03",
+     "2025-09-04",
+     "2025-09-05",
+     "2025-09-08",
+     "2025-09-09",
+     "2025-09-10",
+     "2025-09-11",
+     "2025-09-12",
+     "2025-09-15",
+     "2025-09-16",
+     "2025-09-17",
+     "2025-09-18",
+     "2025-09-19",
+     "2025-09-22",
+     "2025-09-23",
+     "2025-09-24",
+     "2025-09-25",
+     "2025-09-26",
+     "2025-09-29",
+     "2025-09-30",
+     "2025-10-01",
+     "2025-10-02",
+     "2025-10-03",
+     "2025-10-06",
+     "2025-10-07",
+     "2025-10-08",
+     "2025-10-09",
+     "2025-10-10",
+     "2025-10-13",
+     "2025-10-14",
+     "2025-10-15",
+     "2025-10-16",
+     "2025-10-17",
+     "2025-10-20",
+     "2025-10-21",
+     "2025-10-22",
+     "2025-10-23",
+     "2025-10-24",
+     "2025-10-27",
+     "2025-10-28",
+     "2025-10-29",
+     "2025-10-30",
+     "2025-10-31",
+     "2025-11-03",
+     "2025-11-04",
+     "2025-11-05",
+     "2025-11-06",
+     "2025-11-07",
+     "2025-11-10",
+     "2025-11-11",
+     "2025-11-12",
+     "2025-11-13",
+     "2025-11-14",
+     "2025-11-17",
+     "2025-11-18",
+     "2025-11-19",
+     "2025-11-20",
+     "2025-11-21",
+     "2025-11-24",
+     "2025-11-25",
+     "2025-11-26",
+     "2025-11-27",
+     "2025-11-28",
+     "2025-12-01",
+     "2025-12-02",
+     "2025-12-03",
+     "2025-12-04",
+     "2025-12-05",
+     "2025-12-08",
+     "2025-12-09",
+     "2025-12-10",
+     "2025-12-11",
+     "2025-12-12",
+     "2025-12-15",
+     "2025-12-16",
+     "2025-12-17",
+     "2025-12-18",
+     "2025-12-19"
+    ],
     "tr_close": {
      "UPTREND": [
       100.0,
@@ -2148,6 +2729,59 @@
       100.0
      ],
      "SHORT": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
       100.0,
       100.510725,
       100.905546,
@@ -2348,20 +2982,521 @@
       105.141852,
       105.064886,
       105.245133
+     ],
+     "STALE": [
+      100.0,
+      100.686564,
+      101.071146,
+      100.988059,
+      100.496215,
+      99.84933,
+      99.370414,
+      99.300009,
+      99.689217,
+      100.377525,
+      101.062592,
+      101.438415,
+      101.343544,
+      100.842629,
+      100.193708,
+      99.720695,
+      99.661397,
+      100.061882,
+      100.75647,
+      101.439837,
+      101.806735,
+      101.700036,
+      101.190145,
+      100.539378,
+      100.072459,
+      100.024377,
+      100.436115,
+      101.136836,
+      101.818297,
+      102.176106,
+      102.057537,
+      101.538772,
+      100.886349,
+      100.425716,
+      100.388956,
+      100.811921,
+      101.518624,
+      102.197972,
+      102.546529,
+      102.416053,
+      101.888517,
+      101.234632,
+      100.780475,
+      100.755141,
+      101.189302,
+      101.901833,
+      102.578861,
+      102.918005,
+      102.775587,
+      102.239388,
+      101.584235,
+      101.136746,
+      101.122938,
+      101.568261,
+      102.286465,
+      102.960965,
+      103.290537,
+      103.136146,
+      102.591394,
+      101.93517,
+      101.494537,
+      101.492354,
+      101.948802,
+      102.672519,
+      103.344282,
+      103.664124,
+      103.497733,
+      102.944543,
+      102.287444,
+      101.853857,
+      101.863396,
+      102.330928,
+      103.059996,
+      103.728812,
+      104.038769,
+      103.860353,
+      103.298842,
+      102.641069,
+      102.214717,
+      102.23607,
+      102.714642,
+      103.448897,
+      104.114554,
+      104.414473,
+      104.224012,
+      103.654301,
+      102.996055,
+      102.577124,
+      102.610382,
+      103.099947,
+      103.83922,
+      104.501509,
+      104.791237,
+      104.588714,
+      104.010927,
+      103.352411,
+      102.941089,
+      102.98634,
+      103.486845,
+      104.230967,
+      104.889676,
+      105.169063,
+      104.954465,
+      104.368729,
+      103.710147,
+      103.30662,
+      103.363949,
+      103.87534,
+      104.624138,
+      105.279054,
+      105.547954,
+      105.32127,
+      104.727716,
+      104.069273,
+      103.673726,
+      103.743216,
+      104.265434,
+      105.018732,
+      105.669644,
+      105.92791,
+      105.689134,
+      105.087896,
+      104.4298,
+      104.042418,
+      104.124147,
+      104.657131,
+      105.414749,
+      106.061444,
+      106.308933,
+      106.058064,
+      105.449278,
+      104.791738,
+      104.412702,
+      104.506748,
+      105.050431,
+      105.81219,
+      106.454455,
+      106.691027,
+      106.428064,
+      105.811871,
+      105.155096,
+      104.78459,
+      104.891025,
+      105.445339,
+      106.211055,
+      106.848675,
+      107.074191,
+      106.79914,
+      106.175685,
+      105.519886,
+      105.15809,
+      105.276984,
+      105.841857,
+      106.611343,
+      107.244106,
+      107.45843,
+      107.171299,
+      106.540727,
+      105.886116,
+      105.53321,
+      105.664632,
+      106.239986,
+      107.013055,
+      107.640747,
+      107.843744,
+      107.544546,
+      106.907008,
+      106.253798,
+      105.90996,
+      106.053974,
+      106.63973,
+      107.416189,
+      108.038597,
+      108.230137,
+      107.918888,
+      107.274536,
+      106.622942,
+      106.28835,
+      106.445016,
+      107.04109,
+      107.820747,
+      108.437656,
+      108.61761,
+      108.29433,
+      107.643321,
+      106.993558,
+      106.668387,
+      106.837764,
+      107.444069,
+      108.226727,
+      108.837924,
+      109.006167,
+      108.670879,
+      108.013371,
+      107.365657,
+      107.050081,
+      107.232224,
+      107.848669,
+      108.634129,
+      109.239402,
+      109.395809,
+      109.048542,
+      108.384698,
+      107.739248,
+      107.43344,
+      107.628401,
+      108.254891,
+      109.042954,
+      109.642089,
+      109.78654,
+      109.427325,
+      108.75731,
+      108.114343,
+      107.818475,
+      108.026301,
+      108.662738,
+      109.453201,
+      110.045984,
+      110.178362,
+      109.807234,
+      109.131217,
+      108.490952,
+      108.205192,
+      108.425929,
+      109.072212,
+      109.864869,
+      110.451089,
+      110.571279,
+      110.188276,
+      109.506428,
+      108.869085,
+      108.593602,
+      108.827291,
+      109.483314,
+      110.277958,
+      110.857403,
+      110.965293,
+      110.570459,
+      109.882954,
+      109.248753,
+      108.983713,
+      109.230392,
+      109.896047,
+      110.692468,
+      111.264926,
+      111.360406,
+      110.95379,
+      110.260805,
+      109.629967,
+      109.375534,
+      109.635238,
+      110.310411,
+      null
+     ],
+     "GAP": [
+      100.0,
+      100.686564,
+      101.071146,
+      100.988059,
+      100.496215,
+      99.84933,
+      99.370414,
+      99.300009,
+      99.689217,
+      100.377525,
+      101.062592,
+      101.438415,
+      101.343544,
+      100.842629,
+      100.193708,
+      99.720695,
+      99.661397,
+      100.061882,
+      100.75647,
+      101.439837,
+      101.806735,
+      101.700036,
+      101.190145,
+      100.539378,
+      100.072459,
+      100.024377,
+      100.436115,
+      101.136836,
+      101.818297,
+      102.176106,
+      102.057537,
+      101.538772,
+      100.886349,
+      100.425716,
+      100.388956,
+      100.811921,
+      101.518624,
+      102.197972,
+      102.546529,
+      102.416053,
+      101.888517,
+      101.234632,
+      100.780475,
+      100.755141,
+      101.189302,
+      101.901833,
+      102.578861,
+      102.918005,
+      102.775587,
+      102.239388,
+      101.584235,
+      101.136746,
+      101.122938,
+      101.568261,
+      102.286465,
+      102.960965,
+      103.290537,
+      103.136146,
+      102.591394,
+      101.93517,
+      101.494537,
+      101.492354,
+      101.948802,
+      102.672519,
+      103.344282,
+      103.664124,
+      103.497733,
+      102.944543,
+      102.287444,
+      101.853857,
+      101.863396,
+      102.330928,
+      103.059996,
+      103.728812,
+      104.038769,
+      103.860353,
+      103.298842,
+      102.641069,
+      102.214717,
+      102.23607,
+      102.714642,
+      103.448897,
+      104.114554,
+      104.414473,
+      104.224012,
+      103.654301,
+      102.996055,
+      102.577124,
+      102.610382,
+      103.099947,
+      103.83922,
+      104.501509,
+      104.791237,
+      104.588714,
+      104.010927,
+      103.352411,
+      102.941089,
+      102.98634,
+      103.486845,
+      104.230967,
+      null,
+      105.169063,
+      104.954465,
+      104.368729,
+      103.710147,
+      103.30662,
+      103.363949,
+      103.87534,
+      104.624138,
+      105.279054,
+      105.547954,
+      105.32127,
+      104.727716,
+      104.069273,
+      103.673726,
+      103.743216,
+      104.265434,
+      105.018732,
+      105.669644,
+      105.92791,
+      105.689134,
+      105.087896,
+      104.4298,
+      104.042418,
+      104.124147,
+      104.657131,
+      105.414749,
+      106.061444,
+      106.308933,
+      106.058064,
+      105.449278,
+      104.791738,
+      104.412702,
+      104.506748,
+      105.050431,
+      105.81219,
+      106.454455,
+      106.691027,
+      106.428064,
+      105.811871,
+      105.155096,
+      104.78459,
+      104.891025,
+      105.445339,
+      106.211055,
+      106.848675,
+      107.074191,
+      106.79914,
+      106.175685,
+      105.519886,
+      105.15809,
+      105.276984,
+      105.841857,
+      106.611343,
+      107.244106,
+      107.45843,
+      107.171299,
+      106.540727,
+      105.886116,
+      105.53321,
+      105.664632,
+      106.239986,
+      107.013055,
+      107.640747,
+      107.843744,
+      107.544546,
+      106.907008,
+      106.253798,
+      105.90996,
+      106.053974,
+      106.63973,
+      107.416189,
+      108.038597,
+      108.230137,
+      107.918888,
+      107.274536,
+      106.622942,
+      106.28835,
+      106.445016,
+      107.04109,
+      107.820747,
+      108.437656,
+      108.61761,
+      108.29433,
+      107.643321,
+      106.993558,
+      106.668387,
+      106.837764,
+      107.444069,
+      108.226727,
+      108.837924,
+      109.006167,
+      108.670879,
+      108.013371,
+      107.365657,
+      107.050081,
+      107.232224,
+      107.848669,
+      108.634129,
+      109.239402,
+      109.395809,
+      109.048542,
+      108.384698,
+      107.739248,
+      107.43344,
+      107.628401,
+      108.254891,
+      109.042954,
+      109.642089,
+      109.78654,
+      109.427325,
+      108.75731,
+      108.114343,
+      107.818475,
+      108.026301,
+      108.662738,
+      109.453201,
+      110.045984,
+      110.178362,
+      109.807234,
+      109.131217,
+      108.490952,
+      108.205192,
+      108.425929,
+      109.072212,
+      109.864869,
+      110.451089,
+      110.571279,
+      110.188276,
+      109.506428,
+      108.869085,
+      108.593602,
+      108.827291,
+      109.483314,
+      110.277958,
+      110.857403,
+      110.965293,
+      110.570459,
+      109.882954,
+      109.248753,
+      108.983713,
+      109.230392,
+      109.896047,
+      110.692468,
+      111.264926,
+      111.360406,
+      110.95379,
+      110.260805,
+      109.629967,
+      109.375534,
+      109.635238,
+      110.310411,
+      111.108398
      ]
     }
    },
    "expected": {
     "per_instrument": {
-     "UPTREND": {
-      "eligible": true,
-      "R63": 0.0266262418,
-      "R126": 0.0540118822,
-      "R252": 0.11108398,
-      "trend_score": 1.0,
-      "momentum_return": 0.08593602,
-      "sigma": 0.0785535894
-     },
      "DOWNTREND": {
       "eligible": true,
       "R63": -0.0309367561,
@@ -2370,6 +3505,15 @@
       "trend_score": 0.0,
       "momentum_return": -0.1073843368,
       "sigma": 0.1173617099
+     },
+     "FLAT": {
+      "eligible": false,
+      "reason": "min_vol",
+      "sigma": 0.0
+     },
+     "GAP": {
+      "eligible": false,
+      "reason": "missing_data"
      },
      "MIXED": {
       "eligible": true,
@@ -2380,14 +3524,22 @@
       "momentum_return": 0.33683775,
       "sigma": 0.1096520537
      },
-     "FLAT": {
-      "eligible": false,
-      "reason": "min_vol",
-      "sigma": 0.0
-     },
      "SHORT": {
       "eligible": false,
       "reason": "insufficient_history"
+     },
+     "STALE": {
+      "eligible": false,
+      "reason": "missing_data"
+     },
+     "UPTREND": {
+      "eligible": true,
+      "R63": 0.0266262418,
+      "R126": 0.0540118822,
+      "R252": 0.11108398,
+      "trend_score": 1.0,
+      "momentum_return": 0.08593602,
+      "sigma": 0.0785535894
      }
     },
     "covariance_ids": [
@@ -2412,6 +3564,205 @@
       0.005969281
      ]
     ]
+   }
+  }
+ ],
+ "invalid": [
+  {
+   "name": "V1_nan_sigma",
+   "description": "W1 inputs with sigma for EQ_US = NaN (null).",
+   "stage": "targets",
+   "inputs": {
+    "base": "W1_asset_cap",
+    "override": {
+     "sigma_60d": {
+      "EQ_US": null
+     }
+    }
+   },
+   "expected": {
+    "error": "INVALID_SIGMA"
+   }
+  },
+  {
+   "name": "V2_asymmetric_covariance",
+   "description": "W1 inputs with covariance[BD_GILT][BD_UST] increased by 1e-6 (no longer symmetric).",
+   "stage": "targets",
+   "inputs": {
+    "base": "W1_asset_cap",
+    "override": {
+     "covariance": [
+      [
+       0.0064,
+       0.004801,
+       0.0,
+       0.0,
+       0.0,
+       0.002
+      ],
+      [
+       0.0048,
+       0.01,
+       0.0,
+       0.0,
+       0.0,
+       0.0025
+      ],
+      [
+       0.0,
+       0.0,
+       0.0625,
+       0.04,
+       0.032,
+       0.003125
+      ],
+      [
+       0.0,
+       0.0,
+       0.04,
+       0.04,
+       0.0256,
+       0.0025
+      ],
+      [
+       0.0,
+       0.0,
+       0.032,
+       0.0256,
+       0.0256,
+       0.002
+      ],
+      [
+       0.002,
+       0.0025,
+       0.003125,
+       0.0025,
+       0.002,
+       0.015625
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "error": "INVALID_COVARIANCE"
+   }
+  },
+  {
+   "name": "V3_unknown_asset_class",
+   "description": "W1 inputs with GOLD asset_class = \"crypto\".",
+   "stage": "targets",
+   "inputs": {
+    "base": "W1_asset_cap",
+    "override": {
+     "asset_class": {
+      "GOLD": "crypto"
+     }
+    }
+   },
+   "expected": {
+    "error": "INVALID_ASSET_CLASS"
+   }
+  },
+  {
+   "name": "V4_zero_price",
+   "description": "Held EQ_UK has price 0.",
+   "stage": "plan",
+   "inputs": {
+    "targets_from": "W1_asset_cap",
+    "holdings": {
+     "EQ_UK": 160
+    },
+    "prices": {
+     "EQ_UK": 0.0,
+     "EQ_US": 50.0,
+     "EQ_JP": 25.0,
+     "BD_UST": 20.0,
+     "GOLD": 40.0
+    },
+    "cash_settled": 1000.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "error": "INVALID_PRICE"
+   }
+  },
+  {
+   "name": "V5_fractional_holding",
+   "description": "Holding of 1.5 shares.",
+   "stage": "plan",
+   "inputs": {
+    "targets_from": "W1_asset_cap",
+    "holdings": {
+     "EQ_UK": 1.5
+    },
+    "prices": {
+     "EQ_UK": 10.0,
+     "EQ_US": 50.0,
+     "EQ_JP": 25.0,
+     "BD_UST": 20.0,
+     "GOLD": 40.0
+    },
+    "cash_settled": 1000.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "error": "INVALID_HOLDING"
+   }
+  },
+  {
+   "name": "V6_negative_cash",
+   "description": "Settled cash of -1.",
+   "stage": "plan",
+   "inputs": {
+    "targets_from": "W1_asset_cap",
+    "holdings": {
+     "EQ_UK": 160
+    },
+    "prices": {
+     "EQ_UK": 10.0,
+     "EQ_US": 50.0,
+     "EQ_JP": 25.0,
+     "BD_UST": 20.0,
+     "GOLD": 40.0
+    },
+    "cash_settled": -1.0,
+    "cash_unsettled": 0.0,
+    "open_orders": false,
+    "reconciliation_clean": true,
+    "data_ok": true
+   },
+   "expected": {
+    "error": "INVALID_CASH"
+   }
+  },
+  {
+   "name": "V7_duplicate_date",
+   "description": "S1 calendar with the last date duplicated.",
+   "stage": "signals",
+   "inputs": {
+    "base": "S1_signals_from_prices",
+    "override": "dates[-1] = dates[-2]"
+   },
+   "expected": {
+    "error": "INVALID_CALENDAR"
+   }
+  },
+  {
+   "name": "V8_negative_price",
+   "description": "S1 with UPTREND close at t = -1.",
+   "stage": "signals",
+   "inputs": {
+    "base": "S1_signals_from_prices",
+    "override": "tr_close.UPTREND[-1] = -1.0"
+   },
+   "expected": {
+    "error": "INVALID_PRICE_SERIES"
    }
   }
  ]

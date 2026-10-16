@@ -55,7 +55,10 @@ The exact portfolio algorithm is in **`docs/portfolio-spec.md`**; this document 
 | Order state unknown (timeout, outage) | Record `UNKNOWN` durably; block new orders; alert; query broker and reconcile before resuming. Never resubmit blindly |
 | Order rejected | Record; alert; no automatic retry in the same run |
 | Partial fill | Recorded; exposure counts filled quantity plus open remainder |
-| Constraints still violated after repair | `BLOCKED_CONSTRAINTS`; alert |
+| Constraints still violated after repair, or nothing to repair | `BLOCKED_CONSTRAINTS`; alert |
+| Invalid input (portfolio spec §2.1) | `InvalidInputError` → run records `BLOCKED_INVALID_INPUT`; no orders; alert |
+| NAV ≤ 0 | `BLOCKED_NAV`; no orders |
+| Holding outside the universe | `BLOCKED_UNKNOWN_HOLDING`; owner resolves |
 | Drawdown 15% from peak (paper) | Pause new orders; review |
 | Drawdown 25% from peak (paper) | Stop the experiment; review |
 | Missed heartbeat | External alert; next run starts with reconciliation |

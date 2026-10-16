@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Last updated: 2026-10-16 by Codex. Update this file at the end of every session (`AGENTS.md`).
+Last updated: 2026-10-16 by Claude. Update this file at the end of every session (`AGENTS.md`).
 
 ## Current phase
 
@@ -10,10 +10,8 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Item | Value |
 |---|---|
-| Branch | `t-001-bootstrap` |
-| Implementation commit | `ba5e40e68eedd45b0230681bf833d2e808cf273a` |
-| Exact review head | See [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1); final handoff commit is named there |
-| Under review | T-001 implementation (reviewer: Claude); T-002 returned with findings |
+| T-001 | [PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1) at `3332ccd8ebce7479cc78aea471f58c905c362099`: Claude review posted, **no blocking findings**; awaiting owner merge |
+| T-002 v1.1 | Branch `t-002-spec-fixes` (built on PR #1); exact commit named in its PR. Reviewer: Codex |
 
 ## Decisions
 
@@ -30,8 +28,8 @@ Last updated: 2026-10-16 by Codex. Update this file at the end of every session 
 
 | Task | State | Owner of next step |
 |---|---|---|
-| T-001 Repository bootstrap | **Review** | Claude reviews PR; owner merges |
-| T-002 Portfolio spec + reference cases | **Changes requested** | Claude resolves findings below in decision records |
+| T-001 Repository bootstrap | **Accepted** (Claude review: no blocking findings) | Owner merges PR #1 |
+| T-002 Portfolio spec + reference cases | **Review** (v1.1: all findings resolved in `docs/decisions/0002`) | Codex re-checks v1.1, then Accepted or findings |
 | T-003 Synthetic portfolio implementation | Draft (Ready when T-002 Accepted and T-001 merged) | — |
 | T-004 Feasibility matrix | Ready (document); account rows **Blocked** | Codex drafts; owner does account checks |
 
@@ -43,6 +41,8 @@ Cards: `docs/tasks/`. Copy each into a GitHub issue when convenient; the files r
 |---|---|---|
 | Bootstrap documents, templates, task cards | `c949dfd` | Files listed below |
 | T-002 deliverables (Claude) | `c949dfd` | Reference values computed by Claude's own calculator, kept outside the repo |
+| T-001 review (Claude) | `3332ccd` | [Review on PR #1](https://github.com/emanueltadesse61-del/Trading-bot/pull/1#pullrequestreview-5541923875) |
+| T-002 v1.1: spec, protocol §6, fixture (26 cases), decision 0002 | branch `t-002-spec-fixes` | `docs/decisions/0002-t002-review-resolutions.md` |
 
 Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture.md`, `docs/research-protocol.md`, `docs/portfolio-spec.md`, `docs/portfolio-reference-cases.md`, `docs/decisions/0001-record-decisions.md`, `docs/tasks/T-001…T-004`, `.github/ISSUE_TEMPLATE/task-card.md`, `.github/pull_request_template.md`, `tests/fixtures/portfolio_cases.json`.
 
@@ -57,8 +57,13 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 - `uv sync --locked && uv run ruff check . && uv run pytest -q`: passed, 28 tests.
 - GitHub CI passed on implementation commit `ba5e40e68eedd45b0230681bf833d2e808cf273a`: [run 38835035359](https://github.com/emanueltadesse61-del/Trading-bot/actions/runs/38835035359).
 
+**Completed by Claude (T-002 v1.1)**
+- Fixture regenerated with Claude's independent calculator (outside the repo): 7 weight, 10 order, 1 signal and 8 invalid-input cases; strict JSON (`allow_nan=False`).
+- All v1 expected weights and orders unchanged. Only O1 `k`/`buy_need` and O2 `buy_need` moved, because of the commission reserve.
+- `tests/unit/test_smoke.py` fixture-name list updated for the new cases and passes. Claude's workspace can't reach PyPI, so the full `uv` run is left to CI on the T-002 PR.
+
 **Pending**
-- Claude review and owner merge. Final handoff-only revision CI status is recorded in PR #1.
+- Owner merges PR #1; Codex re-checks T-002 v1.1.
 
 ## Blockers
 
@@ -67,12 +72,12 @@ Bootstrap files: `AGENTS.md`, `CLAUDE.md`, `docs/charter.md`, `docs/architecture
 
 ## Next
 
-1. Claude: resolve T-002 findings below with spec amendments/evidence and decision records.
-2. Claude: review T-001 at the exact full SHA in the PR handoff.
-3. Owner: decide the stop-date convention and budget when ready; neither blocks T-001.
-4. T-003 remains Draft until T-002 is accepted and T-001 is merged.
+1. Owner: merge PR #1 (T-001), then the T-002 v1.1 PR once Codex accepts it.
+2. Codex: re-check T-002 v1.1 against `docs/decisions/0002`. Independently reproduce at least S1 (STALE, GAP), O7, O9 and one V case. Mark Accepted or return findings.
+3. When T-002 is Accepted and T-001 merged, T-003 becomes Ready for Codex.
+4. Owner: decide the stop-date convention and budget when ready; neither blocks the work above.
 
-## Codex T-002 review — 2026-10-16
+## Codex T-002 review — 2026-10-16 (resolved in `docs/decisions/0002`)
 
 Review base: `c949dfd5a9bdd16007025206415d51101406a2a3`; checkout base `8b7d331` adds only the handoff SHA. No spec or fixture changes made. T-002 is **Changes requested**, not Accepted. Findings do not block the independent empty T-001 skeleton.
 

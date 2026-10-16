@@ -52,11 +52,20 @@ The file is committed, and its commit hash recorded, before the first run.
 | Bootstrap statistic | Stationary block bootstrap of the paired monthly returns, mean block length 6 months, 10,000 resamples, fixed seed recorded. Reports the **share of resampled paths with ΔSR > 0**. This describes stability across resamples; it is **not** the probability that the strategy has an edge |
 | Simpler-rule test | If the strategy's walk-forward Sharpe does not exceed the 10-month moving-average rule's by at least 0.10, the strategy fails this gate |
 
-**Outcomes:**
+**Outcomes.** Evaluate these steps in order and stop at the first that applies. Exactly one outcome results. (Amended by `docs/decisions/0002-t002-review-resolutions.md`.)
 
-- **Pass** — all of: ΔSR ≥ +0.20; positive ΔSR in ≥ 80% of resampled paths; max drawdown no worse than the benchmark's; simpler-rule test passed; ΔSR stays > 0 at 2× costs; and on the one-time holdout, ΔSR > 0 with drawdown no worse than the benchmark's. A pass permits paper trading only.
-- **Inconclusive** — walk-forward ΔSR > 0 but short of the pass bars, holdout not yet opened. No holdout evaluation and no live money. The frozen strategy may run on paper for 12 months as prospective evidence, registered as a new trial.
-- **Fail** — anything else, **including passing walk-forward and then failing the holdout**. The better development result never overrides the holdout. Stop, or start a new charter that inherits the trial count and treats the holdout as consumed.
+| Step | Condition (walk-forward period unless stated) | Outcome |
+|---|---|---|
+| 1 | Any **hard failure**: ΔSR ≤ 0; simpler-rule test failed; max drawdown worse than the benchmark's; ΔSR ≤ 0 at 2× costs | **Fail** |
+| 2 | **Soft shortfall**: ΔSR < +0.20, or positive ΔSR in < 80% of resampled paths | **Inconclusive** (holdout stays unopened) |
+| 3 | All walk-forward bars met → open the holdout once. Holdout ΔSR ≤ 0, or holdout drawdown worse than the benchmark's | **Fail** |
+| 4 | Otherwise | **Pass** |
+
+- **Pass** permits paper trading only.
+- **Inconclusive** means no holdout evaluation and no live money. The frozen strategy may run on paper for 12 months as prospective evidence, registered as a new trial. Only soft shortfalls can lead here; a hard failure never can.
+- **Fail** means stop, or start a new charter that inherits the trial count. **Passing walk-forward and then failing the holdout is a Fail**: the better development result never overrides the holdout, and the holdout counts as consumed.
+
+Worked example: ΔSR = 0.30, 90% of paths positive, drawdown and cost stress acceptable, but the strategy beats the moving-average rule by only 0.05. Step 1 applies (simpler-rule test failed), so the outcome is **Fail**, not Inconclusive.
 
 ## 7. Fallback strategies
 
