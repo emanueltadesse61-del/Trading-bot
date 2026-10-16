@@ -1,6 +1,6 @@
 # Feasibility Matrix (T-004)
 
-Status: **Draft — Review (implemented by Claude under decision 0004; Codex reviews).** Public facts checked 2026-10-16. Account checks: **Blocked** until the owner's IBKR account is approved.
+Status: **Draft v2 — Review (Claude under decision 0004; revised for Codex findings F1, F2 on 8aa48b9).** Public facts checked 2026-10-16. Account checks: **Blocked** until the owner's IBKR account is approved.
 
 Cell values follow the T-004 rule. A cell holds a value with its source, `UNVERIFIED`, or `BLOCKED: <reason>`. **No check is recorded as passed without a source.** Nothing here has been verified inside the owner's account.
 
@@ -10,8 +10,8 @@ Cell values follow the T-004 rule. A cell holds a value with its source, `UNVERI
 |---|---|---|---|---|
 | D1 | The GBP gold candidate (iShares Physical Gold, SGLN) is an **ETC, not a UCITS fund**. AJ Bell lists it as "UCITS: No" | The charter universe is UCITS ETFs; an ETC has a different legal structure and issuer exposure, and may count as a complex product for the appropriateness test | (a) Allow a physical gold ETC as the one non-UCITS exception; (b) drop gold from v1 | None |
 | D2 | The GBP-hedged US Treasury candidate (Vanguard VDTS) only launched **8 Feb 2022** | About 4.7 years of real history: too short for the development and holdout periods without index proxy data | (a) Use the index as proxy history (reported separately, per research protocol §3); (b) use an unhedged or older Treasury line; (c) drop the role | Possibly index data |
-| D3 | Some London lines are quoted in **pence (GBX)**, others in **pounds (GBP)** | Both pass the "GBP-quoted" rule, but the data layer must convert GBX to GBP, or prices are off by 100× | Data-layer rule: normalise every price to GBP and record the original unit | None |
-| D4 | IBKR's UK (LSE) commission schedule was **not found on the public pages checked** | `COMMISSION_RESERVE` = £3 is still a placeholder | Owner reads the actual LSE ETF rate in the account's pricing page | None |
+| D3 | Broker pages show some lines in **pence (GBX)** and others in **pounds (GBP)** | A price unit is a property of the **data feed**, not of the fund: the same line can come in GBX from one source and GBP from another. Mixing them puts prices out by 100× | Data-layer rule: read the unit from the chosen feed's metadata for each instrument, convert to GBP, record the original unit. Never infer the unit from the fund name or a broker web page | None |
+| D4 | IBKR's public UK table: **Fixed (IB SmartRouting) 0.05% of trade value, minimum £3.00 per order**, third-party fees shown as none; Fixed direct routing 0.10%, minimum £4.00; Tiered from 0.05%, minimum £1.00 plus third-party fees ([IBKR](https://www.interactivebrokers.com/en/pricing/commissions-stocks.php), checked 2026-10-16) | With a £10,000 account no order exceeds £2,500 (25% cap), and 0.05% of that is £1.25, so the **£3 minimum always applies** under Fixed SmartRouting. That matches `COMMISSION_RESERVE` = £3 | Owner confirms the actual plan (Fixed or Tiered), routing and any entitlements in the account; these stay BLOCKED | None |
 | D5 | Paper accounts show **delayed** data for unsubscribed products, and real-time data needs an approved, funded account | Weekly decisions on daily closes don't need real-time data, but the historical-bar depth and cost via the API are unknown | Check API historical bars on the paper account; decide on a paid source only if it falls short | Possibly within the £600/yr ceiling |
 
 ## Table A — Account checks (owner performs)
@@ -25,7 +25,7 @@ Cell values follow the T-004 rule. A cell holds a value with its source, `UNVERI
 | IB Gateway login method and re-authentication frequency | Owner observation over 2 weeks | BLOCKED: account pending | UNVERIFIED |
 | Market data: free, delayed or subscription for LSE ETFs; monthly cost | Market data page and account entitlements | BLOCKED: account pending | Unsubscribed paper data is delayed; real-time subscriptions need an approved, fully funded account ([IBKR](https://www.interactivebrokers.com/en/trading/papertrader-delayed-data.php)) |
 | Historical daily bars via API: depth per instrument, pacing limits | Test request results | BLOCKED: account pending | UNVERIFIED |
-| Commission for LSE ETF orders (fixed and tiered) | Account pricing page, with date | BLOCKED: account pending | Public pages checked show US and EUR examples only (D4) |
+| Commission plan, routing and entitlements actually applied to the account | Account pricing settings, with date | BLOCKED: account pending | Public UK schedule recorded in D4; the account's plan is not yet known |
 | Can unsettled sale proceeds fund buys in a cash account? | IBKR documentation | UNVERIFIED | The spec does not use them either way (portfolio spec §6.3 step 5) |
 | Withdrawals can be disabled for the API user | IBKR documentation or settings | UNVERIFIED | — |
 | UK stamp duty on ETF purchases | HMRC or broker statement | UNVERIFIED | Commonly reported as not charged on ETFs; confirm before setting the cost model |
@@ -34,7 +34,7 @@ Cell values follow the T-004 rule. A cell holds a value with its source, `UNVERI
 
 Fields come from issuer or broker pages fetched on 2026-10-16. "Charge" is the ongoing charge as displayed; AJ Bell shows it without a unit, and it is read as % a year. **Available in account** is BLOCKED for every row until the owner checks.
 
-| Role | Candidate | ISIN | LSE ticker and quote unit | Income | Charge | Structure | Inception | Source |
+| Role | Candidate | ISIN | LSE ticker and unit shown on source page | Income | Charge | Structure | Share-class inception | Source |
 |---|---|---|---|---|---|---|---|---|
 | UK equity | Vanguard FTSE 100 UCITS ETF (GBP) Distributing | IE00B810Q511 | VUKE, GBP (NAV in GBP) | Distributing, quarterly | 0.09% | Irish UCITS | 22 May 2012 | [Vanguard](https://www.vanguard.co.uk/professional/product/etf/equity/9509/IE00B810Q511) |
 | US equity | iShares Core S&P 500 UCITS ETF USD (Acc) | IE00B5BMR087 | CSP1, **pence** | Accumulating | 0.07 | UCITS (from name) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:CSP1) |
@@ -50,20 +50,43 @@ Fields come from issuer or broker pages fetched on 2026-10-16. "Charge" is the o
 | Benchmark: global equity | Vanguard FTSE All-World UCITS ETF | IE00B3RBWM25 | VWRL, £ | Quarterly | 0.14 | UCITS (from name) | UNVERIFIED | [AJ Bell](https://www.ajbell.co.uk/market-research/LSE:VWRL) |
 | Benchmark: 60/40 | 60% VWRL / 40% VGOV, rebalanced monthly | — | — | — | — | — | — | Composition per research protocol §5 |
 
+### Table B2 — Phase 1 checklist per candidate (required by T-004)
+
+Share-class inception is **not** evidence of usable price history. History coverage is recorded separately and must be shown from the chosen feed.
+
+| Role | Ticker | Currency hedging | KID available | Typical spread source | Available in account | History source and first usable date |
+|---|---|---|---|---|---|---|
+| UK equity | VUKE | None stated on source page — UNVERIFIED | UNVERIFIED | UNVERIFIED (measure from feed in Phase 1) | BLOCKED: account pending | UNVERIFIED |
+| US equity | CSP1 | None stated ("USD" share class name) — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Europe ex-UK equity | VERX | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Japan equity | VJPN | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Emerging-markets equity | VFEM | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| UK gilts | VGOV | Not applicable (GBP assets) — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| US Treasuries, GBP-hedged | VDTS | GBP hedged (fund name, [Vanguard](https://www.vanguard.co.uk/professional/product/etf/bond/E024/usd-treasury-bond-ucits-etf-gbp-hedged-distributing)); method UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED; cannot predate 08 Feb 2022 without proxy (D2) |
+| Inflation-linked bonds | INXG | Not applicable (GBP assets) — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Gold | SGLN | None stated — UNVERIFIED | UNVERIFIED (ETC; KID requirement may differ, D1) | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Broad commodities | CMOP | UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Global property | IWDP | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+| Benchmark: global equity | VWRL | None stated — UNVERIFIED | UNVERIFIED | UNVERIFIED | BLOCKED: account pending | UNVERIFIED |
+
+Every UNVERIFIED cell must hold a sourced value before Phase 1 fixes the holdout dates.
+
 Notes:
 
 - **Non-GBP lines are excluded.** Every candidate above is quoted in GBP or GBX on its London line. Some funds hold USD assets (CSP1, IWDP), which is currency exposure inside a GBP-quoted line, not FX conversion by the bot.
 - **Distributing funds.** Total-return series must add back distributions (portfolio spec §2: `tr_close`). The data source must provide distribution history or adjusted prices.
-- **Inception dates matter for the holdout.** Rows marked UNVERIFIED must be filled before Phase 1 fixes the holdout dates.
+- **Units on source pages are display units**, not feed units (D3).
 
 ## Table C — Historical data options
 
-| Source | Coverage | Total return or price only | Cost | Licence limits | Verdict |
-|---|---|---|---|---|---|
-| IBKR API historical bars | UNVERIFIED (D5) | UNVERIFIED | UNVERIFIED (may need a market-data subscription) | Personal use under the account agreement | First choice, if depth and adjustments are adequate. BLOCKED: account pending |
-| Issuer factsheets and NAV history (Vanguard, iShares) | Fund life only | NAV and distributions, usually downloadable | Free | Issuer terms | Good for reconstructing total return and cross-checking prices (Gate 1 second source) |
-| Free aggregators (e.g. Yahoo Finance) | Varies | Usually adjusted close | Free | Terms restrict automated and commercial use | Research comparison only, never authoritative |
-| Index proxy history (e.g. FTSE, Bloomberg indices) | Decades | Index total return | Often licensed | Index-provider licences | Only where D2-style gaps exist, labelled as proxy, reported separately |
+None of the access, adjustment, cost or licence properties below has been verified. Each cell states what is unknown and the evidence needed.
+
+| Source | Coverage | Total return or price only | Cost | Licence and automation limits | Evidence needed | Verdict |
+|---|---|---|---|---|---|---|
+| IBKR API historical bars | UNVERIFIED (D5) | UNVERIFIED | UNVERIFIED: may need a market-data subscription | UNVERIFIED | Test requests on the paper account; IBKR market-data and API terms, dated | Preferred candidate if depth and adjustments suffice. BLOCKED: account pending |
+| Issuer NAV and distribution history (Vanguard, iShares) | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | Locate the download for one fund; read the issuer site's terms of use, dated | Candidate second source for Gate 1 cross-checks |
+| Free aggregators (e.g. Yahoo Finance) | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | The provider's terms of service, dated | Research comparison only, never authoritative, until terms are checked |
+| Index proxy history (e.g. FTSE, Bloomberg indices) | UNVERIFIED | UNVERIFIED | UNVERIFIED | UNVERIFIED | Index-provider licence and data terms, dated | Only where D2-style gaps exist, labelled as proxy, reported separately |
 
 No purchase without owner approval (charter §5).
 
@@ -72,5 +95,5 @@ No purchase without owner approval (charter §5).
 1. **D1 gold:** allow the physical gold ETC as the one non-UCITS exception, or drop gold.
 2. **D2 US Treasuries:** proxy history, another line, or drop the role.
 3. **D3:** approve the GBX → GBP normalisation rule for the data layer. This becomes a T-005 requirement.
-4. **D4 and D5:** once the account is approved, read the LSE commission and test API historical bars. Then confirm or replace the £3 reserve.
+4. **D4 and D5:** the public UK schedule supports the £3 reserve (D4). Once the account is approved, confirm the plan and routing actually applied, and test API historical bars.
 5. **Data spend:** none proposed yet. Decide after D5, within the £600-a-year ceiling.
