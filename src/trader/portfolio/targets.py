@@ -25,6 +25,15 @@ class TargetResult:
 
 
 def _validate(signals: Signals, asset_class: dict[str, str], params: Params) -> None:
+    # Coverage first: every eligible id must carry all its inputs (spec 2.1). A missing
+    # value is an input failure, never a silent zero weight.
+    for instrument in sorted(signals.eligible):
+        if instrument not in asset_class:
+            raise InvalidInputError("INVALID_ASSET_CLASS", f"{instrument}: no asset class")
+        if instrument not in signals.sigma:
+            raise InvalidInputError("INVALID_SIGMA", f"{instrument}: no sigma")
+        if instrument not in signals.trend_score or instrument not in signals.momentum_return:
+            raise InvalidInputError("INVALID_SIGNAL", f"{instrument}: missing score")
     for instrument, cls in asset_class.items():
         if cls not in params.ASSET_CLASSES:
             raise InvalidInputError("INVALID_ASSET_CLASS", f"{instrument}: {cls!r}")
@@ -36,20 +45,15 @@ def _validate(signals: Signals, asset_class: dict[str, str], params: Params) -> 
             if not is_finite_number(value):
                 raise InvalidInputError("INVALID_SIGNAL", f"{name} {instrument}: {value!r}")
     validate_covariance(signals.cov, params)
+    if set(signals.cov.index) != set(signals.eligible):
+        raise InvalidInputError("INVALID_COVARIANCE", "covariance labels must equal the eligible ids")
 
 
 def compute_targets(signals: Signals, asset_class: dict[str, str], params: Params) -> TargetResult:
     _validate(signals, asset_class, params)
 
-    universe = sorted(
-        i for i in signals.eligible
-        if i in asset_class and i in signals.sigma and signals.sigma[i] >= params.MIN_VOL
-    )
-    for instrument in universe:
-        if instrument not in signals.trend_score or instrument not in signals.momentum_return:
-            raise InvalidInputError("INVALID_SIGNAL", f"{instrument}: missing score")
-        if instrument not in signals.cov.index:
-            raise InvalidInputError("INVALID_COVARIANCE", f"{instrument}: not in covariance")
+    # Defensive MIN_VOL re-check (spec 5); coverage was validated above.
+    universe = sorted(i for i in signals.eligible if signals.sigma[i] >= params.MIN_VOL)
 
     weights = {i: 0.0 for i in asset_class}
     if not universe:

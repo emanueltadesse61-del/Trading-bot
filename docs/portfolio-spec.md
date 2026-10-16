@@ -1,8 +1,8 @@
-# Portfolio Specification (v1.2)
+# Portfolio Specification (v1.3)
 
 Status: **Review — v1.2 awaiting Codex re-check (T-002).** Author: Claude. Last updated: 2026-10-16.
 
-v1.1 resolves Codex's T-002 findings B1–B3, N1 and N2 (`docs/decisions/0002-t002-review-resolutions.md`). v1.2 resolves B5, the numerical handling of portfolio volatility (`docs/decisions/0003-portfolio-volatility-numerics.md`).
+v1.1 resolves Codex's T-002 findings B1–B3, N1 and N2 (`docs/decisions/0002-t002-review-resolutions.md`). v1.2 resolves B5, the numerical handling of portfolio volatility (`docs/decisions/0003-portfolio-volatility-numerics.md`). v1.3 makes input coverage and covariance labels explicit, from Codex's T-003 review (`docs/decisions/0005-input-coverage-and-covariance-labels.md`). No rule, parameter or fixture value changed.
 
 This document is the single authoritative definition of how target weights and orders are computed. Code that disagrees with it is wrong, or this document needs an amendment recorded in `docs/decisions/`. Reference cases live in `tests/fixtures/portfolio_cases.json` and are explained in `docs/portfolio-reference-cases.md`.
 
@@ -51,13 +51,16 @@ Inputs that break these rules are not market states; they are bugs or upstream d
 | Signals | `dates` strictly increasing with no duplicates | `INVALID_CALENDAR` |
 | Signals | Every series has exactly `len(dates)` values | `INVALID_CALENDAR` |
 | Signals | Every present value is finite and > 0 | `INVALID_PRICE_SERIES` |
-| Targets | Every id has an `asset_class` in the allowed set | `INVALID_ASSET_CLASS` |
-| Targets | Every σ is finite and ≥ 0 (NaN is invalid; 0 is valid and fails `MIN_VOL`) | `INVALID_SIGMA` |
-| Targets | Every trend score and momentum return is finite | `INVALID_SIGNAL` |
-| Targets | Covariance is square over the ids, finite, symmetric within `SYM_TOL`, smallest eigenvalue ≥ −`PSD_TOL` | `INVALID_COVARIANCE` |
+| Targets | Every **eligible** id has an `asset_class`, and every `asset_class` is in the allowed set | `INVALID_ASSET_CLASS` |
+| Targets | Every eligible id has a σ; every σ is finite and ≥ 0 (NaN is invalid; 0 is valid and fails `MIN_VOL`) | `INVALID_SIGMA` |
+| Targets | Every eligible id has a trend score and a momentum return; every one is finite | `INVALID_SIGNAL` |
+| Targets | Covariance is square with **unique** labels equal to the eligible ids, numeric, finite, symmetric within `SYM_TOL`, smallest eigenvalue ≥ −`PSD_TOL` | `INVALID_COVARIANCE` |
 | Planner | Every holding is an integer ≥ 0 | `INVALID_HOLDING` |
 | Planner | `cash_settled` and `cash_unsettled` are finite and ≥ 0 | `INVALID_CASH` |
 | Planner | Every instrument held or with a positive target has a finite price > 0 | `INVALID_PRICE` |
+| Planner | The covariance passes the Targets covariance rules (labels unique, numeric, finite, symmetric, PSD within tolerance) and covers every instrument held or with a positive target | `INVALID_COVARIANCE` |
+
+A missing input is never treated as a zero: an eligible id without its asset class, σ or scores raises rather than silently receiving no weight.
 
 Legitimate account states that cannot be traded are **statuses**, not errors (§6).
 
@@ -126,6 +129,7 @@ Diagnostics to record per run: `wT`, `wM`, `TopN`, weights after steps 3, 4, 5 a
 | 6 | Every held instrument is eligible (§3) | `BLOCKED_HELD_INELIGIBLE` |
 | 7 | Prices valid for every instrument held or with a positive target (§2.1) | `InvalidInputError` (`INVALID_PRICE`) |
 | 8 | NAV > 0 | `BLOCKED_NAV` |
+| 9 | Covariance valid and covering every instrument held or targeted (§2.1) | `InvalidInputError` (`INVALID_COVARIANCE`) |
 
 A `BLOCKED_*` status returns no orders and raises an alert. The first failing check decides the status.
 

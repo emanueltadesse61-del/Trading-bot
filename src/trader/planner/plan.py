@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from trader.errors import InvalidInputError
-from trader.numerics import is_finite_number, portfolio_vol
+from trader.numerics import is_finite_number, portfolio_vol, validate_covariance
 from trader.params import Params
 from trader.portfolio.targets import TargetResult
 
@@ -105,6 +105,10 @@ def plan_orders(
     nav = state.cash_settled + state.cash_unsettled + sum(holdings.get(i, 0) * prices[i] for i in names)
     if not nav > 0.0:
         return PlanResult(status="BLOCKED_NAV")
+    validate_covariance(cov, params)
+    uncovered = [i for i in names if i not in cov.index]
+    if uncovered:
+        raise InvalidInputError("INVALID_COVARIANCE", f"no covariance for {uncovered}")
 
     # 6.3 steps 2-3: actual weights and the trade set with every reason that applies.
     actual = {i: holdings.get(i, 0) * prices[i] / nav for i in names}

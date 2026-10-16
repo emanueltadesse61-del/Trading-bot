@@ -17,15 +17,24 @@ def is_finite_number(value: object) -> bool:
     return math.isfinite(float(value))
 
 
+def _as_float_matrix(cov: pd.DataFrame) -> np.ndarray:
+    try:
+        return cov.to_numpy(dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise InvalidInputError("INVALID_COVARIANCE", f"non-numeric entry: {exc}") from exc
+
+
 def validate_covariance(cov: pd.DataFrame, params: Params) -> None:
     """Square, labelled consistently, finite, symmetric within SYM_TOL, PSD within PSD_TOL."""
     if not isinstance(cov, pd.DataFrame):
         raise InvalidInputError("INVALID_COVARIANCE", "covariance must be a DataFrame")
     if cov.shape[0] != cov.shape[1] or list(cov.index) != list(cov.columns):
         raise InvalidInputError("INVALID_COVARIANCE", "covariance must be square with matching labels")
+    if not cov.index.is_unique:
+        raise InvalidInputError("INVALID_COVARIANCE", "duplicate covariance labels")
     if cov.shape[0] == 0:
         return
-    matrix = cov.to_numpy(dtype=float)
+    matrix = _as_float_matrix(cov)
     if not np.all(np.isfinite(matrix)):
         raise InvalidInputError("INVALID_COVARIANCE", "non-finite entry")
     if np.max(np.abs(matrix - matrix.T)) > params.SYM_TOL:
@@ -39,13 +48,15 @@ def portfolio_vol(weights: Mapping[str, float], cov: pd.DataFrame, params: Param
 
     Every portfolio volatility in the system goes through this function.
     """
+    if not cov.index.is_unique:
+        raise InvalidInputError("INVALID_COVARIANCE", "duplicate covariance labels")
     missing = [k for k, v in weights.items() if v != 0.0 and k not in cov.index]
     if missing:
         raise InvalidInputError("INVALID_COVARIANCE", f"no covariance for {sorted(missing)}")
     x = np.array([float(weights.get(k, 0.0)) for k in cov.index], dtype=float)
     if x.size == 0:
         return 0.0
-    q = float(x @ cov.to_numpy(dtype=float) @ x)
+    q = float(x @ _as_float_matrix(cov) @ x)
     if q < -params.PSD_TOL:
         raise InvalidInputError("INVALID_COVARIANCE", f"quadratic form {q} below -PSD_TOL")
     return math.sqrt(max(0.0, q))
