@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 trader-split = "trader.data.split:main"
+trader-registry = "trader.registry.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
