@@ -1,0 +1,299 @@
+{
+ "version": "1.1",
+ "generator": "Claude reference (outside the repo)",
+ "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+ "canonical_json": "json.dumps(x, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)",
+ "row_hash": "sha256(prev_hash + '\\n' + body) over UTF-8, hex",
+ "chain": [
+  {
+   "seq": 1,
+   "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+   "body": "{\"registry_id\":\"3f2b8c1e-7a4d-4e9b-9c0a-1d2e3f405162\",\"schema\":\"trading-bot/registry/v1\",\"seq\":1,\"timestamp_utc\":\"2026-10-16T21:00:00Z\",\"type\":\"registry_created\"}",
+   "row_hash": "2b850e2339c7b90f3a453410e4f27cdaacf8e594a74efb89a850507ae78a10cd"
+  },
+  {
+   "seq": 2,
+   "prev_hash": "2b850e2339c7b90f3a453410e4f27cdaacf8e594a74efb89a850507ae78a10cd",
+   "body": "{\"baselines\":[{\"baseline_id\":\"B:sixty_forty\",\"config_hash\":\"b019a4fee7f94b54e4d7232ae634c815e498dad0601da11f633e7c6761411736\"}],\"cost_multipliers\":[1,2],\"dataset\":{\"dataset_id\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifest_digest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"},\"exceptions\":{\"digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"version\":\"snap-1\"},\"file_sha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"frozen_by\":\"docs/decisions/9999-test.md\",\"hypothesis_commit\":\"dddddddddddddddddddddddddddddddddddddddd\",\"hypothesis_id\":\"H-900\",\"period\":{\"end\":\"2021-12-31\",\"start\":\"2016-01-04\"},\"seq\":2,\"timestamp_utc\":\"2026-10-16T21:01:00Z\",\"trial_count_after\":2,\"type\":\"hypothesis_registered\",\"variants\":[{\"config_hash\":\"f1b2d0363745d80b06f962830f6b73f51b13774a4b1aac7bbf90a20cb93c89c4\",\"role\":\"primary\",\"schedule\":\"weekly\",\"variant_id\":\"V1\"},{\"config_hash\":\"d2f4fde2dd2c87bdc8de42010ba3cf71af5c6184aba759f3c78a84c9be0542d4\",\"role\":\"robustness\",\"schedule\":\"weekly\",\"variant_id\":\"V2\"}]}",
+   "row_hash": "bef8c4a03f55da613c58aea1ff1ed5df6605870aa61202c730637b89d75427eb"
+  },
+  {
+   "seq": 3,
+   "prev_hash": "bef8c4a03f55da613c58aea1ff1ed5df6605870aa61202c730637b89d75427eb",
+   "body": "{\"checkout_clean\":false,\"code_commit\":\"7777777777777777777777777777777777777777\",\"config\":{\"asset_class\":{\"SYN_A\":\"equity\",\"SYN_B\":\"bond\"},\"backtest_params\":{\"ANNUALISATION\":252,\"COMMISSION_MIN\":3.0,\"COMMISSION_RATE\":0.0005,\"DISTRIBUTION_LAG\":20,\"HALF_SPREAD\":{\"SYN_A\":0.001,\"SYN_B\":0.0015,\"SYN_W\":0.001},\"INITIAL_CASH\":10000.0,\"SETTLEMENT_LAG\":2,\"SLIPPAGE\":0.0005},\"generator\":\"strategy\",\"kind\":\"strategy\",\"params\":{\"ANNUALISATION\":252,\"ASSET_CAP\":0.25,\"ASSET_CLASSES\":[\"bond\",\"equity\",\"real_asset\"],\"BAND\":0.02,\"BUY_BUFFER\":0.005,\"CLASS_CAP\":0.6,\"COMMISSION_RESERVE\":3.0,\"COV_WINDOW\":252,\"FLOOR_EPS\":1e-09,\"MIN_VOL\":0.005,\"MOM_LONG\":252,\"MOM_SKIP\":21,\"PSD_TOL\":1e-12,\"SLEEVE_MOM\":0.5,\"SLEEVE_TREND\":0.5,\"SYM_TOL\":1e-12,\"TOL\":1e-09,\"TOP_N\":4,\"TREND_LOOKBACKS\":[63,126,252],\"VOL_CEILING\":0.1,\"VOL_WINDOW\":60},\"schedule\":\"weekly\",\"universe\":[\"SYN_A\",\"SYN_B\"]},\"config_hash\":\"f1b2d0363745d80b06f962830f6b73f51b13774a4b1aac7bbf90a20cb93c89c4\",\"cost_multiplier\":1,\"data\":{\"dataset_id\":null,\"kind\":\"synthetic\",\"manifest_digest\":null,\"partition\":\"synthetic\"},\"exceptions\":{\"digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"version\":\"synthetic-v1\"},\"generator\":\"strategy\",\"hypothesis_commit\":null,\"hypothesis_id\":\"SYNTHETIC\",\"hypothesis_sha256\":null,\"kind\":\"strategy\",\"note\":\"Prix fixe £10,000 — UTF-8\",\"period\":{\"end\":\"2024-01-19\",\"start\":\"2024-01-08\"},\"run_id\":3,\"seq\":3,\"supersedes\":null,\"timestamp_utc\":\"2026-10-16T21:02:00Z\",\"type\":\"run_started\",\"variant_id\":\"S1\"}",
+   "row_hash": "9bdbe502a52e7159e7b1a2a9e73ed6bc6d105185ee2d24b00a3f24b7a0274f93"
+  },
+  {
+   "seq": 4,
+   "prev_hash": "9bdbe502a52e7159e7b1a2a9e73ed6bc6d105185ee2d24b00a3f24b7a0274f93",
+   "body": "{\"error\":null,\"metrics\":{\"ann_return\":0.0123,\"sharpe\":null,\"undefined\":{\"sharpe\":\"SHORT_SERIES\"}},\"outcome\":\"completed\",\"run_id\":3,\"seq\":4,\"timestamp_utc\":\"2026-10-16T21:02:05Z\",\"totals\":{\"commission\":6.0},\"type\":\"run_finished\"}",
+   "row_hash": "83cb808f98e729c1b153b92a75a74bc4cdb954bb8266f3450b475fc3d064042b"
+  },
+  {
+   "seq": 5,
+   "prev_hash": "83cb808f98e729c1b153b92a75a74bc4cdb954bb8266f3450b475fc3d064042b",
+   "body": "{\"checkout_clean\":false,\"code_commit\":\"7777777777777777777777777777777777777777\",\"config\":{\"asset_class\":{\"SYN_A\":\"equity\",\"SYN_B\":\"bond\"},\"backtest_params\":{\"ANNUALISATION\":252,\"COMMISSION_MIN\":3.0,\"COMMISSION_RATE\":0.0005,\"DISTRIBUTION_LAG\":20,\"HALF_SPREAD\":{\"SYN_A\":0.001,\"SYN_B\":0.0015,\"SYN_W\":0.001},\"INITIAL_CASH\":10000.0,\"SETTLEMENT_LAG\":2,\"SLIPPAGE\":0.0005},\"generator\":\"strategy\",\"kind\":\"strategy\",\"params\":{\"ANNUALISATION\":252,\"ASSET_CAP\":0.25,\"ASSET_CLASSES\":[\"bond\",\"equity\",\"real_asset\"],\"BAND\":0.02,\"BUY_BUFFER\":0.005,\"CLASS_CAP\":0.6,\"COMMISSION_RESERVE\":3.0,\"COV_WINDOW\":252,\"FLOOR_EPS\":1e-09,\"MIN_VOL\":0.005,\"MOM_LONG\":252,\"MOM_SKIP\":21,\"PSD_TOL\":1e-12,\"SLEEVE_MOM\":0.5,\"SLEEVE_TREND\":0.5,\"SYM_TOL\":1e-12,\"TOL\":1e-09,\"TOP_N\":4,\"TREND_LOOKBACKS\":[63,126,252],\"VOL_CEILING\":0.1,\"VOL_WINDOW\":60},\"schedule\":\"weekly\",\"universe\":[\"SYN_A\",\"SYN_B\"]},\"config_hash\":\"f1b2d0363745d80b06f962830f6b73f51b13774a4b1aac7bbf90a20cb93c89c4\",\"cost_multiplier\":2,\"data\":{\"dataset_id\":null,\"kind\":\"synthetic\",\"manifest_digest\":null,\"partition\":\"synthetic\"},\"exceptions\":{\"digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"version\":\"synthetic-v1\"},\"generator\":\"strategy\",\"hypothesis_commit\":null,\"hypothesis_id\":\"SYNTHETIC\",\"hypothesis_sha256\":null,\"kind\":\"strategy\",\"note\":\"stress rerun; unfinished\",\"period\":{\"end\":\"2024-01-19\",\"start\":\"2024-01-08\"},\"run_id\":5,\"seq\":5,\"supersedes\":3,\"timestamp_utc\":\"2026-10-16T21:03:00Z\",\"type\":\"run_started\",\"variant_id\":\"S1\"}",
+   "row_hash": "b447f84de65ae19b1729c1528d5b75214bb55dd83afaa94e7f97d18cd0d71b26"
+  }
+ ],
+ "lifecycle": {
+  "trial_count": 2,
+  "runs": {
+   "3": "completed",
+   "5": "unfinished"
+  },
+  "superseded": [
+   3
+  ]
+ },
+ "checkpoints": {
+  "full": {
+   "registry_id": "3f2b8c1e-7a4d-4e9b-9c0a-1d2e3f405162",
+   "seq": 5,
+   "row_hash": "b447f84de65ae19b1729c1528d5b75214bb55dd83afaa94e7f97d18cd0d71b26"
+  },
+  "mid": {
+   "registry_id": "3f2b8c1e-7a4d-4e9b-9c0a-1d2e3f405162",
+   "seq": 3,
+   "row_hash": "9bdbe502a52e7159e7b1a2a9e73ed6bc6d105185ee2d24b00a3f24b7a0274f93"
+  }
+ },
+ "tamper_cases": [
+  {
+   "name": "edit_body",
+   "description": "Change seq 4 outcome to 'failed' in the stored body",
+   "checkpoint": null,
+   "code": "REGISTRY_CHAIN_BROKEN",
+   "seq": 4
+  },
+  {
+   "name": "delete_middle_row",
+   "description": "Remove seq 4",
+   "checkpoint": null,
+   "code": "REGISTRY_CHAIN_BROKEN",
+   "seq": 4
+  },
+  {
+   "name": "swap_rows",
+   "description": "Exchange the bodies of seq 3 and 5",
+   "checkpoint": null,
+   "code": "REGISTRY_CHAIN_BROKEN",
+   "seq": 3
+  },
+  {
+   "name": "suffix_deletion_internal_only",
+   "description": "Remove seq 5 and verify WITHOUT a checkpoint: internal consistency holds, so it passes. This is the documented limit of internal verification.",
+   "checkpoint": null,
+   "code": null,
+   "seq": null
+  },
+  {
+   "name": "suffix_deletion_with_checkpoint",
+   "description": "Remove seq 5 and verify against checkpoints.full",
+   "checkpoint": "full",
+   "code": "REGISTRY_CHECKPOINT_MISMATCH",
+   "seq": 5
+  },
+  {
+   "name": "suffix_deletion_behind_mid_checkpoint",
+   "description": "Remove seq 5 and verify against checkpoints.mid: rows after the last checkpoint are not protected (documented limit)",
+   "checkpoint": "mid",
+   "code": null,
+   "seq": null
+  },
+  {
+   "name": "replacement_log",
+   "description": "A fresh registry (new registry_id) verified against checkpoints.full",
+   "checkpoint": "full",
+   "code": "REGISTRY_CHECKPOINT_MISMATCH",
+   "seq": 1
+  },
+  {
+   "name": "duplicate_finish",
+   "description": "Append a second run_finished for run 3 (chain recomputed correctly)",
+   "checkpoint": null,
+   "code": "REGISTRY_LIFECYCLE",
+   "seq": 6
+  }
+ ],
+ "config_cases": {
+  "configs": {
+   "strategy_V1": {
+    "kind": "strategy",
+    "generator": "strategy",
+    "schedule": "weekly",
+    "universe": [
+     "SYN_A",
+     "SYN_B"
+    ],
+    "asset_class": {
+     "SYN_A": "equity",
+     "SYN_B": "bond"
+    },
+    "params": {
+     "ANNUALISATION": 252,
+     "TREND_LOOKBACKS": [
+      63,
+      126,
+      252
+     ],
+     "MOM_LONG": 252,
+     "MOM_SKIP": 21,
+     "VOL_WINDOW": 60,
+     "COV_WINDOW": 252,
+     "TOP_N": 4,
+     "SLEEVE_TREND": 0.5,
+     "SLEEVE_MOM": 0.5,
+     "ASSET_CAP": 0.25,
+     "CLASS_CAP": 0.6,
+     "VOL_CEILING": 0.1,
+     "BAND": 0.02,
+     "MIN_VOL": 0.005,
+     "BUY_BUFFER": 0.005,
+     "COMMISSION_RESERVE": 3.0,
+     "TOL": 1e-09,
+     "FLOOR_EPS": 1e-09,
+     "SYM_TOL": 1e-12,
+     "PSD_TOL": 1e-12,
+     "ASSET_CLASSES": [
+      "bond",
+      "equity",
+      "real_asset"
+     ]
+    },
+    "backtest_params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20,
+     "ANNUALISATION": 252,
+     "HALF_SPREAD": {
+      "SYN_A": 0.001,
+      "SYN_B": 0.0015,
+      "SYN_W": 0.001
+     }
+    }
+   },
+   "strategy_V2": {
+    "kind": "strategy",
+    "generator": "strategy",
+    "schedule": "weekly",
+    "universe": [
+     "SYN_A",
+     "SYN_B"
+    ],
+    "asset_class": {
+     "SYN_A": "equity",
+     "SYN_B": "bond"
+    },
+    "params": {
+     "ANNUALISATION": 252,
+     "TREND_LOOKBACKS": [
+      21,
+      63,
+      252
+     ],
+     "MOM_LONG": 252,
+     "MOM_SKIP": 21,
+     "VOL_WINDOW": 60,
+     "COV_WINDOW": 252,
+     "TOP_N": 4,
+     "SLEEVE_TREND": 0.5,
+     "SLEEVE_MOM": 0.5,
+     "ASSET_CAP": 0.25,
+     "CLASS_CAP": 0.6,
+     "VOL_CEILING": 0.1,
+     "BAND": 0.02,
+     "MIN_VOL": 0.005,
+     "BUY_BUFFER": 0.005,
+     "COMMISSION_RESERVE": 3.0,
+     "TOL": 1e-09,
+     "FLOOR_EPS": 1e-09,
+     "SYM_TOL": 1e-12,
+     "PSD_TOL": 1e-12,
+     "ASSET_CLASSES": [
+      "bond",
+      "equity",
+      "real_asset"
+     ]
+    },
+    "backtest_params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20,
+     "ANNUALISATION": 252,
+     "HALF_SPREAD": {
+      "SYN_A": 0.001,
+      "SYN_B": 0.0015,
+      "SYN_W": 0.001
+     }
+    }
+   },
+   "baseline_sixty_forty": {
+    "kind": "baseline",
+    "generator": "sixty_forty",
+    "schedule": "monthly",
+    "instruments": {
+     "equity": "SYN_W",
+     "bond": "SYN_B"
+    },
+    "params": {
+     "ANNUALISATION": 252,
+     "TREND_LOOKBACKS": [
+      63,
+      126,
+      252
+     ],
+     "MOM_LONG": 252,
+     "MOM_SKIP": 21,
+     "VOL_WINDOW": 60,
+     "COV_WINDOW": 252,
+     "TOP_N": 4,
+     "SLEEVE_TREND": 0.5,
+     "SLEEVE_MOM": 0.5,
+     "ASSET_CAP": 0.25,
+     "CLASS_CAP": 0.6,
+     "VOL_CEILING": 0.1,
+     "BAND": 0.02,
+     "MIN_VOL": 0.005,
+     "BUY_BUFFER": 0.005,
+     "COMMISSION_RESERVE": 3.0,
+     "TOL": 1e-09,
+     "FLOOR_EPS": 1e-09,
+     "SYM_TOL": 1e-12,
+     "PSD_TOL": 1e-12,
+     "ASSET_CLASSES": [
+      "bond",
+      "equity",
+      "real_asset"
+     ]
+    },
+    "backtest_params": {
+     "INITIAL_CASH": 10000.0,
+     "COMMISSION_RATE": 0.0005,
+     "COMMISSION_MIN": 3.0,
+     "SLIPPAGE": 0.0005,
+     "SETTLEMENT_LAG": 2,
+     "DISTRIBUTION_LAG": 20,
+     "ANNUALISATION": 252,
+     "HALF_SPREAD": {
+      "SYN_A": 0.001,
+      "SYN_B": 0.0015,
+      "SYN_W": 0.001
+     }
+    }
+   }
+  },
+  "config_hashes": {
+   "strategy_V1": "f1b2d0363745d80b06f962830f6b73f51b13774a4b1aac7bbf90a20cb93c89c4",
+   "strategy_V2": "d2f4fde2dd2c87bdc8de42010ba3cf71af5c6184aba759f3c78a84c9be0542d4",
+   "baseline_sixty_forty": "b019a4fee7f94b54e4d7232ae634c815e498dad0601da11f633e7c6761411736"
+  },
+  "note": "COST_MULTIPLIER is not part of the configuration; it is a separate run field checked against the registered set."
+ }
+}
