@@ -42,20 +42,20 @@ There is no commission maximum and no stamp duty in v1.x. Both are UNVERIFIED in
   - `open = None` means no open is known for that session; the record's close is still required and valid.
   - **An absent observation is the absence of a record.** No record for an instrument at a session means no open and no close there: a gap (data spec §3). A record whose `close` is `None` is an **invalid supplied price** (`DATA_INVALID_PRICE`), not a gap, and is refused at admission (§2.2).
   - Consequence: a buy can only fill at a session with a record, and every record has a valid close, so a held instrument always has a known close from its first fill onward. "Last known close" (§3 step 4) is therefore always defined.
-  - Raw-dataset storage and CSV import are unchanged in v1.x: `write_raw_dataset` refuses any record with a non-`None` open (`DataStoreError("OPEN_PRICES_UNSUPPORTED", "prices")`) until a data card adds them to the raw-dataset schema (§12).
+  - Raw-dataset storage: schema v1 refuses any non-`None` open (`OPEN_PRICES_UNSUPPORTED`); schema v2 stores opens and pay dates (data spec §8.4.1, v1.3).
 - **Distribution records** and **jump exceptions:** as in the data spec.
 - **`universe`, `asset_class`, `HALF_SPREAD`:** for every instrument any generator may trade.
 
 ### 2.1.1 From a raw dataset (v1.3)
 
-`market_from_raw(raw_dataset, exceptions_snapshot) -> Market` is the **only** route from stored data to the simulator. It requires a schema-v2 dataset (`BacktestInputError("BACKTEST_RAW_SCHEMA")` for v1) and builds the market as follows:
-- the calendar is the dataset's calendar;
-- prices, with their opens, and distributions, with their pay dates, are passed through unchanged;
-- exceptions come from the parsed snapshot (registry spec §5 exceptions-file format), with its version.
+`market_from_raw(dataset_dir, exceptions, exceptions_version) -> (Market, manifest)` is the **only** route from stored data to the simulator.
+- It calls `read_raw_dataset(dataset_dir)` itself, so every check of data spec §8.4 runs and the schema comes from the **validated manifest**, never from the caller (data spec §8.4.1). A v1 dataset gives `BacktestInputError("BACKTEST_RAW_SCHEMA")`.
+- `exceptions` is an already-parsed tuple of `JumpException`s, and `exceptions_version` its version string. This card defines no file parser: the registry (T-009) parses the exceptions file and passes the result in, so the two cards share no new code.
+- The market's calendar is the dataset's calendar. Prices, with their opens, and distributions, with their pay dates, pass through unchanged.
 
-It never fills, adjusts or drops a record; admission (§2.2) then validates. Real-data use stays refused by the registry until the Gate 3 statistics card enables `SUPPORTED_REAL_SCHEMAS`.
+It never fills, adjusts or drops a record; admission (§2.2) then validates. Real-data use stays refused by the registry until the Gate 3 statistics card enables `SUPPORTED_REAL_SCHEMAS` (§12).
 
-Admission also refuses a distribution whose `pay_date` is earlier than its `ex_date` (`BACKTEST_PAY_DATE`).
+Admission also gives `BACKTEST_PAY_DATE` for a distribution whose `pay_date` is not `None` and is either not a `date` (including a `datetime`) or earlier than its `ex_date`. Like every admission check, this applies only to the run's instruments and records dated ≤ `end`; others are ignored.
 
 ### 2.2 Admission (before the first session)
 
@@ -97,6 +97,7 @@ For each session `d` from `start` to `end`, in order:
 1. **Settle.** Every unsettled lot whose settlement session is `d` or earlier moves to settled cash. Lags are ≥ 1, so a lot created during `d` never settles at `d`. Lots due after `end`, including beyond the supplied calendar, stay unsettled and are counted in NAV (BT10).
 2. **Distributions.** For each instrument with a distribution whose `ex_date = d`: the entitled shares are the holding **at the start of `d`**, before this session's fills. Cash = shares × amount in GBP. It is added as an unsettled lot. Shares bought at `d`'s open are **not** entitled. The lot's settlement session (v1.3):
    - **With `pay_date`:** the first session in `calendar` that is **after `d`** and **on or after `pay_date`**. A Saturday pay date settles on the next session; a pay date equal to the ex-date settles at the next session. If no such session exists in the supplied calendar, the lot never settles inside the run and stays in NAV as unsettled (BT13). `DISTRIBUTION_LAG` is not used.
+   - **This is a declared model, not a guarantee.** Settling at the **start** of the pay-date session assumes the cash is spendable at that morning's open. A broker that credits it later that day, or the next day, would make the simulator use it up to a session early. Before real use, this timing needs evidence or an owner-approved convention with a sensitivity check (§12).
    - **Without `pay_date`** (synthetic records only): `d + DISTRIBUTION_LAG` sessions, as in v1.2.
 3. **Fills at the open.** Orders produced at the previous session's decision are executed (§4): all sells first, then all buys, each group in ascending `id`. Orders live for exactly one session; nothing is carried forward.
 4. **Valuation at the close.**
@@ -270,3 +271,4 @@ Produced by Claude's independent calculator; tolerance 1e-12 relative, 1e-9 abso
 | Gate 3 statistics | Paired monthly ΔSR, stationary block bootstrap, walk-forward windows by calendar year, simpler-rule test | Any Gate 3 result |
 | Experiment registry | SQLite append-only rows (protocol §2), with code commit (clean-checkout rule), config hash, dataset ids and manifest digests | Any run on real data |
 | Pre-registration | `research/hypotheses/H-001` with variants V1–V3 (decisions 0008, 0010), frozen by the owner from evidence | Any run on real data |
+| **Real-data activation prerequisites** (the Gate 3 statistics card enables `SUPPORTED_REAL_SCHEMAS` only when all hold) | (1) **Dividend cash timing:** evidence of when IBKR makes dividend cash spendable relative to the pay date, **or** an owner-approved convention (for example, credit at the session after the pay date) plus a sensitivity run with a later credit. (2) **Point-in-time pay dates:** evidence that the stored pay dates are as announced on or before each ex-date, or a gate excluding retrospectively revised dates. (3) Gate 3 statistics merged. (4) H-001 frozen and registered | Any run on real data |

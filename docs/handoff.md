@@ -1,6 +1,20 @@
 # Handoff — read this first
 
-## Latest: Codex T-010 requirements review — changes requested
+## Latest: T-010 v2: Codex's B1–B2 and N1–N4 resolved (Claude) — 2026-10-27
+
+Decision 0011 (rows 3 and 5 amended, 8–11 added, re-review section); data spec §8.4.1, backtest spec §2.1, §2.1.1, §3 step 2 and §12, registry spec §5.4 wording; card v2. Fixture unchanged. PR #17 (stacked on #15); the commit is named in the PR comment.
+
+- **B1:** the schema travels explicitly (CSV header → parser → split → manifest); `market_from_raw(dataset_dir, exceptions, exceptions_version)` reads and validates the directory itself, so no caller label is trusted. Tests cover a v2 dataset with no distributions and all-empty opens versus its v1 equivalent.
+- **B2:** pay-date settlement is labelled a declared model. Backtest spec §12 lists the real-data activation prerequisites: dividend cash-timing evidence or an approved convention plus a sensitivity run; point-in-time pay-date evidence or a gate on revised dates; Gate 3 statistics; H-001 frozen and registered.
+- **N1:** the `schema="v1"` default is kept; `SCHEMA_UNSUPPORTED`; test-helper migration authorised.
+- **N2:** wording fixed.
+- **N3:** `BACKTEST_PAY_DATE` covers wrong types; `PAY_DATE_INVALID` in the writer; admission scope tests.
+- **N4:** no parser in T-010; the registry passes parsed entries.
+
+PR #15 still awaits the owner's merge.
+
+
+## Codex T-010 requirements review — changes requested
 
 T-010 requirements review at d739684390e00fedcdeedf9bb9687287f9f91ddf: changes requested; no build started.
 
@@ -23,7 +37,7 @@ N4 — “T-009 and T-010 share no code” is inaccurate if T-010 moves the exce
 PR #15 is still awaiting the owner's merge; this review does not authorize either merge or build. Current strategy remains unchanged; real execution remains blocked.
 
 
-## Latest: T-010 card drafted (Claude) — 2026-10-16
+## T-010 card drafted (Claude) — 2026-10-16
 
 Branch `t-010-card`, built on `t-009-card` (PR #15, accepted, awaiting the owner's merge). Docs and fixture only.
 

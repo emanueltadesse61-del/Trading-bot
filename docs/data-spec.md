@@ -197,11 +197,16 @@ Schema `trading-bot/raw-dataset/v2` is identical to v1 except:
 
 Rules:
 - `dataset_id` uses the same formula with the v2 schema string, so a v2 dataset never shares an id with a v1 one.
-- `read_raw_dataset` reads **both** schemas. v1 records get `open = None` and `pay_date = None`. A v2 dataset additionally requires every `pay_date ≥ ex_date` (`DATASET_MANIFEST_MISMATCH`, field `pay_date`).
-- `write_raw_dataset(dataset, directory, *, provenance, schema)` takes `schema` as `"v1"` or `"v2"`, with no default:
-  - **v1** keeps refusing non-`None` opens (`OPEN_PRICES_UNSUPPORTED`) and refuses any `pay_date` (`PAY_DATES_UNSUPPORTED`);
-  - **v2** requires a `pay_date` on every distribution (`DATASET_MANIFEST_MISMATCH`, field `pay_date`).
-- Partition rules (§8.4) still apply to market events only: `date` and `ex_date`, not `open` or `pay_date`. A development distribution whose `pay_date` falls on or after `holdout_start` is allowed: the payment date was announced before the ex-date and carries no later price information.
+- **The schema is carried explicitly, never inferred from the records.** A v2 dataset whose opens are all `None` and which has no distributions has the same record content as a v1 dataset. The version therefore always travels with the data:
+  - **CSV header → parse:** the private parser returns the parsed records **and** the CSV version (`"v1"` or `"v2"`) taken from the header.
+  - **Parse → partitions:** `trader-split` writes both partitions with that version.
+  - **Stored dataset → reader:** the version is the validated manifest's `schema`.
+  - **Reader → simulator:** `market_from_raw` takes the dataset **directory** and reads the schema from the validated manifest itself (backtest spec §2.1.1). No caller-supplied label is ever trusted.
+- `read_raw_dataset` reads **both** schemas. v1 records get `open = None` and `pay_date = None`. A v2 dataset additionally requires every `pay_date` to be a `date` (not a `datetime`) with `pay_date ≥ ex_date` (`DATASET_MANIFEST_MISMATCH`, field `pay_date`).
+- `write_raw_dataset(dataset, directory, *, provenance, schema="v1")`. **The default stays `"v1"` for compatibility:** every existing call keeps its exact behaviour and bytes, and v1 can't silently drop data because it refuses opens and pay dates. Any value other than `"v1"` or `"v2"` gives `DataStoreError("SCHEMA_UNSUPPORTED", "schema")`.
+  - **v1** keeps refusing non-`None` opens (`OPEN_PRICES_UNSUPPORTED`) and refuses any non-`None` `pay_date` (`PAY_DATES_UNSUPPORTED`);
+  - **v2** requires every distribution's `pay_date` to be a `date` (not a `datetime`) and ≥ its `ex_date` (`PAY_DATE_INVALID`, for missing, wrong type or before the ex-date).
+- Partition rules (§8.4) still apply to market events only: `date` and `ex_date`, not `open` or `pay_date`. A development distribution whose `pay_date` falls on or after `holdout_start` is allowed **on condition** that the pay date was announced on or before the ex-date, so it carries no later price information. That condition is evidence the owner must provide before real use (backtest spec §12, decision 0011 row 9). It is not assumed for revised pay dates.
 
 **CSV format v2** (canonical import, T-007 extended). The version is chosen by the `prices.csv` header, and `distributions.csv` must match it (otherwise `IMPORT_BAD_HEADER`):
 
