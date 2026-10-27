@@ -1,5 +1,26 @@
 # Handoff — read this first
 
+## Latest: T-009 implementation ready for Claude; T-010 requirements accepted — 2026-10-27
+
+Owner merged PR #15 as `6b68a875c5ef85dbad98c35c9e68ff22fa4f11c7`, preserving accepted handoff `de8f8dc`. Codex implemented T-009 from that main on `t-009-registry`; implementation commit **`ee9dd674808b7a9c229213b4f2903d97a317bd08`**. This handoff-only commit follows it; the implementation PR names its exact final review head and CI results. State: **Review (Claude)**, not accepted or merged.
+
+Implemented registry spec v1.2.1: strict hypothesis and exception parsing, resolved-value validation, immutable executable descriptors, durable registration/trial counts, SQLite hash chain and lifecycle checks, committed-HEAD checkpoints, two-transaction synthetic runs, fully checked but disabled real-run path, summaries and `trader-registry` CLI. README documents checkpoint policy and limits. No existing source outside the registry changed; only the CLI entry point was added. No prior tests, fixtures, strategy settings or H-001 changed.
+
+Verification on the clean implementation commit:
+- `.venv/bin/uv sync --locked`: passed; lockfile unchanged.
+- `.venv/bin/ruff check .`: passed.
+- `.venv/bin/pytest -q`: **888 passed** (809 existing + 79 registry acceptance tests).
+- `.venv/bin/trader-registry --help`: installed entry point works.
+- `git diff --check`: passed.
+
+Coverage includes all 5 reference-chain rows, 8 tamper cases and 3 config hashes; malformed/value-invalid preregistrations; durable counts and all real-run pin refusals; a matching v1 development dataset refused without invoking the simulator; recorded descriptors actually passed to factories; all baseline factories; non-empty approval round-trip and shared digest; SQL triggers; committed-checkpoint reads; a child `os._exit` leaving a committed unfinished start visible to a separate connection; logging failure chaining; and two processes competing at 19 trials, with exactly one registration and the other refused at 21.
+
+The first uncommitted full-suite run stopped only at the existing `SPLIT_DIRTY_CHECKOUT` guard; after committing, all tests passed without changing that guard or its tests. Synthetic temporary registries only, including deliberately failed/unfinished runs; no research experiments, real/holdout data, network market access, broker access, funding or permanent registry/checkpoint. H-001 remains draft and unregistered; `SUPPORTED_REAL_SCHEMAS` remains empty. The growth proposal remains undecided.
+
+**T-010 v2 requirements accepted** at **`a282423c7849e2657f0659780b40f622d3776dab`**, PR #17. [Codex review](https://github.com/emanueltadesse61-del/Trading-bot/pull/17#pullrequestreview-5663945734). B1–B2 and N1–N4 resolved: explicit schema propagation and validated-directory bridge; declared dividend settlement model with activation evidence; v1 compatibility and helper-only test migration; scoped pay-date validation; T-009 owns the exceptions parser. Independent Decimal calculation reproduced BT13 cash/holdings/NAV across all 15 sessions (final settled 9,016.50, unsettled 10, NAV 10,026.50); earlier fixture sections unchanged. CI push `40470217126` and PR `40470220804` passed at that exact head. Requirements acceptance only: no T-010 implementation started, and owner merge remains separate.
+
+Next: Claude reviews T-009's exact PR head against the accepted card and reference vectors. Owner controls merges. T-010 may be implemented after its accepted card is merged/authorised; it must keep real execution disabled until Gate 3 statistics and the activation evidence are in place.
+
 ## Latest: Codex accepts T-009 v3.1 requirements
 
 Accepted at `018157b82fd73635c07bcbd469fc27d9c410634b` (PR #15), registry spec v1.2.1. B1–B7 resolved; no remaining blocking findings. This is requirements acceptance, not implementation acceptance.
