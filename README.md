@@ -125,7 +125,7 @@ records and an exchange calendar, a generator with explicit instruments, and
 and `end` and either `schedule="weekly"`/`"monthly"` or explicit `decision_dates`.
 Results contain the daily ledger, decisions, descriptive metrics, anomaly totals
 and input provenance. Strategy generation reuses the accepted portfolio engine.
-Only synthetic use is supported at this stage. Registry, Gate 3 statistics and
+Only synthetic use is supported at this stage. Gate 3 statistics and
 real-data opens/pay-date prerequisites remain separate cards. Raw storage rejects
 non-None opens with `OPEN_PRICES_UNSUPPORTED`; CSV headers remain unchanged.
 
@@ -135,3 +135,61 @@ market snapshot unchanged. If supplied, generator approval arguments are asserti
 that must match the market snapshot/version; conflicts raise `BACKTEST_PARAMS`.
 `rebalance` trades only target keys: an omitted held instrument is retained; an
 explicit zero target requests an exit. Baselines report `BLOCKED_NAV` for NAV ≤ 0.
+
+## Running backtests through the registry
+
+`trader.registry` implements registry spec v1.2.1. `run_synthetic` accepts an
+immutable `RunDescriptor`, a synthetic `Market`, an ISO-string `period` object,
+a cost multiplier and a note. All instrument ids must start with `SYN_`; this
+convention is a test guard, not permission to relabel real data. The descriptor
+contains the complete configuration defined in registry spec §2. Its values
+construct the accepted generator and simulator parameters; opaque or scripted
+generators cannot supply registry provenance. The returned `RecordedRun` holds
+the backtest result, run id, durable trial count and checkpoint used.
+
+Create a disposable registry **outside the repository** for synthetic work:
+
+```bash
+uv run trader-registry init /tmp/trader-synthetic-registry.sqlite
+uv run trader-registry verify /tmp/trader-synthetic-registry.sqlite
+uv run trader-registry checkpoint /tmp/trader-synthetic-registry.sqlite
+```
+
+Initialization refuses an existing file. Each command prints JSON. For a manual
+checkpoint comparison, save the printed head outside the repository, then use
+`verify PATH --checkpoint FILE` or `summary PATH --checkpoint FILE`. Summary
+includes completed, failed, unfinished and superseded runs. These commands do
+not create or commit `research/registry-checkpoint.json`.
+
+Each run start commits **before** simulation; its finish commits separately.
+An ordinary failure is recorded and re-raised. Process death leaves a visible
+unfinished run. A rerun may name an earlier run with the same hypothesis,
+configuration and kind in `supersedes`; it never erases that earlier run.
+
+`parse_preregistration` checks the strict JSON block, every resolved variant,
+and costs at every declared multiplier. `register_hypothesis` requires a clean
+checkout, a committed, complete frozen hypothesis and a committed checkpoint.
+Registration permanently consumes its strategy-variant count from the 20-trial
+budget, even if the file is later deleted or demoted. Baselines and synthetic
+runs do not consume trials. H-001 remains draft and unregistered in this build.
+
+Write operations read their checkpoint from **committed HEAD**, never a caller's
+file or working-tree edit. The clock (zero-argument ISO UTC string function), Git
+access (`root`, `commit()`, `clean()`, `committed(relative_path)`), checkpoint
+provider (`provider(git)`) and hypothesis resolver (`resolver(parsed_contract)`)
+are injectable for synthetic tests. The production defaults use the checkout's
+Git objects. `run_registered` accepts neither a custom configuration nor period;
+it checks registration, file and config hashes, declared costs, dataset identity,
+development partition and approval snapshot. **Real execution is disabled**:
+`SUPPORTED_REAL_SCHEMAS` is empty, so even a fully matching request ends with
+`REGISTRY_REAL_DATA_UNSUPPORTED`, without a start row or simulator call.
+
+Before future real use, the owner initializes the permanent external registry
+and commits its initial checkpoint through review. The policy then requires a
+new committed checkpoint after **every registration and every real-run session**;
+a Gate 3 report must cite a checkpoint covering every run it uses. The registry
+id cannot be reset without an explicit owner decision. Hash verification detects
+edits and middle deletions. A checkpoint also detects truncation up to its saved
+head and replacement of the registry. Deletion **after** that checkpoint remains
+undetectable; verification without one proves only internal consistency. This
+is tamper evidence relative to a trusted checkpoint, not authenticity or a backup.
