@@ -1,6 +1,12 @@
 # Handoff — read this first
 
-## Latest: Claude accepts T-009 implementation — 2026-10-27
+## Latest: PRs #18 and #17 merged (Claude) — 2026-10-27
+
+The owner instructed "merge both". PR #18 (T-009 implementation, accepted by Claude at `614d745`) was merged as `5ae4ade`, pinned to `50c7c8c`. Main was then merged into `t-010-card` for PR #17 (T-010 card, accepted by Codex at `a282423`), docs only, with both handoff records kept below. The T-010 card, specs and fixture are unchanged from `a282423`.
+
+**Next:** Codex implements T-010 from main. Claude drafts T-011 (owner-run IBKR price export) and the Gate 3 statistics card. The growth pivot (draft PR #16) is undecided.
+
+## Claude accepts T-009 implementation — 2026-10-27
 
 **Accepted at `614d7457be8f54f521886201f9864ffe4ae93c8e`; no blocking findings** (review on PR #18).
 
@@ -39,6 +45,56 @@ The first uncommitted full-suite run stopped only at the existing `SPLIT_DIRTY_C
 **T-010 v2 requirements accepted** at **`a282423c7849e2657f0659780b40f622d3776dab`**, PR #17. [Codex review](https://github.com/emanueltadesse61-del/Trading-bot/pull/17#pullrequestreview-5663945734). B1–B2 and N1–N4 resolved: explicit schema propagation and validated-directory bridge; declared dividend settlement model with activation evidence; v1 compatibility and helper-only test migration; scoped pay-date validation; T-009 owns the exceptions parser. Independent Decimal calculation reproduced BT13 cash/holdings/NAV across all 15 sessions (final settled 9,016.50, unsettled 10, NAV 10,026.50); earlier fixture sections unchanged. CI push `40470217126` and PR `40470220804` passed at that exact head. Requirements acceptance only: no T-010 implementation started, and owner merge remains separate.
 
 Next: Claude reviews T-009's exact PR head against the accepted card and reference vectors. Owner controls merges. T-010 may be implemented after its accepted card is merged/authorised; it must keep real execution disabled until Gate 3 statistics and the activation evidence are in place.
+## T-010 v2: Codex's B1–B2 and N1–N4 resolved (Claude) — 2026-10-27
+
+Decision 0011 (rows 3 and 5 amended, 8–11 added, re-review section); data spec §8.4.1, backtest spec §2.1, §2.1.1, §3 step 2 and §12, registry spec §5.4 wording; card v2. Fixture unchanged. PR #17 (stacked on #15); the commit is named in the PR comment.
+
+- **B1:** the schema travels explicitly (CSV header → parser → split → manifest); `market_from_raw(dataset_dir, exceptions, exceptions_version)` reads and validates the directory itself, so no caller label is trusted. Tests cover a v2 dataset with no distributions and all-empty opens versus its v1 equivalent.
+- **B2:** pay-date settlement is labelled a declared model. Backtest spec §12 lists the real-data activation prerequisites: dividend cash-timing evidence or an approved convention plus a sensitivity run; point-in-time pay-date evidence or a gate on revised dates; Gate 3 statistics; H-001 frozen and registered.
+- **N1:** the `schema="v1"` default is kept; `SCHEMA_UNSUPPORTED`; test-helper migration authorised.
+- **N2:** wording fixed.
+- **N3:** `BACKTEST_PAY_DATE` covers wrong types; `PAY_DATE_INVALID` in the writer; admission scope tests.
+- **N4:** no parser in T-010; the registry passes parsed entries.
+
+PR #15 still awaits the owner's merge.
+
+
+## Codex T-010 requirements review — changes requested
+
+T-010 requirements review at d739684390e00fedcdeedf9bb9687287f9f91ddf: changes requested; no build started.
+
+Independent checks: BT13 matches every ledger field. Saturday payment credits Monday 15 Jan; same-ex-date payment credits Tuesday 16 Jan; the 2 Feb payment remains unsettled at the 26 Jan end. Earlier simulator, schedule, rebalancer, metric and invalid-input fixture sections are JSON-identical to de8f8dc. Independent calculator /tmp/review_t010.py also reproduced all 11 earlier simulator cases, schedules, RB1–RB4 and MT1. No market data used.
+
+B1 — Schema provenance is missing from the proposed bridge's input.
+market_from_raw(raw_dataset, exceptions_snapshot) must reject v1 and accept v2, but accepted RawDataset has only prices/distributions/calendar/declarations/partition/holdout_start; read_raw_dataset returns the manifest separately. Neither RawDataset nor ParsedImport carries a schema version. A v2 dataset with all opens None and no distributions has exactly the same record content as a v1 dataset, so inspecting fields cannot distinguish them. Likewise trader-split cannot infer the original CSV version from an empty-distributions/all-missing-opens import.
+Specify explicit schema propagation from header -> parsed import -> partitions -> read result -> bridge, or change the bridge to consume a validated dataset-plus-manifest envelope. Do not infer version from non-None records or let an unverified caller label substitute for manifest validation. Include empty-distribution and all-None-open tests proving v2 remains v2 and an equivalent v1 is refused; preserve v1 byte identities.
+
+B2 — A date-only payment field does not prove cash is available at that session's open.
+The rule credits cash at the start of the pay-date session before fills. For an ordinary weekday pay date, an account credited later that same day would nevertheless fund a morning buy in this simulator. A payment date alone cannot distinguish those two cases. The spec also assumes every final historical pay date was announced before ex-date, but neither the declarations nor event schema establishes this.
+Keep BT13 as a test of the declared model if desired, but explicitly label same-pay-date opening availability as an assumption, not a guarantee that cash is never used early. Before real activation, require evidence of broker spendable-cash timing or an owner-approved lag/next-session convention with a sensitivity check. Specify evidence that exported pay dates reflect the schedule known at ex-date, or explicitly gate use of retrospectively revised dates. Pay_date can remain an event attribute exempt from holdout partitioning; the exemption needs a stated point-in-time evidence condition. No network/broker work is requested in T-010.
+
+Contract cleanups to settle with the revision:
+N1 — Requiring schema with no default breaks every existing write_raw_dataset call (including tests); adding pay_date also changes asdict-based CSV test exporters. “Existing tests unchanged and pass” cannot coexist with this API change. Choose compatibility or explicitly authorize mechanical caller/helper migrations while keeping all prior assertions and fixture answers. Also name the error for unknown schema arguments.
+N2 — Backtest §2.1 still says raw storage refuses every non-None open until a later card, contradicting the new v2 support. Registry §5.4 still says the open-prices card enables SUPPORTED_REAL_SCHEMAS whereas T-010 now defers activation to statistics; align it without enabling real runs. Decision 0011 row 3 references decision 0010 row 18, which does not establish the lag rule (the relevant discussion was decision 0009).
+N3 — Define BACKTEST_PAY_DATE for wrong-type non-None values, not only pay_date < ex_date, to avoid unlabelled TypeError for direct canonical inputs. Specify v2 writer validation of both missing and pre-ex-date payments and tests for invalid pay dates outside the run instrument/end scope being ignored consistently with admission.
+N4 — “T-009 and T-010 share no code” is inaccurate if T-010 moves the exceptions parser into trader.data for registry reuse. Assign that shared parser location/ownership before parallel builds, or make that small integration sequential. The accepted digest and approved-string contract must remain unchanged.
+
+PR #15 is still awaiting the owner's merge; this review does not authorize either merge or build. Current strategy remains unchanged; real execution remains blocked.
+
+
+## T-010 card drafted (Claude) — 2026-10-16
+
+Branch `t-010-card`, built on `t-009-card` (PR #15, accepted, awaiting the owner's merge). Docs and fixture only.
+
+Contents:
+- **Data spec v1.3:** optional `open` and `pay_date`; raw-dataset schema v2 and CSV v2 (§8.4.1); §10 row updated.
+- **Backtest spec v1.3:** pay-date settlement (first session after the ex-date on or after the pay date); `market_from_raw` (v2 only); `BACKTEST_PAY_DATE`.
+- **Fixture v1.3:** adds BT13 (Saturday, same-day and beyond-calendar pay dates) from Claude's calculator; all earlier cases unchanged.
+- **Decision 0011:** the design choices. Real runs stay refused until the Gate 3 statistics card. Distribution history comes from issuer sources; the IBKR export is T-011.
+- **`docs/tasks/T-010-opens-pay-dates.md`.**
+
+The growth pivot (draft PR #16) is undecided; the current strategy is unchanged.
+
 
 ## Codex accepts T-009 v3.1 requirements
 

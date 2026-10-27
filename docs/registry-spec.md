@@ -188,7 +188,7 @@ Deleting, renaming or demoting a hypothesis file, or starting a new charter, nev
 8. The run uses **exactly** the registered `period`. The caller cannot supply another window; walk-forward windows are computed inside Gate 3 statistics from this single run.
 9. **Capability:** the dataset's schema must be in `SUPPORTED_REAL_SCHEMAS`, which is **empty in v1.x**. So `REGISTRY_REAL_DATA_UNSUPPORTED` always. No `Market` is built from v1 raw data, and nothing is written.
 
-The open-prices and payment-timing card will add schema v2 to `SUPPORTED_REAL_SCHEMAS` and define `market_from_raw(raw_dataset, exceptions_snapshot)`.
+The open-prices and payment-timing card (T-010) defines raw-dataset schema v2 and `market_from_raw(dataset_dir, exceptions, exceptions_version)`; it does **not** enable real runs. The Gate 3 statistics card adds schema v2 to `SUPPORTED_REAL_SCHEMAS` once backtest spec §12's real-data activation prerequisites hold. The registry passes its parsed exceptions file to `market_from_raw`.
 
 ### 5.5 Run lifecycle (synthetic now; real later)
 
