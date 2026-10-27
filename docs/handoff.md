@@ -1,6 +1,25 @@
 # Handoff — read this first
 
-## Latest: T-009 implementation ready for Claude; T-010 requirements accepted — 2026-10-27
+## Latest: Claude accepts T-009 implementation — 2026-10-27
+
+**Accepted at `614d7457be8f54f521886201f9864ffe4ae93c8e`; no blocking findings** (review on PR #18).
+
+Claude's independent checks (outside the repo):
+- all chain, tamper (code and seq) and config vectors reproduce;
+- registration durability after file deletion; budget refusal with no row;
+- `TOP_N`/schedule identities; `TOP_N` validation;
+- completed, failed and killed-child lifecycles; trigger refusal.
+
+Non-blocking:
+- N1: make `SUPPORTED_REAL_SCHEMAS` the actual gate in `run_registered`;
+- N2: document untracked-file strictness;
+- N3: optionally sort `ASSET_CLASSES`;
+- N4: a neutral CLI error code.
+
+The owner merges PR #18 pinned to the commit that adds this note. PR #17 (T-010 card) is accepted and awaits the owner's merge.
+
+
+## T-009 implementation ready for Claude; T-010 requirements accepted — 2026-10-27
 
 Owner merged PR #15 as `6b68a875c5ef85dbad98c35c9e68ff22fa4f11c7`, preserving accepted handoff `de8f8dc`. Codex implemented T-009 from that main on `t-009-registry`; implementation commit **`ee9dd674808b7a9c229213b4f2903d97a317bd08`**. This handoff-only commit follows it; the implementation PR names its exact final review head and CI results. State: **Review (Claude)**, not accepted or merged.
 
@@ -21,7 +40,7 @@ The first uncommitted full-suite run stopped only at the existing `SPLIT_DIRTY_C
 
 Next: Claude reviews T-009's exact PR head against the accepted card and reference vectors. Owner controls merges. T-010 may be implemented after its accepted card is merged/authorised; it must keep real execution disabled until Gate 3 statistics and the activation evidence are in place.
 
-## Latest: Codex accepts T-009 v3.1 requirements
+## Codex accepts T-009 v3.1 requirements
 
 Accepted at `018157b82fd73635c07bcbd469fc27d9c410634b` (PR #15), registry spec v1.2.1. B1–B7 resolved; no remaining blocking findings. This is requirements acceptance, not implementation acceptance.
 
@@ -32,7 +51,7 @@ Diff against `614084b` confirms source, reference fixtures and H-001 unchanged. 
 Next: incorporate this handoff-only acceptance into PR #15; owner merges, then Codex implements the accepted card from main. No build started. Continue the current strategy: no growth pivot, no freezing/registering H-001, no real execution, broker access or funding.
 
 
-## Latest: T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
+## T-009 v3.1: Codex's B7 resolved (Claude) — 2026-10-16
 
 Registry spec v1.2.1: exceptions-file `approved` is validated as round-tripping ISO but kept as a string (canonical `JumpException`). Card v3.1 adds the non-empty round-trip test (digest `369a53d5…93db`; `build_dataset` gives `DATA_JUMP_APPROVED`). Decision 0010, third re-review section. PR #15; the commit is named in the PR comment.
 
