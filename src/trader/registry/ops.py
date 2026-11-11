@@ -286,6 +286,8 @@ def run_registered(
             "exceptions"
         ]:
             raise RegistryError("REGISTRY_EXCEPTIONS_MISMATCH")
-        # No adapter or simulator call exists here. Even fully matching v1 data
-        # lacks executable opening prices. Future capability needs its own card.
-        raise RegistryError("REGISTRY_REAL_DATA_UNSUPPORTED", manifest["schema"])
+        if manifest["schema"] not in SUPPORTED_REAL_SCHEMAS:
+            raise RegistryError("REGISTRY_REAL_DATA_UNSUPPORTED", manifest["schema"])
+        # The capability set remains empty. Gate 3 must implement registered
+        # execution before adding any schema; an accidental opt-in stays blocked.
+        raise NotImplementedError("Real execution requires the Gate 3 activation card")

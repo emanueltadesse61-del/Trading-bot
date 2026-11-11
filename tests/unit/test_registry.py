@@ -638,7 +638,8 @@ def test_supersedes_and_synthetic_guard(env):
     assert verify_registry(env[0]) == before
 
 
-def test_real_bindings_before_any_append(env, monkeypatch):
+@pytest.mark.parametrize("schema", ["v1", "v2"])
+def test_real_bindings_before_any_append(env, monkeypatch, schema):
     path, git, h, file, _ = env
     args = real_args(env)
     s = snapshot(args["exceptions_file"])
@@ -659,6 +660,7 @@ def test_real_bindings_before_any_append(env, monkeypatch):
     write_raw_dataset(
         raw,
         args["dataset_dir"],
+        schema=schema,
         provenance={
             "source": "synthetic",
             "adapter_version": "test",
@@ -710,6 +712,12 @@ def test_real_bindings_before_any_append(env, monkeypatch):
     error("REGISTRY_EXCEPTIONS_MISMATCH", run_registered, **args)
     args["exceptions_file"].write_text("{}")
     error("REGISTRY_EXCEPTIONS_FORMAT", run_registered, **args)
+    assert verify_registry(path) == before
+
+    snapshot(args["exceptions_file"])
+    monkeypatch.setattr(ops, "SUPPORTED_REAL_SCHEMAS", frozenset({manifest["schema"]}))
+    with pytest.raises(NotImplementedError, match="Gate 3"):
+        run_registered(**args)
     assert verify_registry(path) == before
 
 

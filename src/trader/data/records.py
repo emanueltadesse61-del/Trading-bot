@@ -19,6 +19,7 @@ class DistributionRecord:
     ex_date: date
     amount: float
     unit: str
+    pay_date: date | None = None
 
 
 @dataclass(frozen=True)
