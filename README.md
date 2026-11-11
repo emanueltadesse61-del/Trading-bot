@@ -48,6 +48,28 @@ The source directory requires four UTF-8 without BOM, comma-separated files:
 | `calendar.csv` | `date` |
 | `declarations.csv` | `instrument,price_semantics,distributions_complete,corporate_actions_none_through,evidence_source,checked_on` |
 
+T-010 also supports CSV v2. Calendar and declaration headers are unchanged;
+both market files must use matching versions:
+
+| File | v2 header |
+|---|---|
+| `prices.csv` | `instrument,date,open,close,unit` |
+| `distributions.csv` | `instrument,ex_date,pay_date,amount,unit` |
+
+An empty `open` means unknown; supplied opens must be finite decimal numbers.
+Every v2 distribution needs an ISO `pay_date` on or after its ex-date. Distribution
+histories come from issuer sources with owner-recorded evidence; price bars alone
+do not provide them. Pay dates after the holdout boundary may accompany earlier
+ex-dates, subject to the point-in-time evidence requirement below.
+
+The private parser returns `(ParsedImport, "v1" | "v2")`. `trader-split` carries
+that header-derived version to both manifests, including header-only distributions
+and all-empty opens. The public `import_csv` signature and `RawDataset` return
+type are unchanged. `write_raw_dataset(..., schema="v1")` retains its default
+and v1 bytes. Select `schema="v2"` explicitly for rich records; v1 refuses opens
+and pay dates instead of dropping them. V2 refuses missing, wrongly typed or
+pre-ex-date pay dates. The reader validates both schemas.
+
 Dates use `YYYY-MM-DD`. Units are the feed's original labels (`GBP` or `GBX`),
 never guessed. A header-only distributions file means confirmed no cash payments,
 not a missing export. Each source instrument requires one evidence-backed
@@ -119,15 +141,33 @@ changed record across the two partitions; neither output is published.
 
 ## Synthetic backtest machinery
 
-`trader.backtest` implements backtest spec v1.2. Construct `Market` with canonical
+`trader.backtest` implements backtest spec v1.3. Construct `Market` with canonical
 records and an exchange calendar, a generator with explicit instruments, and
 `BacktestParams(HALF_SPREAD=...)`. Call `run_backtest` with date-valued `start`
 and `end` and either `schedule="weekly"`/`"monthly"` or explicit `decision_dates`.
 Results contain the daily ledger, decisions, descriptive metrics, anomaly totals
 and input provenance. Strategy generation reuses the accepted portfolio engine.
-Only synthetic use is supported at this stage. Gate 3 statistics and
-real-data opens/pay-date prerequisites remain separate cards. Raw storage rejects
-non-None opens with `OPEN_PRICES_UNSUPPORTED`; CSV headers remain unchanged.
+Only synthetic use is supported at this stage. Gate 3 statistics and the
+real-data activation evidence remain prerequisites.
+
+`market_from_raw(dataset_dir, exceptions, exceptions_version)` reads and validates
+the directory itself and returns `(Market, manifest)`. Only raw schema v2 is
+accepted; v1 gives `BACKTEST_RAW_SCHEMA`. The bridge preserves the records and
+parsed approval snapshot. No caller-supplied schema label is accepted. Simulator
+admission still checks market quality; storage integrity is not trading validity.
+
+Dividend cash settles at the first supplied session **after the ex-date** and
+**on or after the pay date**. Weekend dates move to the next session, and same-day
+payments wait until the next session. Cash due beyond the run remains unsettled
+in NAV. Synthetic distributions without pay dates retain `DISTRIBUTION_LAG`.
+Invalid types or pre-ex-date pay dates give `BACKTEST_PAY_DATE` for in-scope records.
+
+This is a **declared model**, not evidence that a broker credits cash before the
+pay-date open. Before real activation, backtest spec §12 requires cash-timing
+evidence or an owner-approved convention plus a later-credit sensitivity run,
+and evidence that pay dates were announced by ex-date (or a gate excluding
+retrospective revisions). Gate 3 statistics and a frozen, registered hypothesis
+are also required. None of that evidence is supplied by this build.
 
 Supply the frozen jump-approval snapshot and version on `Market`. The strategy
 generator defaults both optional approval arguments to `None`, so it uses that
@@ -169,6 +209,10 @@ configuration and kind in `supersedes`; it never erases that earlier run.
 `parse_preregistration` checks the strict JSON block, every resolved variant,
 and costs at every declared multiplier. `register_hypothesis` requires a clean
 checkout, a committed, complete frozen hypothesis and a committed checkpoint.
+The registry treats untracked, non-ignored files as dirty, as well as tracked
+edits. Ignored files do not mark it dirty. Keep temporary files outside the
+checkout or in an appropriate ignored location; never commit data or secrets to
+satisfy the guard. Synthetic runs may be dirty and record that fact.
 Registration permanently consumes its strategy-variant count from the 20-trial
 budget, even if the file is later deleted or demoted. Baselines and synthetic
 runs do not consume trials. H-001 remains draft and unregistered in this build.
@@ -183,6 +227,9 @@ it checks registration, file and config hashes, declared costs, dataset identity
 development partition and approval snapshot. **Real execution is disabled**:
 `SUPPORTED_REAL_SCHEMAS` is empty, so even a fully matching request ends with
 `REGISTRY_REAL_DATA_UNSUPPORTED`, without a start row or simulator call.
+The set is the actual capability check. Its unreachable supported branch raises
+`NotImplementedError` until the Gate 3 activation card implements registered
+execution. CLI failures without a more specific named code use `REGISTRY_CLI_ERROR`.
 
 Before future real use, the owner initializes the permanent external registry
 and commits its initial checkpoint through review. The policy then requires a

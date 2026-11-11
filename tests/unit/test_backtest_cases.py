@@ -30,7 +30,8 @@ def market_for(case):
         tuple(map(D, inputs["calendar"])),
         tuple(PriceRecord(**{**r, "date": D(r["date"])}) for r in inputs["prices"]),
         tuple(
-            DistributionRecord(**{**r, "ex_date": D(r["ex_date"])})
+            DistributionRecord(**{**r, "ex_date": D(r["ex_date"]),
+                                   "pay_date": D(r["pay_date"]) if r.get("pay_date") else None})
             for r in inputs["distributions"]
         ),
     )
@@ -55,7 +56,7 @@ def compare(actual, expected):
         assert actual == expected
 
 
-@pytest.mark.parametrize("case", FIXTURE["simulator_cases"], ids=lambda c: c["name"])
+@pytest.mark.parametrize("case", FIXTURE["simulator_cases"] + FIXTURE["pay_date_cases"], ids=lambda c: c["name"])
 def test_simulator_fixture(case):
     market, params, generator, dates = market_for(case)
     result = run_backtest(

@@ -13,7 +13,8 @@ import pyarrow.parquet as pq
 import pytest
 
 from trader.data import DataParams, build_dataset
-from trader.data.csv_import import HEADERS, _parse_csv_dir, import_csv
+from trader.data.csv_import import HEADERS, import_csv
+from trader.data.csv_import import _parse_csv_dir as _parse_csv_with_schema
 from trader.data.raw import (
     DataImportError,
     DataStoreError,
@@ -39,6 +40,11 @@ PROVENANCE = {
     "code_commit": "test",
     "retrieved_at": "2026-10-16T00:00:00Z",
 }
+
+
+def _parse_csv_dir(*args, **kwargs):
+    # Legacy assertions concern records; T-010 tests cover the version separately.
+    return _parse_csv_with_schema(*args, **kwargs)[0]
 
 
 def example():
@@ -85,6 +91,8 @@ def export(directory, parsed=None):
                 row = {"date": record} if type(record) is date else asdict(record)
                 if isinstance(record, PriceRecord):
                     assert row.pop("open") is None  # v1 CSV has no open column
+                if isinstance(record, DistributionRecord):
+                    assert row.pop("pay_date") is None  # v1 CSV has no pay-date column
                 row = {
                     k: (str(v).lower() if type(v) is bool else v)
                     for k, v in row.items()

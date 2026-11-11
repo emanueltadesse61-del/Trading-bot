@@ -35,7 +35,7 @@ def main(argv=None):
         print(
             json.dumps(
                 {
-                    "code": getattr(exc, "code", "REGISTRY_CHECKPOINT_MISMATCH"),
+                    "code": getattr(exc, "code", "REGISTRY_CLI_ERROR"),
                     "detail": getattr(exc, "detail", str(exc)),
                 }
             ),

@@ -44,6 +44,15 @@ SCHEMAS = {
         ]
     ),
 }
+SCHEMA_V2 = "trading-bot/raw-dataset/v2"
+SCHEMAS_V2 = {
+    **SCHEMAS,
+    "prices.parquet": SCHEMAS["prices.parquet"].append(pa.field("open", pa.float64())),
+    "distributions.parquet": SCHEMAS["distributions.parquet"].append(
+        pa.field("pay_date", pa.date32(), nullable=False)
+    ),
+}
+VERSIONS = {"v1": (SCHEMA, SCHEMAS), "v2": (SCHEMA_V2, SCHEMAS_V2)}
 SETTINGS = {
     "compression": "NONE",
     "row_group_size": 65536,
@@ -76,14 +85,15 @@ def _sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def dataset_identity(partition, holdout_start, files):
+def dataset_identity(partition, holdout_start, files, *, schema="v1"):
+    schema_name, schemas = _version(schema)
     return _sha(
         _json(
             {
-                "schema": SCHEMA,
+                "schema": schema_name,
                 "partition": partition,
                 "holdout_start": holdout_start,
-                "files": {name: files[name]["sha256"] for name in SCHEMAS},
+                "files": {name: files[name]["sha256"] for name in schemas},
             }
         )
     )
@@ -91,6 +101,20 @@ def dataset_identity(partition, holdout_start, files):
 
 def _fail(field):
     raise DataStoreError("DATASET_MANIFEST_MISMATCH", field)
+
+
+def _version(schema):
+    if not isinstance(schema, str) or schema not in VERSIONS:
+        raise DataStoreError("SCHEMA_UNSUPPORTED", "schema")
+    return VERSIONS[schema]
+
+
+def _valid_pay_date(record):
+    return (
+        type(record.pay_date) is date
+        and type(record.ex_date) is date
+        and record.pay_date >= record.ex_date
+    )
 
 
 def _validate_dataset(data):
@@ -157,13 +181,17 @@ def _provenance(value):
         _fail("retrieved_at")
 
 
-def _tables(data):
+def _tables(data, schemas=SCHEMAS):
     rows = {
         "prices.parquet": [asdict(r) for r in data.prices],
         "distributions.parquet": [asdict(r) for r in data.distributions],
         "calendar.parquet": [{"date": d} for d in data.calendar],
         "declarations.parquet": [asdict(r) for r in data.declarations],
     }
+    if schemas is SCHEMAS:
+        # Preserve the exact pre-v2 v1 row ordering and bytes.
+        for row in rows["distributions.parquet"]:
+            row.pop("pay_date")
     for name, records in rows.items():
         # Full-row tie-breaker keeps duplicate/invalid input order from changing
         # identity. Rows are preserved, never deduplicated or filled.
@@ -174,20 +202,26 @@ def _tables(data):
                 repr(sorted(r.items())),
             )
         )
-        yield name, pa.Table.from_pylist(records, schema=SCHEMAS[name])
+        yield name, pa.Table.from_pylist(records, schema=schemas[name])
 
 
-def write_raw_dataset(dataset, directory, *, provenance):
+def write_raw_dataset(dataset, directory, *, provenance, schema="v1"):
     """Write only into a new directory. CLI provides staging/publication."""
-    if any(r.open is not None for r in dataset.prices):
-        raise DataStoreError("OPEN_PRICES_UNSUPPORTED", "prices")
+    schema_name, schemas = _version(schema)
+    if schema == "v1":
+        if any(r.open is not None for r in dataset.prices):
+            raise DataStoreError("OPEN_PRICES_UNSUPPORTED", "prices")
+        if any(r.pay_date is not None for r in dataset.distributions):
+            raise DataStoreError("PAY_DATES_UNSUPPORTED", "pay_date")
+    elif any(not _valid_pay_date(r) for r in dataset.distributions):
+        raise DataStoreError("PAY_DATE_INVALID", "pay_date")
     _validate_dataset(dataset)
     _provenance(provenance)
     directory = Path(directory)
     directory.mkdir()  # never overwrite or remove a pre-existing destination
     try:
         files = {}
-        for name, table in _tables(dataset):
+        for name, table in _tables(dataset, schemas):
             path = directory / name
             pq.write_table(table, path, **SETTINGS)
             with path.open("rb") as stream:
@@ -196,11 +230,13 @@ def write_raw_dataset(dataset, directory, *, provenance):
         boundary = dataset.holdout_start.isoformat() if dataset.holdout_start else None
         date_range, instruments = _summary(dataset)
         manifest = {
-            "schema": SCHEMA,
+            "schema": schema_name,
             "partition": dataset.partition,
             "holdout_start": boundary,
             "files": files,
-            "dataset_id": dataset_identity(dataset.partition, boundary, files),
+            "dataset_id": dataset_identity(
+                dataset.partition, boundary, files, schema=schema
+            ),
             "date_range": date_range,
             "instruments": instruments,
             **provenance,
@@ -254,8 +290,12 @@ def read_raw_dataset(directory):
         }
         if not isinstance(manifest, dict) or set(manifest) != expected:
             _fail(field)
-        if manifest["schema"] != SCHEMA:
+        version = next(
+            (v for v, (name, _) in VERSIONS.items() if name == manifest["schema"]), None
+        )
+        if version is None:
             _fail("schema")
+        _, schemas = VERSIONS[version]
         _provenance(
             {
                 k: manifest[k]
@@ -275,7 +315,7 @@ def read_raw_dataset(directory):
         if set(manifest["files"]) != set(SCHEMAS):
             _fail("files")
         tables = {}
-        for name, schema in SCHEMAS.items():
+        for name, schema in schemas.items():
             field = name
             info = manifest["files"][name]
             if (
@@ -289,19 +329,29 @@ def read_raw_dataset(directory):
             if _sha(data) != info["sha256"]:
                 _fail(name)
             table = pq.read_table(pa.BufferReader(data))
+            if version == "v2" and name == "distributions.parquet":
+                if (
+                    "pay_date" not in table.column_names
+                    or table.schema.field("pay_date").type != pa.date32()
+                    or table["pay_date"].null_count
+                ):
+                    _fail("pay_date")
             if (
                 not table.schema.equals(schema, check_metadata=True)
                 or table.num_rows != info["rows"]
             ):
                 _fail(name)
             for column in table.column_names:
-                if column != "close" and table[column].null_count:
+                if column not in ("close", "open") and table[column].null_count:
                     _fail(name)
             tables[name] = table.to_pylist()
         field = "dataset_id"
         if (
             dataset_identity(
-                manifest["partition"], manifest["holdout_start"], manifest["files"]
+                manifest["partition"],
+                manifest["holdout_start"],
+                manifest["files"],
+                schema=version,
             )
             != manifest["dataset_id"]
         ):
@@ -319,6 +369,10 @@ def read_raw_dataset(directory):
             manifest["partition"],
             day,
         )
+        if version == "v2" and any(
+            not _valid_pay_date(r) for r in dataset.distributions
+        ):
+            _fail("pay_date")
         _validate_dataset(dataset)
         ranges, instruments = _summary(dataset)
         for field, actual in [("date_range", ranges), ("instruments", instruments)]:

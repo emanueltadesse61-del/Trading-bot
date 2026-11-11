@@ -3,6 +3,7 @@
 import csv
 import math
 import re
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
@@ -27,6 +28,11 @@ HEADERS = {
         "evidence_source",
         "checked_on",
     ),
+}
+HEADERS_V2 = {
+    **HEADERS,
+    "prices.csv": ("instrument", "date", "open", "close", "unit"),
+    "distributions.csv": ("instrument", "ex_date", "pay_date", "amount", "unit"),
 }
 NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z")
 
@@ -79,7 +85,8 @@ def _checked_lines(stream, file):
         yield text
 
 
-def _rows(directory, file):
+@contextmanager
+def _reader(directory, file):
     path = Path(directory) / file
     try:
         stream = path.open(encoding="utf-8", newline="")
@@ -88,32 +95,57 @@ def _rows(directory, file):
     with stream:
         reader = csv.reader(_checked_lines(stream, file), strict=True)
         try:
-            header = next(reader, [])
-            if len(header) != len(HEADERS[file]) or set(header) != set(HEADERS[file]):
-                raise DataImportError("IMPORT_BAD_HEADER", file, 1)
-            while True:
-                line = reader.line_num + 1
-                row = next(reader, None)
-                if row is None:
-                    break
-                if len(row) != len(header):
-                    raise DataImportError("IMPORT_MALFORMED_ROW", file, line)
-                yield dict(zip(header, row)), line
+            yield reader, next(reader, [])
         except (csv.Error, UnicodeError):
             raise DataImportError(
                 "IMPORT_MALFORMED_ROW", file, reader.line_num or 1
             ) from None
 
 
+def _matches(header, expected):
+    return len(header) == len(expected) and set(header) == set(expected)
+
+
+def _csv_version(directory):
+    # Paired headers establish the version even with no observations.
+    with _reader(directory, "prices.csv") as (_, header):
+        if _matches(header, HEADERS["prices.csv"]):
+            version, headers = "v1", HEADERS
+        elif _matches(header, HEADERS_V2["prices.csv"]):
+            version, headers = "v2", HEADERS_V2
+        else:
+            raise DataImportError("IMPORT_BAD_HEADER", "prices.csv", 1)
+    with _reader(directory, "distributions.csv") as (_, header):
+        if not _matches(header, headers["distributions.csv"]):
+            raise DataImportError("IMPORT_BAD_HEADER", "distributions.csv", 1)
+    return version, headers
+
+
+def _rows(directory, file, headers):
+    with _reader(directory, file) as (reader, header):
+        if not _matches(header, headers[file]):
+            raise DataImportError("IMPORT_BAD_HEADER", file, 1)
+        while True:
+            line = reader.line_num + 1
+            row = next(reader, None)
+            if row is None:
+                break
+            if len(row) != len(header):
+                raise DataImportError("IMPORT_MALFORMED_ROW", file, line)
+            yield dict(zip(header, row)), line
+
+
 def _parse_csv_dir(directory, *, cutoff=None, synthetic=False):
     """Private full-history parser; only the owner CLI uses it without a cutoff.
 
-    Public synthetic import is the other deliberate full-range test path.
+    Returns (ParsedImport, CSV version). Public synthetic import is the other
+    deliberate full-range test path.
     """
     output = {name: [] for name in HEADERS}
     locations = {}
+    version, headers = _csv_version(directory)
     for file in HEADERS:
-        for row, line in _rows(directory, file):
+        for row, line in _rows(directory, file, headers):
             if "instrument" in row:
                 name = row["instrument"]
                 if not name.strip():
@@ -126,11 +158,26 @@ def _parse_csv_dir(directory, *, cutoff=None, synthetic=False):
                     raise DataImportError("IMPORT_HOLDOUT_LEAK", file, line)
                 if file == "prices.csv":
                     record = PriceRecord(
-                        name, day, _number(row["close"], file, line, True), row["unit"]
+                        name,
+                        day,
+                        _number(row["close"], file, line, True),
+                        row["unit"],
+                        _number(row["open"], file, line, True)
+                        if version == "v2"
+                        else None,
                     )
                 elif file == "distributions.csv":
+                    pay_date = (
+                        _day(row["pay_date"], file, line) if version == "v2" else None
+                    )
+                    if pay_date is not None and pay_date < day:
+                        raise DataImportError("IMPORT_PAY_BEFORE_EX", file, line)
                     record = DistributionRecord(
-                        name, day, _number(row["amount"], file, line), row["unit"]
+                        name,
+                        day,
+                        _number(row["amount"], file, line),
+                        row["unit"],
+                        pay_date,
                     )
                 else:
                     record = day
@@ -160,7 +207,7 @@ def _parse_csv_dir(directory, *, cutoff=None, synthetic=False):
                 "declarations.csv",
                 locations[declaration.instrument],
             )
-    return parsed
+    return parsed, version
 
 
 def import_csv(directory, *, holdout_start, synthetic=False):
@@ -169,7 +216,7 @@ def import_csv(directory, *, holdout_start, synthetic=False):
         raise DataImportError("IMPORT_HOLDOUT_REQUIRED")
     if holdout_start is not None and type(holdout_start) is not date:
         raise DataImportError("IMPORT_BAD_DATE", "holdout_start", 0)
-    parsed = _parse_csv_dir(
+    parsed, _ = _parse_csv_dir(
         directory, cutoff=None if synthetic else holdout_start, synthetic=synthetic
     )
     return RawDataset(

@@ -6,6 +6,8 @@ from datetime import date
 from trader.data import DataParams, build_dataset
 from trader.data.build import exceptions_digest
 
+from .errors import BacktestInputError
+
 
 @dataclass(frozen=True)
 class Market:
@@ -61,3 +63,15 @@ class DecisionMarket:
 
     def build(self, d, instruments):
         return self.data.build(d, instruments)
+
+
+def market_from_raw(dataset_dir, exceptions, exceptions_version):
+    """Read and validate the stored schema; never trust a caller's schema label."""
+    from trader.data.store import SCHEMA_V2, read_raw_dataset
+
+    raw, manifest = read_raw_dataset(dataset_dir)
+    if manifest["schema"] != SCHEMA_V2:
+        raise BacktestInputError("BACKTEST_RAW_SCHEMA", manifest["schema"])
+    return Market(
+        raw.calendar, raw.prices, raw.distributions, exceptions, exceptions_version
+    ), manifest

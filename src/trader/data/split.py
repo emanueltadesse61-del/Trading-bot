@@ -224,7 +224,7 @@ def run_split(
 ):
     source, dev_out, holdout_out = map(Path, (source, dev_out, holdout_out))
     preflight(source, dev_out, holdout_out, repo_root, agent_workspaces)
-    parsed = _parse_csv_dir(source)
+    parsed, schema = _parse_csv_dir(source)
     development, holdout = split_records(parsed, holdout_start)
     stages = (_staging(dev_out), _staging(holdout_out))
     owned = []
@@ -232,7 +232,7 @@ def run_split(
     try:
         for dataset, stage in zip((development, holdout), stages):
             stage.parent.mkdir(parents=True, exist_ok=True)
-            write_raw_dataset(dataset, stage, provenance=provenance)
+            write_raw_dataset(dataset, stage, provenance=provenance, schema=schema)
             owned.append(stage)
         loaded = [read_raw_dataset(stage)[0] for stage in stages]
         for field in ("prices", "distributions", "calendar"):
@@ -322,7 +322,8 @@ def main(argv=None):
         code_commit = _clean_commit()
         if args.propose_holdout:
             _guard_source(args.source, args.repo_root, args.agent_workspace)
-            proposal = propose_holdout(_parse_csv_dir(args.source))
+            parsed, _ = _parse_csv_dir(args.source)
+            proposal = propose_holdout(parsed)
             print(json.dumps(asdict(proposal), default=str, sort_keys=True))
             return 0 if proposal.holdout_start else 1
         manifests = run_split(
