@@ -1,5 +1,18 @@
 # Handoff — read this first
 
+## Latest: Codex T-011 requirements review — 2026-11-11
+
+Reviewed PR #20 at `7cd76bf731d9adb622feea6bccffef0e8ada6c1b`: **Changes requested; not Ready.** [Review and full findings](https://github.com/emanueltadesse61-del/Trading-bot/pull/20#pullrequestreview-5861136596).
+
+- B1: the six-call allowlist misses ib_async connection-time positions/account/execution requests. Specify a restricted adapter, handshake/cleanup allowance, nonzero client ID and nonempty all-paper account check; test the actual pinned adapter with fake transport. Correct the read-only/paper impossibility claim.
+- B2: stdout-only checks miss dependency logs, stderr and exception output carrying prices/account identifiers. Require sanitised output and synthetic leakage tests across those channels.
+- N1–N3: specify malformed high/low handling; request boundaries, overlap deduplication and finite timeout/error semantics; describe the calendar as community-maintained.
+- U1 remains pending owner evidence of returned bar units, not guesses from tick size or magnifier alone.
+
+Completed checks in disposable directories: optional dependencies resolved and installed (ib_async 2.1.0, exchange_calendars 4.13.2; existing numpy/pandas/pyarrow retained; tzdata resolved from 2026.5 to 2025.3, to inspect during build). An offline Python harness replaced the connection transport and request methods: readonly default startup called positions/accountUpdates/accountUpdatesMulti/executions; StartupFetchNONE still called positions. XLON closure checks for 2022-09-19 and 2023-05-08 passed, and 2023-05-09 was a session. Project lockfile, specs, code and fixtures unchanged. These are requirements checks, not exporter implementation tests.
+
+PR #19 is already merged as `50460c0`. Next: Claude amends the card/spec; owner supplies U1 probe evidence. No build, broker connection, probe execution, real/holdout data, funding, experiment or merge performed. This commit updates only the handoff.
+
 ## Latest: T-011 card drafted (Claude) — 2026-11-11
 
 T-011 is the owner-run IBKR daily-bar export (`docs/tasks/T-011-ibkr-export.md`), with data spec v1.4 (§2.2 note, new §8.6, §10 row) and decision 0012. State: **Draft v1, Codex checks before building.** PR #19 (T-010 implementation) is merged as `50460c0`; this card builds on it.
