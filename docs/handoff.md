@@ -1,6 +1,46 @@
 # Handoff — read this first
 
-## Latest: Claude accepts T-010 implementation — 2026-11-11
+## Latest: T-011 card v2 (Claude) — 2026-11-11
+
+This resolves Codex's PR #20 review at `7cd76bf` (handoff `0085811`). The changes are in decision 0012 (row 1 amended; rows 10–13) and data spec §8.6:
+- **B1:** a restricted protocol adapter: ib_async `Client`, never `IB.connect`; one outbound type allowlist at the send point; client ID 0 refused; a non-empty all-paper account list required before data requests. It is tested on the pinned `Client` with a scripted socket. The "impossible twice over" claim is corrected: the Gateway's Read-Only API setting is the server-side layer.
+- **B2:** logging, warnings, stdout, stderr, IBKR error text and tracebacks are sanitised before connecting. Sentinel leak tests cover success, failure and an injected exception.
+- **N1–N3:**
+  - bad high/low refuses the bar;
+  - inclusive London-year windows: earlier bars ignored, later bars refused, identical duplicates kept once;
+  - finite timeouts that fail closed (cancel, no retry);
+  - failure and empty results are distinct;
+  - the calendar is described as community-maintained.
+- **U1:** still open. It needs the probe plus bar-level owner evidence (a development-period close checked locally against an independent price) and a synthetic GBP/GBX regression. No config rows are guessed.
+
+State: **Draft v2, Codex re-checks.** The owner's probe is still pending.
+
+## Codex T-011 requirements review — 2026-11-11
+
+Reviewed PR #20 at `7cd76bf731d9adb622feea6bccffef0e8ada6c1b`: **Changes requested; not Ready.** [Review and full findings](https://github.com/emanueltadesse61-del/Trading-bot/pull/20#pullrequestreview-5861136596).
+
+- B1: the six-call allowlist misses ib_async connection-time positions/account/execution requests. Specify a restricted adapter, handshake/cleanup allowance, nonzero client ID and nonempty all-paper account check; test the actual pinned adapter with fake transport. Correct the read-only/paper impossibility claim.
+- B2: stdout-only checks miss dependency logs, stderr and exception output carrying prices/account identifiers. Require sanitised output and synthetic leakage tests across those channels.
+- N1–N3: specify malformed high/low handling; request boundaries, overlap deduplication and finite timeout/error semantics; describe the calendar as community-maintained.
+- U1 remains pending owner evidence of returned bar units, not guesses from tick size or magnifier alone.
+
+Completed checks in disposable directories: optional dependencies resolved and installed (ib_async 2.1.0, exchange_calendars 4.13.2; existing numpy/pandas/pyarrow retained; tzdata resolved from 2026.5 to 2025.3, to inspect during build). An offline Python harness replaced the connection transport and request methods: readonly default startup called positions/accountUpdates/accountUpdatesMulti/executions; StartupFetchNONE still called positions. XLON closure checks for 2022-09-19 and 2023-05-08 passed, and 2023-05-09 was a session. Project lockfile, specs, code and fixtures unchanged. These are requirements checks, not exporter implementation tests.
+
+PR #19 is already merged as `50460c0`. Next: Claude amends the card/spec; owner supplies U1 probe evidence. No build, broker connection, probe execution, real/holdout data, funding, experiment or merge performed. This commit updates only the handoff.
+
+## Latest: T-011 card drafted (Claude) — 2026-11-11
+
+T-011 is the owner-run IBKR daily-bar export (`docs/tasks/T-011-ibkr-export.md`), with data spec v1.4 (§2.2 note, new §8.6, §10 row) and decision 0012. State: **Draft v1, Codex checks before building.** PR #19 (T-010 implementation) is merged as `50460c0`; this card builds on it.
+
+**Open item U1 (price units):** it isn't known whether IBKR's metadata distinguishes pence-quoted from pound-quoted LSE lines. The owner runs the read-only probe (`ibkr_probe.py`, outside the repo; it prints contract metadata and earliest-data dates, never prices) and the result is recorded in decision 0012 §U1 before the card is Ready. Codex can check everything else now.
+
+Owner-gated items are unchanged: the growth proposal (PR #16), distribution histories with pay dates, declarations, the holdout proposal and charter, dividend cash-timing evidence, and freezing H-001.
+
+## PR #19 merged (Claude) — 2026-11-11
+
+The owner instructed "merge it". PR #19 (T-010 implementation, accepted at `9d6bf59`) was merged as `50460c0`, pinned to `282850d`.
+
+## Claude accepts T-010 implementation — 2026-11-11
 
 **Accepted at `9d6bf59401f941b89aed6c75747942883da99e78`; no blocking findings** (review on PR #19).
 
@@ -43,7 +83,7 @@ Coverage includes BT13 under the existing full-ledger harness, all previous fixt
 Synthetic only: no real data, broker access, funding, holdout access, permanent checkpoint, research experiment or H-001 registration. Real execution remains disabled. The growth proposal remains undecided. Next: Claude independently reviews the exact PR head, then the owner controls merging. T-011 and Gate 3 statistics remain separate cards.
 
 
-## Latest: PRs #18 and #17 merged (Claude) — 2026-10-27
+## PRs #18 and #17 merged (Claude) — 2026-10-27
 
 The owner instructed "merge both". PR #18 (T-009 implementation, accepted by Claude at `614d745`) was merged as `5ae4ade`, pinned to `50c7c8c`. Main was then merged into `t-010-card` for PR #17 (T-010 card, accepted by Codex at `a282423`), docs only, with both handoff records kept below. The T-010 card, specs and fixture are unchanged from `a282423`.
 
