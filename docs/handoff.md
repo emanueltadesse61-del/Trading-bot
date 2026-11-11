@@ -8,8 +8,6 @@ T-011 is the owner-run IBKR daily-bar export (`docs/tasks/T-011-ibkr-export.md`)
 
 Owner-gated items are unchanged: the growth proposal (PR #16), distribution histories with pay dates, declarations, the holdout proposal and charter, dividend cash-timing evidence, and freezing H-001.
 
-## PRs #18 and #17 merged (Claude) — 2026-10-27
-
 ## PR #19 merged (Claude) — 2026-11-11
 
 The owner instructed "merge it". PR #19 (T-010 implementation, accepted at `9d6bf59`) was merged as `50460c0`, pinned to `282850d`.
@@ -57,7 +55,7 @@ Coverage includes BT13 under the existing full-ledger harness, all previous fixt
 Synthetic only: no real data, broker access, funding, holdout access, permanent checkpoint, research experiment or H-001 registration. Real execution remains disabled. The growth proposal remains undecided. Next: Claude independently reviews the exact PR head, then the owner controls merging. T-011 and Gate 3 statistics remain separate cards.
 
 
-## Latest: PRs #18 and #17 merged (Claude) — 2026-10-27
+## PRs #18 and #17 merged (Claude) — 2026-10-27
 
 The owner instructed "merge both". PR #18 (T-009 implementation, accepted by Claude at `614d745`) was merged as `5ae4ade`, pinned to `50c7c8c`. Main was then merged into `t-010-card` for PR #17 (T-010 card, accepted by Codex at `a282423`), docs only, with both handoff records kept below. The T-010 card, specs and fixture are unchanged from `a282423`.
 
