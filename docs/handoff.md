@@ -1,6 +1,14 @@
 # Handoff — read this first
 
-## Latest: PRs #18 and #17 merged (Claude) — 2026-10-27
+## Latest: T-011 card drafted (Claude) — 2026-11-11
+
+T-011 is the owner-run IBKR daily-bar export (`docs/tasks/T-011-ibkr-export.md`), with data spec v1.4 (§2.2 note, new §8.6, §10 row) and decision 0012. State: **Draft v1, Codex checks before building.** PR #19 (T-010 implementation) is accepted at `282850d` and awaits the owner's merge. This card depends on it.
+
+**Open item U1 (price units):** it isn't known whether IBKR's metadata distinguishes pence-quoted from pound-quoted LSE lines. The owner runs the read-only probe (`ibkr_probe.py`, outside the repo; it prints contract metadata and earliest-data dates, never prices) and the result is recorded in decision 0012 §U1 before the card is Ready. Codex can check everything else now.
+
+Owner-gated items are unchanged: the growth proposal (PR #16), distribution histories with pay dates, declarations, the holdout proposal and charter, dividend cash-timing evidence, and freezing H-001.
+
+## PRs #18 and #17 merged (Claude) — 2026-10-27
 
 The owner instructed "merge both". PR #18 (T-009 implementation, accepted by Claude at `614d745`) was merged as `5ae4ade`, pinned to `50c7c8c`. Main was then merged into `t-010-card` for PR #17 (T-010 card, accepted by Codex at `a282423`), docs only, with both handoff records kept below. The T-010 card, specs and fixture are unchanged from `a282423`.
 

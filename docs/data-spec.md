@@ -1,6 +1,6 @@
-# Data Layer Specification (v1.3)
+# Data Layer Specification (v1.4)
 
-Status: **v1.2.1 in review (T-007 requirements); §1–6 and §9 accepted in v1.1.1; §7.1 has a one-sentence provenance correction.** Author: Claude. Last updated: 2026-10-16.
+Status: **v1.2.1 in review (T-007 requirements); §1–6 and §9 accepted in v1.1.1; §7.1 has a one-sentence provenance correction.** Author: Claude. Last updated: 2026-11-11. **v1.4 (T-011, decision 0012) in review:** §2.2 unit source for IBKR exports (open item U1), new §8.6 IBKR export, §10 row.
 
 This document defines how raw daily price records become the inputs the portfolio engine expects (`docs/portfolio-spec.md` §2). It is source-agnostic: the data feed is still undecided (feasibility D5), so every source is read through an adapter into the canonical record format below. Reference cases: `tests/fixtures/data_cases.json`, explained in §9. v1.1 resolves Codex's T-005 findings (`docs/decisions/0006-data-spec-holdout-and-jump-approvals.md`). v1.1.1 clarifies duplicate counting (Claude's T-006 review, note N1). v1.2 (§8, §10) adds raw-dataset storage, owner-run isolation details, declarations and a corrected corporate-action rule, from Codex's T-007 review (`docs/decisions/0007-raw-datasets-isolation-and-corporate-actions.md`); v1.2.1 resolves Codex's T-007 re-review (B4 attestation dates, B5 per-dataset publication, identity covers partition and holdout start, §7.1 provenance sentence; same decision record). The builder's behaviour and the fixture are unchanged.
 
@@ -35,6 +35,7 @@ A list of trading-session dates for the exchange (London Stock Exchange, `XLON`)
 `build_dataset` ignores `open` and `pay_date`. They are used only by the backtester (backtest spec §3).
 
 - `unit` comes from the **feed's metadata** for that record or instrument. It is never inferred from a fund name or a web page (feasibility D3).
+  - **IBKR exports (v1.4, T-011):** how the unit is taken from IBKR is decision 0012 §U1, settled from the owner's contract probe before T-011 is Ready. Either the IBKR metadata determines it (`unit_source = feed`), or, only if that metadata cannot distinguish pounds from pence, an owner declaration with recorded evidence (`unit_source = owner_declaration`). Never a fund name alone.
 - Allowed units: `GBP` and `GBX` (pence). Any other unit is an error.
 
 ### 2.3 Jump exceptions
@@ -236,6 +237,26 @@ A missing or invalid declaration refuses the whole import (`IMPORT_DECLARATION_M
 
 The jump check (§7) is an anomaly check, **not** split detection: a 4:3 split lowers the price by exactly 25% and is not flagged. A split-induced jump must never be approved as ordinary cleaning.
 
+### 8.6 IBKR daily-bar export (v1.4, T-011)
+
+`trader-ibkr-export` is an **owner-run** source adapter. Its output directory is a §8.3 **source**: it holds the full history, holdout years included, so it is guarded like the split's source and stays outside every agent location.
+
+- **What it reads:** IBKR `TRADES` daily bars, regular trading hours. IBKR adjusts `TRADES` for splits, not dividends, so the closes equal unadjusted closes only where the §8.5 declaration attests no corporate action, which is required anyway (decision 0012 row 2).
+- **What it writes:** CSV v2 `prices.csv` (§8.4.1) and `calendar.csv` (XLON sessions from a pinned `exchange_calendars` release; §2.1, decision 0012 row 3), and `ibkr_export.json`. That records:
+  - versions and code commit;
+  - `retrieved_at`;
+  - the request parameters;
+  - per contract: `conId`, symbol, exchange, primary exchange, currency, `priceMagnifier`, `minTick`, long name and ISIN as IBKR reported them;
+  - the head timestamp, bar counts and file hashes.
+
+  It contains no prices and no account codes. It never writes `distributions.csv` or `declarations.csv`: those come from the owner (issuer sources, §8.5).
+- **Bar validity:**
+  - a close must be finite, > 0 and within the bar's `[low, high]`, otherwise the export is refused;
+  - an open that is non-finite, ≤ 0 or outside `[low, high]` is written as an **empty** open (unknown) and counted;
+  - off-calendar, duplicate-conflicting or post-end bars, and an empty one-year window after the head date, refuse the export;
+  - nothing is filled, adjusted or dropped.
+- **Isolation:** no price is printed or logged. The tool stages, validates and publishes its output atomically, and never retries a failed request.
+
 ## 9. Reference cases (`tests/fixtures/data_cases.json`)
 
 | Case | Exercises | Key expected result |
@@ -270,7 +291,7 @@ Every case also gives the expected `exceptions_digest`.
 
 | Item | Gate |
 |---|---|
-| Downloading from any provider | A broker or vendor adapter card, after feasibility D5 and the holdout dates (§8.3) |
+| Downloading from any provider | IBKR daily bars: T-011 (§8.6), owner-run only. Any other provider: its own adapter card. Real use still needs the holdout dates (§8.3) and declarations (§8.5) |
 | Share splits and other non-cash corporate actions | Not supported. Real use requires a §8.5 declaration that none occurred; otherwise the instrument is unusable until split support is specified |
 | Incomplete distribution history | Real use requires `distributions_complete = true` (§8.5); a missing export is never treated as "no payments" |
 | Distributions in a currency other than GBP or GBX | Rejected by `DATA_UNKNOWN_UNIT` |
