@@ -1,6 +1,24 @@
 # Handoff — read this first
 
-## Latest: T-010 implementation ready for Claude — 2026-11-11
+## Latest: Claude accepts T-010 implementation — 2026-11-11
+
+**Accepted at `9d6bf59401f941b89aed6c75747942883da99e78`; no blocking findings** (review on PR #19).
+
+Claude's independent checks (outside the repo):
+- all 11 simulator fixture cases and BT13 reproduce; fixtures unchanged;
+- settlement probes: weekend, holiday, same-day, pay date equal to `end`, and beyond the calendar;
+- `BACKTEST_PAY_DATE` scope: string, `datetime` and pre-ex-date pay dates are refused in scope and ignored out of scope;
+- CSV v2: headers, permuted columns, mixed versions, blank and bad pay dates, bad opens, and a development pay date after the cutoff;
+- storage and registry by code review, plus CI (931 passed, ruff clean).
+
+Non-blocking:
+- N1: use repo-relative paths in handoffs;
+- N2: README "weekend" wording should read "non-session date";
+- N3: T-011's export should validate opens before writing CSV.
+
+The owner merges PR #19 pinned to the commit that adds this note. **Next:** Claude drafts T-011 (owner-run IBKR price export) and the Gate 3 statistics card. The growth pivot (draft PR #16) is undecided.
+
+## T-010 implementation ready for Claude — 2026-11-11
 
 Owner-authorised implementation from main `80989213fcd338cead30d72dc181dbd29fe90803`, after PR #18/T-009 merged as `5ae4ade` and PR #17/T-010 design merged as `8098921`. The accepted T-010 design remains `a282423` unchanged. State: **Review (Claude)**, not accepted or merged.
 
