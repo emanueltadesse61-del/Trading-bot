@@ -1,5 +1,30 @@
 # Handoff — read this first
 
+## Latest: T-010 implementation ready for Claude — 2026-11-11
+
+Owner-authorised implementation from main `80989213fcd338cead30d72dc181dbd29fe90803`, after PR #18/T-009 merged as `5ae4ade` and PR #17/T-010 design merged as `8098921`. The accepted T-010 design remains `a282423` unchanged. State: **Review (Claude)**, not accepted or merged.
+
+The previous temporary checkout disappeared before its work was pushed. Codex reconstructed the implementation in persistent checkout `/Users/eman/Documents/ChatGPT/Trading-bot`, branch `t-010-data-v2`. Implementation commit: **`ad7e36a8b461eda7d62c44198042b2bef71b97f5`**. This handoff-only commit follows it; the implementation PR names the exact final review head and CI results.
+
+Implemented `DistributionRecord.pay_date`; explicit CSV v1/v2 headers and `(ParsedImport, version)` propagation through split; raw schema v2 with nullable opens and required validated pay dates; unchanged v1 writer default/bytes; pay-date settlement and scoped `BACKTEST_PAY_DATE`; and `market_from_raw(dataset_dir, exceptions, exceptions_version)` reading the validated manifest itself. The bridge preserves records and the parsed approval snapshot. No builder, strategy parameter, fixture, H-001 or lockfile changes.
+
+T-009 follow-ups: N1 makes the empty `SUPPORTED_REAL_SCHEMAS` set the actual check; its unsupported future execution branch fails closed with `NotImplementedError` until the Gate 3 activation card. N2 documents non-ignored untracked-file strictness. N4 uses `REGISTRY_CLI_ERROR` for otherwise unnamed CLI failures. Optional N3 (sorting `ASSET_CLASSES`) is deferred to avoid changing configuration identities in this data-layer card.
+
+Completed verification:
+- `.venv/bin/uv sync --locked`: passed (uv 0.13.1); lockfile unchanged.
+- `.venv/bin/ruff check .`: passed.
+- `.venv/bin/pytest -q`: **931 passed** on the clean implementation commit (888 prior tests, BT13 activated, 41 new v2 tests and the existing registered-run refusal checks expanded to both schemas).
+- Focused data-v2, fixture and registry suite: **143 passed**.
+- `git diff --check`: passed; no changes to `tests/fixtures`, `research/hypotheses`, `build.py` or `uv.lock`.
+- Independently regenerated the five v1 files from an isolated archive of accepted main; all hashes match the new compatibility regression, including dataset id `4256992c…c6be70` and manifest SHA `27c0ead0…22d89`. The golden test is tied to the pinned pyarrow 23.0.1 writer, as required by the byte-identity contract.
+
+Local pytest reported one non-failing sandbox warning: it could not write its optional cache in the persistent checkout. All tests ran. CI on the final PR head is recorded in the PR description.
+
+Coverage includes BT13 under the existing full-ledger harness, all previous fixture answers, empty-v2 schema preservation through both partitions, malformed CSV values/headers, pre-publication pay-date refusal, rehashed malformed storage, v1 compatibility, deterministic v2 identity, tampered opens, validated bridge versus direct simulation (GBP and GBX), approval provenance, scoped admission and payments after the run. Both v1 and v2 matching registered requests remain refused without a start row or simulator invocation. Prior test assertions are unchanged; only authorised harness migrations and added coverage were made.
+
+Synthetic only: no real data, broker access, funding, holdout access, permanent checkpoint, research experiment or H-001 registration. Real execution remains disabled. The growth proposal remains undecided. Next: Claude independently reviews the exact PR head, then the owner controls merging. T-011 and Gate 3 statistics remain separate cards.
+
+
 ## Latest: PRs #18 and #17 merged (Claude) — 2026-10-27
 
 The owner instructed "merge both". PR #18 (T-009 implementation, accepted by Claude at `614d745`) was merged as `5ae4ade`, pinned to `50c7c8c`. Main was then merged into `t-010-card` for PR #17 (T-010 card, accepted by Codex at `a282423`), docs only, with both handoff records kept below. The T-010 card, specs and fixture are unchanged from `a282423`.
