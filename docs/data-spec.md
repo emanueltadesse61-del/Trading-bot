@@ -242,7 +242,7 @@ The jump check (§7) is an anomaly check, **not** split detection: a 4:3 split l
 `trader-ibkr-export` is an **owner-run** source adapter. Its output directory is a §8.3 **source**: it holds the full history, holdout years included, so it is guarded like the split's source and stays outside every agent location.
 
 - **What it reads:** IBKR `TRADES` daily bars, regular trading hours. IBKR adjusts `TRADES` for splits, not dividends, so the closes equal unadjusted closes only where the §8.5 declaration attests no corporate action, which is required anyway (decision 0012 row 2).
-- **What it writes:** CSV v2 `prices.csv` (§8.4.1) and `calendar.csv` (XLON sessions from a pinned `exchange_calendars` release; §2.1, decision 0012 row 3), and `ibkr_export.json`. That records:
+- **What it writes:** CSV v2 `prices.csv` (§8.4.1) and `calendar.csv` (XLON sessions from a pinned release of the community-maintained `exchange_calendars`; §2.1, decision 0012 row 3), and `ibkr_export.json`. That records:
   - versions and code commit;
   - `retrieved_at`;
   - the request parameters;
@@ -255,7 +255,9 @@ The jump check (§7) is an anomaly check, **not** split detection: a 4:3 split l
   - an open that is non-finite, ≤ 0 or outside `[low, high]` is written as an **empty** open (unknown) and counted;
   - off-calendar, duplicate-conflicting or post-end bars, and an empty one-year window after the head date, refuse the export;
   - nothing is filled, adjusted or dropped.
-- **Isolation:** no price is printed or logged. The tool stages, validates and publishes its output atomically, and never retries a failed request.
+- **Bounds:** an invalid `low` or `high` (non-finite, ≤ 0, or `low > high`) refuses the bar, because the close cannot be validated.
+- **Connection:** a restricted protocol adapter, never `IB.connect`. One outbound choke point allows only the handshake, `startApi`, contract-details, head-timestamp, historical-data and their cancels, and delayed market-data type. A non-empty all-paper account list is required before data requests; client ID 0 is refused. The Gateway's Read-Only API setting is the separate server-side layer (decision 0012 rows 1 and 10).
+- **Isolation:** no price, account code or raw IBKR payload is printed, logged or put in an error, on stdout, stderr, library logs or tracebacks (decision 0012 row 11). The tool stages, validates and publishes its output atomically, and never retries a failed request.
 
 ## 9. Reference cases (`tests/fixtures/data_cases.json`)
 

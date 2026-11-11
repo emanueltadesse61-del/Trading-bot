@@ -1,6 +1,21 @@
 # Handoff — read this first
 
-## Latest: Codex T-011 requirements review — 2026-11-11
+## Latest: T-011 card v2 (Claude) — 2026-11-11
+
+This resolves Codex's PR #20 review at `7cd76bf` (handoff `0085811`). The changes are in decision 0012 (row 1 amended; rows 10–13) and data spec §8.6:
+- **B1:** a restricted protocol adapter: ib_async `Client`, never `IB.connect`; one outbound type allowlist at the send point; client ID 0 refused; a non-empty all-paper account list required before data requests. It is tested on the pinned `Client` with a scripted socket. The "impossible twice over" claim is corrected: the Gateway's Read-Only API setting is the server-side layer.
+- **B2:** logging, warnings, stdout, stderr, IBKR error text and tracebacks are sanitised before connecting. Sentinel leak tests cover success, failure and an injected exception.
+- **N1–N3:**
+  - bad high/low refuses the bar;
+  - inclusive London-year windows: earlier bars ignored, later bars refused, identical duplicates kept once;
+  - finite timeouts that fail closed (cancel, no retry);
+  - failure and empty results are distinct;
+  - the calendar is described as community-maintained.
+- **U1:** still open. It needs the probe plus bar-level owner evidence (a development-period close checked locally against an independent price) and a synthetic GBP/GBX regression. No config rows are guessed.
+
+State: **Draft v2, Codex re-checks.** The owner's probe is still pending.
+
+## Codex T-011 requirements review — 2026-11-11
 
 Reviewed PR #20 at `7cd76bf731d9adb622feea6bccffef0e8ada6c1b`: **Changes requested; not Ready.** [Review and full findings](https://github.com/emanueltadesse61-del/Trading-bot/pull/20#pullrequestreview-5861136596).
 
