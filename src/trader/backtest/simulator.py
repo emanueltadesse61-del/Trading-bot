@@ -1,6 +1,7 @@
 """Deterministic next-open simulator. Synthetic use only in T-008."""
 
 import math
+from bisect import bisect_left
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
@@ -101,6 +102,11 @@ def run_backtest(
             not is_finite_number(r.open) or r.open * units[r.unit] <= 0
         ):
             raise BacktestInputError("BACKTEST_OPEN", f"{r.instrument} {r.date}")
+    for r in bounded.distributions:
+        if r.pay_date is not None and (
+            type(r.pay_date) is not date or r.pay_date < r.ex_date
+        ):
+            raise BacktestInputError("BACKTEST_PAY_DATE", f"{r.instrument} {r.ex_date}")
     if decision_dates is not None:
         if schedule is not None:
             raise BacktestInputError(
@@ -136,7 +142,10 @@ def run_backtest(
             shares = holdings.get(r.instrument, 0)
             if shares:
                 amount = shares * r.amount * units[r.unit]
-                lots.append((index + params.DISTRIBUTION_LAG, amount))
+                due = (index + params.DISTRIBUTION_LAG if r.pay_date is None
+                       else max(index + 1, bisect_left(calendar, r.pay_date)))
+                # len(calendar) keeps a payment beyond the calendar unsettled in NAV.
+                lots.append((due, amount))
                 distributions.append(
                     dict(instrument=r.instrument, shares=shares, cash=amount)
                 )
